@@ -93,9 +93,9 @@ def async_register_sidebar_panel(hass: HomeAssistant) -> None:
         sidebar_title=SIDEBAR_TITLE,
         sidebar_icon=SIDEBAR_ICON,
         frontend_url_path=FRONTEND_URL_PATH,
-        # A floor-plan editor that also exposes device ids and positions:
-        # admin-only, matching the websocket commands (see websocket_api.py).
-        require_admin=True,
+        # Every user can view the plan; only admins can edit it. The
+        # websocket commands enforce that split (see websocket_api.py).
+        require_admin=False,
         config={
             "_panel_custom": {
                 "name": "floorplan-plus-panel",

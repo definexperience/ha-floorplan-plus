@@ -1,0 +1,393 @@
+{
+  "floorTabs": {
+    "property": "Perceel"
+  },
+  "appHeader": {
+    "saving": "Opslaan…",
+    "save": "Opslaan",
+    "menu": "Menu",
+    "back": "Terug",
+    "settings": "Instellingen",
+    "edit": "Plattegrond bewerken",
+    "doneEditing": "Klaar met bewerken"
+  },
+  "canvas": {
+    "mode": {
+      "select": "Selecteren",
+      "pan": "Verschuiven",
+      "trace": "Ruimte tekenen",
+      "wall": "Muur tekenen",
+      "door": "Deur toevoegen",
+      "window": "Raam toevoegen",
+      "scale": "Schaal instellen",
+      "place": "Apparaat plaatsen",
+      "align": "Verdiepingen uitlijnen"
+    },
+    "snap": {
+      "tooltip": "Waar nieuwe punten aan vastklikken (houd Shift ingedrukt om één punt vrij te plaatsen)",
+      "all": "Vastklikken: alles",
+      "walls": "Vastklikken: alleen muren",
+      "rooms": "Vastklikken: alleen ruimtes",
+      "off": "Vastklikken: uit"
+    },
+    "hint": {
+      "closeRoom": "Klik bij het beginpunt om de ruimte te sluiten.",
+      "addPoints": "Klik om punten toe te voegen.",
+      "addWallPoints": "Klik om punten toe te voegen.",
+      "addWallPointsFinish": "Klik om punten toe te voegen en kies daarna Afronden.",
+      "scaleFirst": "Klik op het eerste punt van een bekende afstand.",
+      "scaleSecond": "Klik op het tweede punt.",
+      "placeOpening": "Klik op een muur om een {type} te plaatsen.",
+      "alignAgainst": "Uitlijnen op:",
+      "noBackground": "Die verdieping heeft geen achtergrondafbeelding om op uit te lijnen.",
+      "alignDrag": "Sleep om te verplaatsen, gebruik +/− om de grootte aan te passen en kies daarna Toepassen.",
+      "multiSelected": "{count} apparaten geselecteerd. Sleep er één om ze samen te verplaatsen."
+    },
+    "openingType": {
+      "door": "deur",
+      "window": "raam",
+      "opening": "opening"
+    },
+    "openingLabel": {
+      "door": "deur",
+      "window": "raam"
+    },
+    "button": {
+      "cancel": "Annuleren",
+      "finishWall": "Muur afronden",
+      "chooseAnother": "Kies een andere",
+      "apply": "Toepassen",
+      "close": "Sluiten",
+      "clearSelection": "Wissen"
+    },
+    "align": {
+      "choose": "— Kies een verdieping —",
+      "shrink": "Overlay iets verkleinen",
+      "grow": "Overlay iets vergroten"
+    },
+    "room": {
+      "custom": "— Eigen naam —",
+      "outdoor": "Buiten / geen verdieping",
+      "fillOpacity": "Dekking vulling",
+      "borderOpacity": "Dekking rand",
+      "doneEditing": "Klaar met bewerken",
+      "editVertices": "Hoekpunten bewerken",
+      "useAreaName": "Gebruik ruimtenaam “{name}”",
+      "resetLabel": "Positie van label herstellen",
+      "delete": "Ruimte verwijderen"
+    },
+    "pin": {
+      "setIcon": "Pictogram instellen",
+      "delete": "Apparaat verwijderen",
+      "removeFromSpot": "Van deze plek verwijderen",
+      "stackTitle": "{count} apparaten op deze plek"
+    },
+    "wall": {
+      "material": "Muurmateriaal",
+      "thickness": "Muurdikte ({unit})",
+      "delete": "Muur verwijderen"
+    },
+    "opening": {
+      "width": "Breedte ({unit})",
+      "storedUnits": "opgeslagen eenheden",
+      "calibrate": "Stel de schaal in voor echte maten",
+      "delete": "Verwijderen"
+    },
+    "meshStub": {
+      "goToFloor": "Naar verdieping"
+    },
+    "notCalibrated": "Geen schaal ingesteld",
+    "card": {
+      "room": "Ruimte",
+      "device": "Apparaat",
+      "wall": "Muur",
+      "wallOpening": "In een muur",
+      "link": "Verbinding",
+      "quality": "Signaal",
+      "area": "Ruimte in Home Assistant",
+      "style": "Stijl",
+      "visible": "Zichtbaar",
+      "name": "Naam",
+      "label": "Label",
+      "height": "Hoogte ({unit})",
+      "colour": "Kleur",
+      "colourDefault": "Standaard",
+      "colourCustom": "Eigen kleur",
+      "links": "{count} verbindingen",
+      "noLinks": "Geen verbindingen met andere geplaatste apparaten",
+      "hide": "Details verbergen",
+      "show": "Details tonen"
+    },
+    "calibrateHint": "Klik om de schaal in te stellen"
+  },
+  "deviceCard": {
+    "offline": "Offline",
+    "lowBattery": "Batterij bijna leeg",
+    "noEntities": "Niets te tonen voor dit apparaat",
+    "more": "Nog {count} in Home Assistant",
+    "openDevice": "Openen in Home Assistant",
+    "details": "Details"
+  },
+  "mapBackground": {
+    "noWebgl": "Deze browser kan de kaart niet tekenen (WebGL2 is nodig).",
+    "failed": "Kon de kaart niet laden: {error}",
+    "add": "Kaart als achtergrond toevoegen",
+    "remove": "Kaartachtergrond verwijderen",
+    "opacity": "Dekking kaart",
+    "adjust": "Kaart verplaatsen (slepen; Ctrl+scrollen of knijpen om te zoomen)",
+    "adjustHint": "Sleep de kaart zodat hij gelijk ligt met je gebouwen.",
+    "zoomIn": "Kaart inzoomen",
+    "zoomOut": "Kaart uitzoomen",
+    "rotation": "Draaiing",
+    "resetRotation": "Noorden boven",
+    "done": "Klaar",
+    "style": "Kaarttype",
+    "street": "Stratenkaart",
+    "aerial": "Luchtfoto (Esri)"
+  },
+  "settings": {
+    "editing": "Bewerken",
+    "autoSave": "Wijzigingen automatisch opslaan",
+    "autoSaveHint": "Slaat een paar seconden na elke wijziging op",
+    "units": "Eenheden",
+    "metric": "Metrisch",
+    "imperial": "Imperiaal",
+    "floorOrder": "Volgorde verdiepingen",
+    "topFirst": "Bovenste eerst",
+    "groundFirst": "Begane grond eerst",
+    "zigbeeMesh": "Zigbee-mesh",
+    "coordinator": "Coördinator",
+    "coordinatorAria": "Zigbee-coördinator",
+    "bridge": "Zigbee2MQTT-bridge",
+    "notPlaced": "(apparaat niet geplaatst)",
+    "coordinatorHint": "Het apparaat dat je voor je radio hebt geplaatst, als dat niet de bridge is",
+    "matterThread": "Matter en Thread",
+    "borderRouter": "Border router",
+    "borderRouterAria": "Thread border router",
+    "notSet": "Niet ingesteld",
+    "borderRouterHint": "Het apparaat dat je voor je Thread border router hebt geplaatst, zodat de verbindingen getekend worden",
+    "scanTimeout": "Scan-timeout",
+    "scanTimeoutAria": "Zigbee-scan-timeout in seconden",
+    "scanTimeoutHint": "Verhoog dit als Mesh laden bij een grote mesh te lang duurt",
+    "troubleshooting": "Probleemoplossing",
+    "debugLogging": "Debuglogboek",
+    "debugLoggingHint": "Schrijft floorplan_plus_debug.log in je configuratiemap, alleen id's en aantallen",
+    "about": "Over",
+    "version": "Versie",
+    "github": "GitHub-repository",
+    "releaseNotes": "Release notes",
+    "releaseNotesHint": "Wat er nieuw is in elke versie",
+    "documentation": "Documentatie",
+    "documentationHint": "Floorplan Plus instellen en gebruiken",
+    "reportIssue": "Probleem melden",
+    "reportIssueHint": "Voeg het debugrapport uit het ⋮-menu toe om de oorzaak te vinden",
+    "githubHint": "definexperience/ha-spatial-context, een ster helpt anderen het te vinden",
+    "support": "Steun het oorspronkelijke project",
+    "supportHint": "Floorplan Plus is gebouwd op Spatial Context van Greminn. Heb je er wat aan, dan kun je Greminn een espresso trakteren",
+    "licence": "Licentie"
+  },
+  "picker": {
+    "search": "Apparaten zoeken…",
+    "clearSearch": "Zoekopdracht wissen",
+    "more": "Meer",
+    "allFloors": "Alle verdiepingen",
+    "outdoor": "Buiten / geen verdieping",
+    "allAreas": "Alle ruimtes",
+    "clearAll": "Alle geplaatste apparaten verwijderen",
+    "noMatches": "Geen apparaten gevonden.",
+    "alreadyPlaced": "Al geplaatst op {floor}, verwijder het daar eerst",
+    "placedOn": "Geplaatst op {floor}",
+    "placed": "✓ geplaatst",
+    "showAll": "Alle apparaten",
+    "showUnplaced": "Nog niet geplaatst",
+    "showPlaced": "Geplaatst",
+    "locate": "Tonen op plattegrond",
+    "remove": "Van plattegrond verwijderen",
+    "title": "Apparaat plaatsen"
+  },
+  "iconPicker": {
+    "title": "Kies een pictogram",
+    "search": "Pictogrammen zoeken, zoals lamp, beweging, hek",
+    "loadError": "Kon de lijst met pictogrammen niet laden ({error}).",
+    "loading": "Pictogrammen laden…",
+    "noMatch": "Geen pictogrammen gevonden.",
+    "typeToSearch": "Typ om alle pictogrammen te doorzoeken.",
+    "useDefault": "Standaardpictogram gebruiken",
+    "cancel": "Annuleren"
+  },
+  "legend": {
+    "weak": "Zwak",
+    "medium": "Gemiddeld",
+    "strong": "Sterk",
+    "unknown": "Geen signaalgegevens",
+    "dashedFloor": "Naar een andere verdieping of buiten",
+    "dashedProperty": "In een gebouw",
+    "hint": {
+      "zigbee": "Verbindingskwaliteit (LQI): sterk vanaf 150, gemiddeld vanaf 80, anders zwak",
+      "wifi": "Signaal: sterk −50 dBm of beter, gemiddeld −70 dBm of beter, anders zwak",
+      "bluetooth": "Signaal: sterk −70 dBm of beter, gemiddeld −85 dBm of beter, anders zwak",
+      "matter": "Zoals Matter het beoordeelt"
+    },
+    "lqi": "LQI {value}",
+    "dbm": "{value} dBm"
+  },
+  "rowActions": {
+    "undo": "Ongedaan maken (Ctrl/Cmd+Z)",
+    "redo": "Opnieuw (Ctrl/Cmd+Shift+Z)"
+  },
+  "panel": {
+    "loading": "Floorplan Plus laden…",
+    "noFloors": "Geen verdiepingen gevonden. Voeg verdiepingen toe onder Instellingen → Ruimtes → Verdiepingen en open dit paneel opnieuw.",
+    "dismiss": "Sluiten",
+    "versionRestart": "Floorplan Plus is bijgewerkt. Herstart Home Assistant om af te ronden. Tot die tijd worden sommige wijzigingen misschien niet opgeslagen.",
+    "versionReload": "Deze pagina draait een ouder Floorplan Plus-paneel dan er geïnstalleerd is. Laad de pagina opnieuw (in Safari: Option+Cmd+R).",
+    "scaleDisagree": "Geplaatste gebouwen geven verschillende schalen. Vergelijk hun afmetingen met de foto.",
+    "scaleFromBuilding": "Schaal (van {building}): 1 {unit} ≈ {value} eenheden"
+  },
+  "menu": {
+    "background": "Achtergrond",
+    "connectivity": "Netwerkkaart",
+    "settings": "Instellingen",
+    "more": "Meer opties",
+    "uploadBackground": "Achtergrond uploaden",
+    "replaceBackground": "Achtergrond vervangen",
+    "removeBackground": "Achtergrond verwijderen",
+    "opacity": "Dekking",
+    "gettingStarted": "Handleiding om te beginnen",
+    "exportJson": "JSON exporteren",
+    "debugReport": "Debugrapport downloaden",
+    "debugReportHint": "Versies, instellingen, aantallen en het recente debuglogboek, veilig om aan een GitHub-issue toe te voegen",
+    "resetFloor": "Verdieping leegmaken",
+    "resetProperty": "Perceel leegmaken"
+  },
+  "network": {
+    "zigbee": "Zigbee-mesh",
+    "wifi": "Wifi-netwerk",
+    "matter": "Matter-netwerk",
+    "bluetooth": "Bluetooth",
+    "zigbeeShort": "Zigbee-mesh",
+    "wifiShort": "Wifi",
+    "matterShort": "Matter",
+    "refresh": "Mesh vernieuwen",
+    "load": "Mesh laden",
+    "loadingZigbee": "Laden… {seconds}s (meestal 1–2 min)",
+    "showAll": "Alle verbindingen tonen",
+    "live": "● Live",
+    "loading": "Laden…",
+    "refreshedSeconds": "{n}s geleden vernieuwd",
+    "refreshedMinutes": "{n}m geleden vernieuwd",
+    "scanByAdmin": "Dit is de laatste scan. Een beheerder kan hem vernieuwen.",
+    "noScanYet": "Nog geen scan. Een beheerder kan de mesh laden."
+  },
+  "errors": {
+    "restartHa": "Herstart Home Assistant om de update van Floorplan Plus af te ronden.",
+    "needsAdmin": "Voor deze kaart is een beheerdersaccount in Home Assistant nodig.",
+    "bluetoothVersion": "De Bluetooth-kaart heeft Home Assistant 2025.2 of nieuwer nodig.",
+    "zigbeeFailed": "Opvragen van de Zigbee-mesh is mislukt",
+    "wifiFailed": "Opvragen van het wifi-netwerk is mislukt",
+    "matterFailed": "Abonneren op de Matter-topologie is mislukt",
+    "bluetoothFailed": "Abonneren op Bluetooth is mislukt",
+    "floorSave": "Kon deze verdieping niet opslaan. Je blijft hier zodat er niets verloren gaat.",
+    "propertySave": "Kon het perceel niet opslaan. Open het tabblad Perceel opnieuw om het nog eens te proberen.",
+    "saveFailed": "Kon niet opslaan: {error} Je wijzigingen staan er nog. Laat dit tabblad open.",
+    "retry": "Opnieuw proberen",
+    "bgType": "De achtergrondafbeelding moet een PNG-, JPEG- of GIF-bestand zijn.",
+    "bgUpload": "Uploaden van de achtergrondafbeelding is mislukt: {error}"
+  },
+  "dialog": {
+    "ok": "OK",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "remove": "Verwijderen",
+    "discard": "Weggooien",
+    "reset": "Leegmaken",
+    "apply": "Toepassen"
+  },
+  "confirm": {
+    "removeOutdoorPin": "\"{name}\" van het perceel verwijderen?",
+    "discardFloor": "Niet-opgeslagen wijzigingen aan deze verdieping weggooien?",
+    "discardProperty": "Niet-opgeslagen wijzigingen aan het perceel weggooien?",
+    "removeOutdoorOne": "Het buitenapparaat van het perceel verwijderen?",
+    "removeOutdoorMany": "Alle {count} buitenapparaten van het perceel verwijderen?",
+    "removeFloorOne": "Het geplaatste apparaat van deze verdieping verwijderen?",
+    "removeFloorMany": "Alle {count} geplaatste apparaten van deze verdieping verwijderen?",
+    "deletePlacement": "De plaatsing \"{label}\" verwijderen?",
+    "resetProperty": "Het perceel leegmaken? Dit wist alle geplaatste gebouwen, alle buitenapparaten en de achtergrondfoto. Er verandert pas iets definitief als je daarna opslaat.",
+    "resetFloor": "\"{floor}\" leegmaken? Dit wist alle ruimtes, muren, deuren en ramen, geplaatste apparaten en de achtergrondafbeelding van deze verdieping. Er verandert pas iets definitief als je daarna opslaat.",
+    "applyAlignment": "Deze uitlijning toepassen op \"{floor}\"? Dit herschrijft de positie van elke ruimte, muur, deur, raam en elk geplaatst apparaat op die verdieping, plus de plaatsing van de achtergrondafbeelding en, als deze verdieping er een heeft, de schaal, zodat ze passen bij het coördinatenstelsel van deze verdieping. Dit wordt direct opgeslagen en kan niet ongedaan worden gemaakt.",
+    "deleteWall": "Deze muur verwijderen? Deuren en ramen in deze muur worden ook verwijderd.",
+    "deleteRoom": "Ruimte \"{name}\" verwijderen?",
+    "deletePin": "{name} van deze verdieping verwijderen?",
+    "deleteDoor": "Deze deur verwijderen?",
+    "deleteWindow": "Dit raam verwijderen?",
+    "removeFromSpot": "{name} van deze plek verwijderen?"
+  },
+  "prompt": {
+    "distance": "Werkelijke afstand tussen deze twee punten, in {unit}:"
+  },
+  "units": {
+    "feet": "voet",
+    "metres": "meter"
+  },
+  "floor": {
+    "thisFloor": "deze verdieping",
+    "thatFloor": "die verdieping"
+  },
+  "property": {
+    "setIcon": "Pictogram instellen",
+    "removeFromProperty": "Van het perceel verwijderen",
+    "goToFloorOf": "Naar de verdieping van {name}",
+    "select": "Selecteren",
+    "placeOutdoor": "Buitenapparaat plaatsen",
+    "placeBuildingTip": "De plattegrond van een gebouw plaatsen",
+    "placeBuilding": "Gebouw plaatsen…",
+    "notCalibrated": "Geen schaal ingesteld",
+    "goToFloor": "Naar verdieping",
+    "deletePlacement": "Plaatsing verwijderen",
+    "outdoorDevice": "Buitenapparaat",
+    "building": "Gebouw",
+    "link": "Verbinding",
+    "calibrateHint": "Stel de schaal in op een verdieping en plaats het gebouw daarna hier"
+  },
+  "canvasControls": {
+    "zoomIn": "Inzoomen",
+    "zoomOut": "Uitzoomen",
+    "fit": "Passend maken"
+  },
+  "materials": {
+    "timber_frame": "Houtskeletbouw (gipsplaat)",
+    "brick_veneer": "Baksteen (gevelsteen)",
+    "concrete_block": "Beton / betonblok",
+    "aerated_concrete_block": "Cellenbetonblok (gepleisterd)",
+    "ceramic_poroton_block": "Keramisch blok / Poroton",
+    "glass": "Glas",
+    "steel_frame": "Staalframe"
+  },
+  "colors": {
+    "primary": "Primair",
+    "accent": "Accent",
+    "red": "Rood",
+    "pink": "Roze",
+    "purple": "Paars",
+    "deep_purple": "Donkerpaars",
+    "indigo": "Indigo",
+    "blue": "Blauw",
+    "light_blue": "Lichtblauw",
+    "cyan": "Cyaan",
+    "teal": "Blauwgroen",
+    "green": "Groen",
+    "light_green": "Lichtgroen",
+    "lime": "Limoen",
+    "yellow": "Geel",
+    "amber": "Amber",
+    "orange": "Oranje",
+    "deep_orange": "Dieporanje",
+    "brown": "Bruin",
+    "light_grey": "Lichtgrijs",
+    "grey": "Grijs",
+    "dark_grey": "Donkergrijs",
+    "blue_grey": "Blauwgrijs",
+    "black": "Zwart",
+    "white": "Wit"
+  }
+}

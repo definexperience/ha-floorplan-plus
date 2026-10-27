@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Floorplan Plus",
-        "description": "Trace each floor's layout and place your devices on it, so an AI assistant can be given real physical context for your home."
+        "description": "Draw each floor over a picture of your floor plan and place your devices on it, to see their live state and your networks where they really are."
       }
     },
     "abort": {

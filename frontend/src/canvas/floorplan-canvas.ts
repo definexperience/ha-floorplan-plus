@@ -43,7 +43,13 @@ import {
 } from "./pin-tool";
 import { addTracePoint, startTrace, type PendingTrace } from "./polygon-tool";
 import { pinDisplayLabel } from "./device-display";
-import { PinIconResolver, pinStyles, type PinIcon } from "./pin-render";
+import {
+  PinIconResolver,
+  pinStyles,
+  type PinExtras,
+  type PinIcon,
+} from "./pin-render";
+import { toneColor, type DeviceStatus } from "./device-state";
 import {
   type WallMaterial,
   wallMaterial,
@@ -163,6 +169,12 @@ export class FloorplanCanvas extends LitElement {
    * `_selectFloor`. */
   @property({ type: Boolean }) sameBuildingAsPrevious = false;
   @property({ attribute: false }) mode: CanvasMode = "select";
+  /** View mode: devices, rooms and network links can be tapped, but
+   * nothing can be moved or changed. Pan and zoom still work. */
+  @property({ type: Boolean }) readonly = false;
+  /** Live status per device id, shown on the pins in view mode. */
+  @property({ attribute: false }) statuses: Map<string, DeviceStatus> | null =
+    null;
   @property({ attribute: false }) snapMode: SnapMode = "all";
   @property({ attribute: false }) armedEntityId: string | null = null;
   @property({ attribute: false }) armedOpeningType: OpeningType | null = null;
@@ -430,6 +442,65 @@ export class FloorplanCanvas extends LitElement {
     return { ...this._viewBox };
   }
 
+  private _zoomAnimation: number | null = null;
+
+  /** Glides the view to frame these points (a room's outline), with some
+   * room around them. Instant when the user prefers reduced motion. */
+  zoomToPoints(points: [number, number][]): void {
+    if (points.length === 0) return;
+    const xs = points.map(([x]) => x);
+    const ys = points.map(([, y]) => y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const w = Math.max(...xs) - minX;
+    const h = Math.max(...ys) - minY;
+    const pad = Math.max(w, h) * 0.15 || 40;
+    const targetW = clamp(w + pad * 2, MIN_VIEWBOX_WIDTH, MAX_VIEWBOX_WIDTH);
+    const targetH = (h + pad * 2) * (targetW / (w + pad * 2));
+    const target: ViewBox = {
+      x: minX + w / 2 - targetW / 2,
+      y: minY + h / 2 - targetH / 2,
+      w: targetW,
+      h: targetH,
+    };
+    this._animateViewBox(target);
+  }
+
+  /** fitToScreen, but gliding there like zoomToPoints. */
+  zoomToFit(): void {
+    const before = { ...this._viewBox };
+    this.fitToScreen();
+    const target = { ...this._viewBox };
+    this._viewBox = before;
+    this._animateViewBox(target);
+  }
+
+  private _animateViewBox(target: ViewBox): void {
+    if (this._zoomAnimation !== null) cancelAnimationFrame(this._zoomAnimation);
+    const reduce = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduce) {
+      this._viewBox = target;
+      return;
+    }
+    const start = { ...this._viewBox };
+    const startTime = performance.now();
+    const duration = 350;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - startTime) / duration);
+      const ease = 1 - Math.pow(1 - t, 3);
+      this._viewBox = {
+        x: start.x + (target.x - start.x) * ease,
+        y: start.y + (target.y - start.y) * ease,
+        w: start.w + (target.w - start.w) * ease,
+        h: start.h + (target.h - start.h) * ease,
+      };
+      this._zoomAnimation = t < 1 ? requestAnimationFrame(step) : null;
+    };
+    this._zoomAnimation = requestAnimationFrame(step);
+  }
+
   /**
    * The SVG element's default `preserveAspectRatio` ("xMidYMid meet")
    * letterboxes/centers its content whenever the container's aspect ratio
@@ -689,6 +760,7 @@ export class FloorplanCanvas extends LitElement {
     const hitR = this._pxToUnits(HIT_RADIUS_PX);
 
     if (this.mode !== "select") return { type: "empty" };
+    if (this.readonly) return this._viewHitTest(image, hitR);
 
     const target = this._editingTarget;
     if (target && this._liveEditPoints) {
@@ -763,8 +835,33 @@ export class FloorplanCanvas extends LitElement {
     return { type: "empty" };
   }
 
+  /** What a tap can reach in view mode: devices, network links and rooms,
+   * never walls, openings or anything's handles. */
+  private _viewHitTest(image: { x: number; y: number }, hitR: number): DownHit {
+    const pinsHere = findPinsAt(this.pins, image.x, image.y, hitR);
+    if (pinsHere.length > 1) return { type: "pinStack", pins: pinsHere };
+    if (pinsHere.length === 1) return { type: "pin", pin: pinsHere[0]! };
+    const meshLink = findMeshLinkAt(this.meshLinks, image.x, image.y, hitR);
+    if (meshLink) return { type: "meshLink", link: meshLink };
+    const meshStub = findMeshStubAt(this.meshStubs, image.x, image.y, hitR);
+    if (meshStub) return { type: "meshStub", stub: meshStub };
+    const room = this.rooms.find(
+      (r) =>
+        r.visible !== false &&
+        r.points.length >= 3 &&
+        pointInPolygon(image.x, image.y, r.points),
+    );
+    if (room) return { type: "room", room };
+    return { type: "empty" };
+  }
+
   private _onPointerDown = (e: PointerEvent): void => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    // Grabbing the plan mid-zoom stops the glide where it is.
+    if (this._zoomAnimation !== null) {
+      cancelAnimationFrame(this._zoomAnimation);
+      this._zoomAnimation = null;
+    }
     blurActiveElement(this);
     this._svg.setPointerCapture(e.pointerId);
     this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1001,6 +1098,8 @@ export class FloorplanCanvas extends LitElement {
     // generic pan fallback below would otherwise win here too, since
     // _downHit is always "empty" in any non-select mode).
     if (this.mode === "align") return { kind: "alignDrag" };
+    // In view mode every drag pans: nothing on the plan moves.
+    if (this.readonly) return { kind: "pan" };
     if (this._downHit?.type === "vertex") {
       this._vertexDragStartPoints = this._liveEditPoints
         ? [...this._liveEditPoints]
@@ -1314,6 +1413,8 @@ export class FloorplanCanvas extends LitElement {
 
     // select mode
     const hit = this._downHit ?? { type: "empty" };
+    // No multi-select in view mode: Shift-click acts as a plain click.
+    if (this.readonly) shiftKey = false;
     if (hit.type === "vertex") {
       this._selectedVertexIndex =
         this._selectedVertexIndex === hit.index ? null : hit.index;
@@ -1969,14 +2070,21 @@ export class FloorplanCanvas extends LitElement {
       const y = live?.y ?? pin.y;
       const selected =
         pin.id === this.selectedPinId || this.multiPinIds.includes(pin.id);
+      const status =
+        pin.device_id && this.statuses
+          ? this.statuses.get(pin.device_id)
+          : undefined;
       return this._renderPinMarker(
         x,
         y,
         r,
         this._iconForPin(pin),
-        "var(--sc-accent)",
+        status ? toneColor(status.tone) : "var(--sc-accent)",
         selected,
         this._pinLabel(pin),
+        status
+          ? { badge: status.badge, lowBattery: status.lowBattery }
+          : undefined,
       );
     }
 
@@ -1984,6 +2092,13 @@ export class FloorplanCanvas extends LitElement {
       (p) => p.id === this.selectedPinId || this.multiPinIds.includes(p.id),
     );
     const label = `${group.pins.length} devices: ${group.pins.map((p) => this._pinLabel(p)).join(", ")}`;
+    const groupStatuses = this.statuses
+      ? group.pins
+          .map((p) =>
+            p.device_id ? this.statuses!.get(p.device_id) : undefined,
+          )
+          .filter((s): s is DeviceStatus => !!s)
+      : [];
     return this._renderPinMarker(
       group.x,
       group.y,
@@ -1992,6 +2107,7 @@ export class FloorplanCanvas extends LitElement {
       "var(--sc-accent)",
       selected,
       label,
+      { lowBattery: groupStatuses.some((s) => s.lowBattery) },
     );
   }
 
@@ -2003,8 +2119,18 @@ export class FloorplanCanvas extends LitElement {
     color: string,
     selected: boolean,
     label: string,
+    extras?: PinExtras,
   ) {
-    return this._pinIcons.renderMarker(x, y, r, icon, color, selected, label);
+    return this._pinIcons.renderMarker(
+      x,
+      y,
+      r,
+      icon,
+      color,
+      selected,
+      label,
+      extras,
+    );
   }
 
   private _renderPendingTrace() {
@@ -2338,6 +2464,8 @@ export class FloorplanCanvas extends LitElement {
   /** Bottom-left: a distance bar (rescaled with the zoom) on a calibrated
    * floor, or a chip that starts Set Scale. */
   private _renderScaleBar() {
+    // Setting the scale is an editing task; view mode shows nothing.
+    if (!this.scale && this.readonly) return nothing;
     if (!this.scale) {
       return html`<div class="scale-corner">
         <button

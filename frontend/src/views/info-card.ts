@@ -51,6 +51,10 @@ export const infoCardStyles = css`
   /* Phones: the card spans the width under the controls row, and its
    * chevron folds it to just the header so the map stays workable with the
    * thing still selected. */
+  /* View mode has no tool row above the card. */
+  :host([readonly]) .info-card {
+    top: 12px;
+  }
   @media (max-width: 700px) {
     .info-card {
       top: 56px;
@@ -59,6 +63,9 @@ export const infoCardStyles = css`
       width: auto;
       max-height: 60%;
       border-radius: 0 0 28px 28px;
+    }
+    :host([readonly]) .info-card {
+      top: 0;
     }
   }
   .info-title {

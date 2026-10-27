@@ -2,9 +2,9 @@
 
 Two kinds of check:
 
-- Admin gating, read from the source. Every command except `version` must carry
-  `require_admin`, so a command added later without it fails here. Needs nothing
-  installed.
+- Admin gating, read from the source. Only the read commands any user may call
+  to view the plan are open; every other command must carry `require_admin`, so
+  a command added later without it fails here. Needs nothing installed.
 - The size limits on saves, run against the real schemas. Needs `voluptuous`
   (a dependency of Home Assistant), and is skipped without it.
 
@@ -23,7 +23,28 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - CI installs it
     vol = None
 
-OPEN_COMMANDS = {"floorplan_plus/version"}
+# What the panel needs to show the plan to any Home Assistant user.
+OPEN_COMMANDS = {
+    "floorplan_plus/version",
+    "floorplan_plus/list_floors",
+    "floorplan_plus/get_layout",
+    "floorplan_plus/get_property_layout",
+    "floorplan_plus/get_settings",
+    "floorplan_plus/list_areas",
+    "floorplan_plus/list_placeable_entities",
+    "floorplan_plus/get_zigbee_mesh",
+    "floorplan_plus/get_wifi_mesh",
+    "floorplan_plus/get_bluetooth_devices",
+}
+
+# Everything that changes stored data must stay admin-only.
+WRITE_COMMANDS = {
+    "floorplan_plus/save_layout",
+    "floorplan_plus/set_building_id",
+    "floorplan_plus/save_property_layout",
+    "floorplan_plus/save_settings",
+    "floorplan_plus/debug_log",
+}
 
 
 def _commands() -> dict[str, set[str]]:
@@ -49,7 +70,7 @@ def _commands() -> dict[str, set[str]]:
 
 
 class AdminGatingTest(unittest.TestCase):
-    def test_every_command_but_version_requires_admin(self) -> None:
+    def test_every_command_but_the_view_commands_requires_admin(self) -> None:
         commands = _commands()
         self.assertGreaterEqual(len(commands), 15)
         ungated = sorted(
@@ -59,10 +80,20 @@ class AdminGatingTest(unittest.TestCase):
         )
         self.assertEqual(ungated, [], "commands any logged-in user could call")
 
-    def test_the_panel_itself_is_admin_only(self) -> None:
+    def test_every_write_requires_admin(self) -> None:
+        commands = _commands()
+        for name in WRITE_COMMANDS:
+            self.assertIn(name, commands)
+            self.assertIn("require_admin", commands[name], name)
+
+    def test_a_zigbee_scan_needs_an_admin(self) -> None:
+        source = (stubs.PKG_DIR / "websocket_api.py").read_text()
+        self.assertIn('if msg["cache_only"] or not connection.user.is_admin:', source)
+
+    def test_the_panel_is_open_to_every_user(self) -> None:
         source = (stubs.PKG_DIR / "frontend.py").read_text()
-        self.assertIn("require_admin=True", source)
-        self.assertNotIn("require_admin=False", source)
+        self.assertIn("require_admin=False", source)
+        self.assertNotIn("require_admin=True", source)
 
 
 @unittest.skipIf(vol is None, "voluptuous is not installed")

@@ -1,4 +1,4 @@
-import { css, svg } from "lit";
+import { css, nothing, svg } from "lit";
 import type { ReactiveControllerHost } from "lit";
 import type { PlaceableEntity, Pin } from "../types";
 import { pinIntegrationDomain } from "./device-display";
@@ -39,7 +39,35 @@ export const pinStyles = css`
   .pin-icon path {
     fill: white;
   }
+  .pin-badge rect {
+    fill: var(--sc-panel-bg, #fff);
+    stroke: var(--sc-divider, #e0e0e0);
+    stroke-width: 1;
+  }
+  .pin-badge text {
+    fill: var(--sc-fg, #212121);
+    font-family: var(--ha-font-family-body, Roboto, sans-serif);
+    font-variant-numeric: tabular-nums;
+    dominant-baseline: central;
+    text-anchor: middle;
+  }
+  .pin-battery {
+    fill: var(--error-color, #db4437);
+    stroke: white;
+    stroke-width: 1.5;
+  }
+  .pin-badge,
+  .pin-battery {
+    pointer-events: none;
+  }
 `;
+
+/** What view mode adds to a marker: a short reading beside it and a red
+ * dot for a low battery. */
+export interface PinExtras {
+  badge?: string | null;
+  lowBattery?: boolean;
+}
 
 /** Which icon to draw for a placed device, per host canvas — holds that
  * canvas's resolved-override and failed-brand-logo caches and re-renders
@@ -105,8 +133,13 @@ export class PinIconResolver {
     color: string,
     selected: boolean,
     label: string,
+    extras: PinExtras = {},
   ) {
     const iconSize = r * 1.1; // native mdi viewBox is 24x24, scaled to fit the dot
+    const badge = extras.badge ?? null;
+    const fontSize = r * 0.9;
+    const badgeW = badge ? fontSize * (0.62 * badge.length + 0.9) : 0;
+    const badgeH = fontSize * 1.5;
     return svg`
       <g>
         <title>${label}</title>
@@ -142,6 +175,34 @@ export class PinIconResolver {
                 @error=${() => this.onBrandIconError(icon.integrationDomain)}
               ></image>
             `
+        }
+        ${
+          badge
+            ? svg`<g class="pin-badge">
+                <rect
+                  x=${x + r * 0.8}
+                  y=${y - badgeH / 2}
+                  width=${badgeW}
+                  height=${badgeH}
+                  rx=${badgeH / 2}
+                ></rect>
+                <text
+                  x=${x + r * 0.8 + badgeW / 2}
+                  y=${y}
+                  font-size=${fontSize}
+                >${badge}</text>
+              </g>`
+            : nothing
+        }
+        ${
+          extras.lowBattery
+            ? svg`<circle
+                class="pin-battery"
+                cx=${x - r * 0.75}
+                cy=${y - r * 0.75}
+                r=${r * 0.32}
+              ></circle>`
+            : nothing
         }
         <circle class="pin-hit" cx=${x} cy=${y} r=${r * 1.4}></circle>
       </g>

@@ -22,6 +22,7 @@ import {
 import { pinDisplayLabel } from "./device-display";
 import { qualityColor } from "./mesh-colors";
 import { PinIconResolver, pinStyles } from "./pin-render";
+import { toneColor, type DeviceStatus } from "./device-state";
 import { BASE_WIDTH } from "./floorplan-canvas";
 import { sharedStyles } from "../styles";
 import { propertyCanvasStyles } from "./property-canvas-styles";
@@ -142,6 +143,11 @@ export class PropertyCanvas extends LitElement {
   /** HA is in a dark theme (sets the backdrop colour). */
   @property({ type: Boolean, reflect: true }) dark = false;
   @property({ attribute: false }) hass?: HomeAssistant;
+  /** View mode: devices, buildings and links can be tapped, nothing moves. */
+  @property({ type: Boolean }) readonly = false;
+  /** Live status per device id, shown on outdoor pins in view mode. */
+  @property({ attribute: false }) statuses: Map<string, DeviceStatus> | null =
+    null;
   @state() private _mapError: string | null = null;
   private _map: MapLayerHandle | undefined;
   private _mapStarting = false;
@@ -406,9 +412,9 @@ export class PropertyCanvas extends LitElement {
         return { type: "pin", id: pin.id };
       }
     }
-    const selected = this.placements.find(
-      (p) => p.id === this.selectedPlacementId,
-    );
+    const selected = this.readonly
+      ? undefined
+      : this.placements.find((p) => p.id === this.selectedPlacementId);
     if (selected) {
       const stick = this._pxToUnits(ROTATE_STICK_PX);
       const corners: [number, number][] = CORNER_SIGN.map(([sx, sy]) => [
@@ -528,6 +534,8 @@ export class PropertyCanvas extends LitElement {
   };
 
   private _lockGesture(): Gesture {
+    // In view mode every drag pans: nothing on the property moves.
+    if (this.readonly) return { kind: "pan" };
     if (this._downHit?.type === "resizeHandle") {
       const downHit = this._downHit;
       const p = this.placements.find((pl) => pl.id === downHit.id);
@@ -972,15 +980,22 @@ export class PropertyCanvas extends LitElement {
   }
 
   private _renderPin(pin: Pin) {
+    const status =
+      pin.device_id && this.statuses
+        ? this.statuses.get(pin.device_id)
+        : undefined;
     return this._pinIcons.renderMarker(
       pin.x,
       pin.y,
       this._pxToUnits(PIN_RADIUS_PX),
       this._pinIcons.iconForPin(pin, this.entityLookup.values()),
-      "var(--sc-accent)",
+      status ? toneColor(status.tone) : "var(--sc-accent)",
       pin.id === this.selectedPinId,
       pin.label_override ??
         pinDisplayLabel(pin.device_id, this.entityLookup.values()),
+      status
+        ? { badge: status.badge, lowBattery: status.lowBattery }
+        : undefined,
     );
   }
 

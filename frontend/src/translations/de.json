@@ -7,7 +7,9 @@
     "save": "Speichern",
     "menu": "Menü",
     "back": "Zurück",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "edit": "Plan bearbeiten",
+    "doneEditing": "Bearbeiten beenden"
   },
   "canvas": {
     "mode": {
@@ -117,6 +119,14 @@
       "show": "Details anzeigen"
     },
     "calibrateHint": "Klicken, um den Maßstab festzulegen"
+  },
+  "deviceCard": {
+    "offline": "Offline",
+    "lowBattery": "Batterie schwach",
+    "noEntities": "Für dieses Gerät gibt es nichts anzuzeigen",
+    "more": "{count} weitere in Home Assistant",
+    "openDevice": "In Home Assistant öffnen",
+    "details": "Details"
   },
   "mapBackground": {
     "noWebgl": "Dieser Browser kann die Karte nicht darstellen (WebGL2 erforderlich).",
@@ -265,7 +275,9 @@
     "live": "● Live",
     "loading": "Wird geladen…",
     "refreshedSeconds": "vor {n} s aktualisiert",
-    "refreshedMinutes": "vor {n} Min. aktualisiert"
+    "refreshedMinutes": "vor {n} Min. aktualisiert",
+    "scanByAdmin": "Zeigt den letzten Scan. Ein Admin kann ihn aktualisieren.",
+    "noScanYet": "Noch kein Scan. Ein Admin kann das Mesh laden."
   },
   "errors": {
     "restartHa": "Starten Sie Home Assistant neu, um die Aktualisierung von Floorplan Plus abzuschließen.",
