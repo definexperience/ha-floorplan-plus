@@ -6,7 +6,7 @@
 // This is a convenience for the specific case of an SSH-reachable HA host —
 // it is NOT required. If you don't have SSH access (HA OS without an SSH
 // add-on, Cloud-managed, etc.), just run `npm run build` and copy the one
-// resulting file, custom_components/spatial_context/www/spatial-context-panel.js,
+// resulting file, custom_components/floorplan_plus/www/floorplan-plus-panel.js,
 // onto your HA instance however you can reach its config directory (Samba,
 // the File editor/Studio Code Server add-on, etc.) — see the README's
 // Development section.
@@ -14,7 +14,7 @@
 // Configured via .env at frontend/ root:
 //   HA_HOST      — SSH alias or user@host (e.g. "user@homeassistant.local")
 //   HA_DEV_PATH  — absolute path on HA, must end with "/"
-//                  (e.g. "/config/custom_components/spatial_context/www/")
+//                  (e.g. "/config/custom_components/floorplan_plus/www/")
 //
 // Usage:
 //   npm run push          (one-shot)
@@ -34,16 +34,16 @@ const FRONTEND_ROOT = resolve(
 const WWW_DIR = resolve(
   FRONTEND_ROOT,
   "..",
-  "custom_components/spatial_context/www",
+  "custom_components/floorplan_plus/www",
 );
-const BUNDLE_PATH = resolve(WWW_DIR, "spatial-context-panel.js");
+const BUNDLE_PATH = resolve(WWW_DIR, "floorplan-plus-panel.js");
 // Everything a build writes, copied together: the build id must match the
 // bundle (the panel's version check compares them — a bundle without its
 // build id shows a false "reload" banner), and the icon picker's search
 // index is regenerated every build.
 const BUILD_OUTPUTS = [
   BUNDLE_PATH,
-  resolve(WWW_DIR, "spatial-context-panel.build.json"),
+  resolve(WWW_DIR, "floorplan-plus-panel.build.json"),
   resolve(WWW_DIR, "mdi-index.json"),
 ];
 
@@ -55,7 +55,7 @@ if (!HA_HOST || !HA_DEV_PATH) {
       "[push] HA_HOST or HA_DEV_PATH not set.",
       "       Copy .env.example to .env and fill in both, e.g.",
       "         HA_HOST=user@homeassistant.local",
-      "         HA_DEV_PATH=/config/custom_components/spatial_context/www/",
+      "         HA_DEV_PATH=/config/custom_components/floorplan_plus/www/",
       "",
       "       No SSH access to your HA host? Skip this script — just copy",
       "       the www/ build outputs onto HA yourself (Samba, the File",

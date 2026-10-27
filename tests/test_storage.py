@@ -42,7 +42,7 @@ stubs.load("sc_storage_test", "const")
 stubs.load("sc_storage_test", "backup")
 storage = stubs.load("sc_storage_test", "storage")
 
-KEY = "spatial_context.layout"
+KEY = "floorplan_plus.layout"
 
 
 def run(coro):

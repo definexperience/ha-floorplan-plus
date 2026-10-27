@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Spatial Context",
+        "title": "Floorplan Plus",
         "description": "Zeichnen Sie den Grundriss jeder Etage und platzieren Sie Ihre Geräte darauf, damit einem KI-Assistenten echter physischer Kontext zu Ihrem Zuhause zur Verfügung steht."
       }
     },
     "abort": {
-      "single_instance_allowed": "Spatial Context ist bereits eingerichtet."
+      "single_instance_allowed": "Floorplan Plus ist bereits eingerichtet."
     }
   },
   "services": {

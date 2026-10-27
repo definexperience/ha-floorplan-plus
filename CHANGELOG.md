@@ -1,6 +1,14 @@
 # Changelog
 
-Notes for each release are also on the [releases page](https://github.com/Greminn/ha-spatial-context/releases). This file starts at 1.0.0 and summarises the beta releases before it.
+Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spatial-context). Entries from 1.0.0 down are the original project's.
+
+## Unreleased
+
+### Changed
+- Renamed to Floorplan Plus (domain `floorplan_plus`), so it can be installed next to Spatial Context without clashing. The panel, actions (`floorplan_plus.get_map`), storage and debug log use the new name.
+- Repository, issue and release links point to this fork. The user guide still links to the original documentation.
+
+Notes for the original releases are on the [Spatial Context releases page](https://github.com/Greminn/ha-spatial-context/releases).
 
 ## 1.0.0
 

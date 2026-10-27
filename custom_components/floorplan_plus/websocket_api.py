@@ -1,4 +1,4 @@
-"""WebSocket API for Spatial Context.
+"""WebSocket API for Floorplan Plus.
 
 Every command except `version` requires an admin account: the panel is
 admin-only, but websocket commands can be called by any logged-in user
@@ -50,7 +50,7 @@ def _client_error(err: Exception, what: str) -> str:
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "spatial_context/list_floors"})
+@websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/list_floors"})
 @websocket_api.async_response
 async def ws_list_floors(
     hass: HomeAssistant,
@@ -65,7 +65,7 @@ async def ws_list_floors(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "spatial_context/get_layout",
+        vol.Required("type"): "floorplan_plus/get_layout",
         vol.Required("floor_id"): _TEXT,
     }
 )
@@ -205,7 +205,7 @@ _PLACEMENT_SCHEMA = {
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "spatial_context/save_layout",
+        vol.Required("type"): "floorplan_plus/save_layout",
         vol.Required("floor_id"): _TEXT,
         vol.Required("background_image_id"): vol.Any(_TEXT, None),
         vol.Required("background_opacity"): vol.Coerce(float),
@@ -251,7 +251,7 @@ async def ws_save_layout(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "spatial_context/set_building_id",
+        vol.Required("type"): "floorplan_plus/set_building_id",
         vol.Required("floor_id"): _TEXT,
         vol.Required("building_id"): vol.Any(_TEXT, None),
     }
@@ -271,7 +271,7 @@ async def ws_set_building_id(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "spatial_context/get_property_layout"}
+    {vol.Required("type"): "floorplan_plus/get_property_layout"}
 )
 @websocket_api.async_response
 async def ws_get_property_layout(
@@ -288,7 +288,7 @@ async def ws_get_property_layout(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "spatial_context/save_property_layout",
+        vol.Required("type"): "floorplan_plus/save_property_layout",
         vol.Required("background_image_id"): vol.Any(_TEXT, None),
         vol.Required("background_opacity"): vol.Coerce(float),
         vol.Required("background_offset_x"): vol.Coerce(float),
@@ -363,7 +363,7 @@ _SETTINGS_SCHEMA = {
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "spatial_context/get_settings"})
+@websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/get_settings"})
 @websocket_api.async_response
 async def ws_get_settings(
     hass: HomeAssistant,
@@ -379,7 +379,7 @@ async def ws_get_settings(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "spatial_context/save_settings",
+        vol.Required("type"): "floorplan_plus/save_settings",
         **_SETTINGS_SCHEMA,
     }
 )
@@ -399,7 +399,7 @@ async def ws_save_settings(
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "spatial_context/list_areas"})
+@websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/list_areas"})
 @websocket_api.async_response
 async def ws_list_areas(
     hass: HomeAssistant,
@@ -412,7 +412,7 @@ async def ws_list_areas(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "spatial_context/list_placeable_entities"}
+    {vol.Required("type"): "floorplan_plus/list_placeable_entities"}
 )
 @websocket_api.async_response
 async def ws_list_placeable_entities(
@@ -427,7 +427,7 @@ async def ws_list_placeable_entities(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "spatial_context/export_snapshot"}
+    {vol.Required("type"): "floorplan_plus/export_snapshot"}
 )
 @websocket_api.async_response
 async def ws_export_snapshot(
@@ -452,7 +452,7 @@ async def ws_export_snapshot(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "spatial_context/get_zigbee_mesh",
+        vol.Required("type"): "floorplan_plus/get_zigbee_mesh",
         vol.Optional("force_refresh", default=False): bool,
         vol.Optional("cache_only", default=False): bool,
     }
@@ -490,7 +490,7 @@ async def ws_get_zigbee_mesh(
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "spatial_context/get_wifi_mesh"})
+@websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/get_wifi_mesh"})
 @websocket_api.async_response
 async def ws_get_wifi_mesh(
     hass: HomeAssistant,
@@ -515,7 +515,7 @@ async def ws_get_wifi_mesh(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "spatial_context/get_bluetooth_devices"}
+    {vol.Required("type"): "floorplan_plus/get_bluetooth_devices"}
 )
 @callback
 def ws_get_bluetooth_devices(
@@ -529,7 +529,7 @@ def ws_get_bluetooth_devices(
     connection.send_result(msg["id"], bluetooth_mesh.async_get_bluetooth_devices(hass))
 
 
-@websocket_api.websocket_command({vol.Required("type"): "spatial_context/version"})
+@websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/version"})
 @websocket_api.async_response
 async def ws_version(
     hass: HomeAssistant,
@@ -545,7 +545,7 @@ async def ws_version(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "spatial_context/debug_log",
+        vol.Required("type"): "floorplan_plus/debug_log",
         vol.Required("entries"): vol.All(
             [{vol.Required("event"): _TEXT, vol.Optional("t"): _TEXT, vol.Extra: object}],
             vol.Length(max=200),
@@ -564,7 +564,7 @@ async def ws_debug_log(
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "spatial_context/debug_report"})
+@websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/debug_report"})
 @websocket_api.async_response
 async def ws_debug_report(
     hass: HomeAssistant,
@@ -577,7 +577,7 @@ async def ws_debug_report(
 
 
 def async_register_commands(hass: HomeAssistant) -> None:
-    """Register every Spatial Context WebSocket command."""
+    """Register every Floorplan Plus WebSocket command."""
     websocket_api.async_register_command(hass, ws_list_floors)
     websocket_api.async_register_command(hass, ws_get_layout)
     websocket_api.async_register_command(hass, ws_save_layout)

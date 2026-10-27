@@ -1,4 +1,4 @@
-"""Export data helpers for Spatial Context."""
+"""Export data helpers for Floorplan Plus."""
 
 from __future__ import annotations
 

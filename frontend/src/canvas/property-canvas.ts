@@ -234,11 +234,11 @@ export class PropertyCanvas extends LitElement {
     if (this._mapStarting || !connection) return;
     this._mapStarting = true;
     this._mapError = null;
-    const baseUrl = "/spatial_context/map";
+    const baseUrl = "/floorplan_plus/map";
     void (async () => {
       try {
         const glue = (await import(
-          /* @vite-ignore */ `${baseUrl}/spatial-context-map.mjs?v=${__BUILD_ID__}`
+          /* @vite-ignore */ `${baseUrl}/floorplan-plus-map.mjs?v=${__BUILD_ID__}`
         )) as MapGlueModule;
         if (!glue.supportsVectorMaps()) {
           throw new Error(localize("mapBackground.noWebgl"));

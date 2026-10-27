@@ -1,4 +1,4 @@
-/** Types mirroring custom_components/spatial_context/storage.py's schema. */
+/** Types mirroring custom_components/floorplan_plus/storage.py's schema. */
 
 /** Stands in for a floor_id wherever something is placed on the Property
  * tab instead of a floor — matches storage.py's PROPERTY_LOCATION_ID. */

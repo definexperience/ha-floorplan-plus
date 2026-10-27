@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - CI installs it
     vol = None
 
-OPEN_COMMANDS = {"spatial_context/version"}
+OPEN_COMMANDS = {"floorplan_plus/version"}
 
 
 def _commands() -> dict[str, set[str]]:
@@ -41,7 +41,7 @@ def _commands() -> dict[str, set[str]]:
                 names.add(target.attr)
             if isinstance(decorator, ast.Call) and getattr(decorator.func, "attr", "") == "websocket_command":
                 for const in ast.walk(decorator):
-                    if isinstance(const, ast.Constant) and str(const.value).startswith("spatial_context/"):
+                    if isinstance(const, ast.Constant) and str(const.value).startswith("floorplan_plus/"):
                         command = const.value
         if command:
             found[command] = names
@@ -109,7 +109,7 @@ class SaveLimitsTest(unittest.TestCase):
 
     def _layout(self, **overrides) -> dict:
         message = {
-            "type": "spatial_context/save_layout",
+            "type": "floorplan_plus/save_layout",
             "floor_id": "up",
             "background_image_id": None,
             "background_opacity": 0.5,
@@ -157,7 +157,7 @@ class SaveLimitsTest(unittest.TestCase):
 
     def test_property_placements_are_limited_too(self) -> None:
         message = {
-            "type": "spatial_context/save_property_layout",
+            "type": "floorplan_plus/save_property_layout",
             "background_image_id": None,
             "background_opacity": 0.5,
             "background_offset_x": 0,
@@ -172,7 +172,7 @@ class SaveLimitsTest(unittest.TestCase):
     def test_the_debug_log_batch_is_limited(self) -> None:
         entries = [{"event": "e"}] * 201
         with self.assertRaises(vol.Invalid):
-            self.api.ws_debug_log.schema({"type": "spatial_context/debug_log", "entries": entries})
+            self.api.ws_debug_log.schema({"type": "floorplan_plus/debug_log", "entries": entries})
 
 
 if __name__ == "__main__":

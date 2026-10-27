@@ -2,18 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "title": "Spatial Context",
+        "title": "Floorplan Plus",
         "description": "Trace each floor's layout and place your devices on it, so an AI assistant can be given real physical context for your home."
       }
     },
     "abort": {
-      "single_instance_allowed": "Spatial Context is already set up."
+      "single_instance_allowed": "Floorplan Plus is already set up."
     }
   },
   "services": {
     "get_map": {
       "name": "Get map",
-      "description": "Returns the full spatial context map, including floors, rooms, walls, and devices."
+      "description": "Returns the full floorplan map, including floors, rooms, walls, and devices."
     },
     "refresh_zigbee_mesh": {
       "name": "Refresh Zigbee mesh",

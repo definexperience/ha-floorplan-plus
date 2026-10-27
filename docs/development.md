@@ -1,16 +1,16 @@
-# Working on Spatial Context: how to run it, test it and release it
+# Working on Floorplan Plus: how to run it, test it and release it
 
-*The README says what Spatial Context is and how to use it; the [docs site](https://greminn.github.io/ha-spatial-context/) (source in `site/`) is the full guide. This file is the "how do I carry on" page.*
+*The README says what Floorplan Plus is and how to use it; the original [Spatial Context docs site](https://greminn.github.io/ha-spatial-context/) is the user guide for now (its source is in `site/`, not yet rebranded or published from this fork). This file is the "how do I carry on" page.*
 
 ## 1. Where things are
 
 | Path | What it is |
 |---|---|
-| `custom_components/spatial_context/` | The integration (domain `spatial_context`): `storage.py` (layouts), `websocket_api.py` (what the panel calls), `services.py` (`get_map`, `refresh_zigbee_mesh`), `export.py` (the map export), `zigbee_mesh.py` / `zha_mesh.py` / `wifi_mesh.py` / `bluetooth_mesh.py` (Connectivity Map sources), `frontend.py` (registers the panel), `www/spatial-context-panel.js` (the built panel, committed) |
+| `custom_components/floorplan_plus/` | The integration (domain `floorplan_plus`): `storage.py` (layouts), `websocket_api.py` (what the panel calls), `services.py` (`get_map`, `refresh_zigbee_mesh`), `export.py` (the map export), `zigbee_mesh.py` / `zha_mesh.py` / `wifi_mesh.py` / `bluetooth_mesh.py` (Connectivity Map sources), `frontend.py` (registers the panel), `www/floorplan-plus-panel.js` (the built panel, committed) |
 | `frontend/` | The Lit + TypeScript panel (`src/`), rollup build, `scripts/dev/push.mjs` (rsync to a dev Home Assistant) |
 | `tests/` | The Python tests, plus `run_all.sh` (the panel's own tests sit beside its source as `frontend/src/**/*.test.ts`) |
 | `site/` | The documentation site (VitePress), published to GitHub Pages |
-| `brand/` | The brand pack (SVG masters, favicons, avatars, social previews); the integration's own images are in `custom_components/spatial_context/brand/` |
+| `brand/` | The brand pack (SVG masters, favicons, avatars, social previews); the integration's own images are in `custom_components/floorplan_plus/brand/` |
 | `docs/` | This file and the README screenshots |
 | `.github/` | `workflows/validate.yml` (CI), `workflows/docs.yml` (publishes `site/`), issue templates |
 
@@ -24,7 +24,7 @@ npm run dev                    # build on save and rsync to your Home Assistant 
 ./tests/run_all.sh             # the Python tests; prints fail=0 or the failures (pip install voluptuous first, or the save-limit tests are skipped)
 ```
 
-- The build writes `www/spatial-context-panel.js`, `spatial-context-panel.build.json`, `mdi-index.json` and `map/`. They go together and are all committed.
+- The build writes `www/floorplan-plus-panel.js`, `floorplan-plus-panel.build.json`, `mdi-index.json` and `map/`. They go together and are all committed.
 - The tests stub Home Assistant, so no install and no private data. CI runs the same checks plus hassfest and HACS validation.
 - `npm run push` needs `frontend/.env` (copy `.env.example`). A browser hard refresh picks up a new panel; changes to the Python files need a Home Assistant restart.
 
@@ -36,7 +36,7 @@ npm run dev        # live preview
 npm run build      # what CI runs
 ```
 
-Pushing to `main` with changes under `site/` publishes to <https://greminn.github.io/ha-spatial-context/>. Pages are plain Markdown; add one to `site/.vitepress/config.mts` to put it in the sidebar. Screenshots live in `site/public/screenshots/`.
+The `site/` folder still holds the original Spatial Context guide. Publishing it from this fork needs GitHub Pages enabled and the content rebranded first. Pages are plain Markdown; add one to `site/.vitepress/config.mts` to put it in the sidebar. Screenshots live in `site/public/screenshots/`.
 
 ## 4. Releasing
 
@@ -44,9 +44,9 @@ A release that only fixes things bumps the PATCH number (1.0.0 to 1.0.1). A rele
 
 The version lives in four places, and CI checks they agree:
 
-- `custom_components/spatial_context/manifest.json`
+- `custom_components/floorplan_plus/manifest.json`
 - `frontend/package.json` and `frontend/package-lock.json`
-- `custom_components/spatial_context/www/spatial-context-panel.build.json` (written by the build, so rebuild after bumping)
+- `custom_components/floorplan_plus/www/floorplan-plus-panel.build.json` (written by the build, so rebuild after bumping)
 
 Then add a section to `CHANGELOG.md`, commit `vX.Y.Z`, fast-forward `main` to `dev`, and create a release with "Added" / "Changed" / "Fixed" notes. HACS only offers GitHub releases, so tag the release. Before every push, sweep the diff, the built bundle and the notes for secrets, LAN addresses or hostnames, IEEE addresses and personal device names.
 

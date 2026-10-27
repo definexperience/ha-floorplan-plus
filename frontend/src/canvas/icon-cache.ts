@@ -1,5 +1,5 @@
 /** Resolves a pin's icon override (`mdi:motion-sensor`, or any other icon
- * set HA knows — including this integration's own `spatial-context:` set)
+ * set HA knows — including this integration's own `floorplan-plus:` set)
  * into raw SVG path `d` data, for the same SVG-in-SVG pin rendering
  * pin-icons.ts's bundled icons use (see floorplan-canvas.ts's doc comment
  * on why — Safari can't put <foreignObject>/<ha-icon> inside an SVG

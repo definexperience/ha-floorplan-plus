@@ -1,14 +1,14 @@
 {
-  "name": "spatial-context-panel",
+  "name": "floorplan-plus-panel",
   "version": "1.0.0",
-  "description": "Sidebar panel frontend for the Spatial Context Home Assistant integration",
-  "author": "Greminn",
+  "description": "Sidebar panel frontend for the Floorplan Plus Home Assistant integration",
+  "author": "definexperience (fork of Spatial Context by Greminn)",
   "license": "MIT",
   "private": true,
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Greminn/ha-spatial-context.git"
+    "url": "https://github.com/definexperience/ha-spatial-context.git"
   },
   "scripts": {
     "build": "rollup -c",

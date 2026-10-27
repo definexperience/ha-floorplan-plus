@@ -21,7 +21,7 @@ class BackupTest(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
-        self.file = Path(self._tmp.name) / "spatial_context.layout"
+        self.file = Path(self._tmp.name) / "floorplan_plus.layout"
         self.file.write_text('{"floors": {}}')
 
     def _backups(self) -> list[str]:
@@ -29,7 +29,7 @@ class BackupTest(unittest.TestCase):
 
     def test_copies_the_file_for_a_version(self) -> None:
         result = backup.backup_before_upgrade(self.file, "0.16.0-beta.2")
-        self.assertEqual(result, self.file.with_name("spatial_context.layout.backup-0.16.0-beta.2"))
+        self.assertEqual(result, self.file.with_name("floorplan_plus.layout.backup-0.16.0-beta.2"))
         self.assertEqual(result.read_text(), '{"floors": {}}')
 
     def test_a_version_already_backed_up_is_left_alone(self) -> None:
@@ -49,7 +49,7 @@ class BackupTest(unittest.TestCase):
             os.utime(made, (1_000_000 + index, 1_000_000 + index))
         self.assertEqual(
             self._backups(),
-            [f"spatial_context.layout.backup-{v}" for v in ["1.1.0", "1.2.0", "1.3.0"]],
+            [f"floorplan_plus.layout.backup-{v}" for v in ["1.1.0", "1.2.0", "1.3.0"]],
         )
 
     def test_version_text_cannot_escape_the_folder(self) -> None:

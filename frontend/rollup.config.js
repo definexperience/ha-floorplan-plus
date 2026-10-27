@@ -18,7 +18,7 @@ const isDev =
 // installed (see frontend/src/version-check.ts and frontend.py).
 const buildId = `${pkg.version}+${Date.now().toString(36)}`;
 const outFile =
-  "../custom_components/spatial_context/www/spatial-context-panel.js";
+  "../custom_components/floorplan_plus/www/floorplan-plus-panel.js";
 
 /** Writes www/mdi-index.json — every non-deprecated Material Design Icon
  * name with its aliases and tags, for the icon picker's search. A separate
@@ -36,13 +36,13 @@ const writeIconIndex = () => ({
         [...icon.aliases, ...icon.tags].join(" ").toLowerCase(),
       ]);
     writeFileSync(
-      outFile.replace(/spatial-context-panel\.js$/, "mdi-index.json"),
+      outFile.replace(/floorplan-plus-panel\.js$/, "mdi-index.json"),
       JSON.stringify(index),
     );
   },
 });
 
-/** Writes www/spatial-context-panel.build.json alongside the bundle. */
+/** Writes www/floorplan-plus-panel.build.json alongside the bundle. */
 const writeBuildInfo = () => ({
   name: "write-build-info",
   writeBundle() {
@@ -53,7 +53,7 @@ const writeBuildInfo = () => ({
   },
 });
 
-const mapDir = "../custom_components/spatial_context/www/map";
+const mapDir = "../custom_components/floorplan_plus/www/map";
 
 /** Copies the MapLibre files the lazily loaded map module needs beside it:
  * the worker (plus the shared chunk it imports) is loaded by URL, not
@@ -81,7 +81,7 @@ const copyMapLibreFiles = () => ({
 const mapModule = {
   input: "src/map/map-glue.ts",
   output: {
-    file: `${mapDir}/spatial-context-map.mjs`,
+    file: `${mapDir}/floorplan-plus-map.mjs`,
     format: "es",
     sourcemap: isDev,
   },
@@ -110,9 +110,9 @@ const panel = {
   output: {
     file: outFile,
     format: "iife",
-    name: "SpatialContextPanelBundle",
+    name: "FloorplanPlusPanelBundle",
     sourcemap: isDev,
-    banner: `/*! spatial-context-panel v${pkg.version} | ${pkg.license} */`,
+    banner: `/*! floorplan-plus-panel v${pkg.version} | ${pkg.license} */`,
   },
   plugins: [
     replace({
@@ -132,7 +132,7 @@ const panel = {
         noEmit: false,
         declaration: false,
         sourceMap: isDev,
-        outDir: "../custom_components/spatial_context/www",
+        outDir: "../custom_components/floorplan_plus/www",
       },
       outputToFilesystem: false,
     }),

@@ -58,9 +58,9 @@ export class AppHeader extends LitElement {
         height: 24px;
         margin-inline-start: var(--ha-space-4, 16px);
         background: var(--sc-brand, #03a9f4);
-        -webkit-mask: url(/spatial_context/spatial-context-mark.svg) center /
+        -webkit-mask: url(/floorplan_plus/floorplan-plus-mark.svg) center /
           contain no-repeat;
-        mask: url(/spatial_context/spatial-context-mark.svg) center / contain
+        mask: url(/floorplan_plus/floorplan-plus-mark.svg) center / contain
           no-repeat;
       }
       .identity .menu-button + .brand-mark {
@@ -199,7 +199,7 @@ export class AppHeader extends LitElement {
             : nothing
         }
         <span class="brand-mark" aria-hidden="true"></span>
-        <h1>Spatial Context</h1>
+        <h1>Floorplan Plus</h1>
       </div>
       <floor-tabs
         .floors=${this.floors}

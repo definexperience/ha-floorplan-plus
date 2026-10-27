@@ -1,6 +1,6 @@
 import { css } from "lit";
 
-/** Common tokens/resets shared across every Spatial Context element. Relies on
+/** Common tokens/resets shared across every Floorplan Plus element. Relies on
  * HA's own theme custom properties, with sane fallbacks for standalone testing. */
 export const sharedStyles = css`
   :host {

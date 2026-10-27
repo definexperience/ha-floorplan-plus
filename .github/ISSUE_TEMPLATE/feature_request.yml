@@ -1,5 +1,5 @@
 name: Feature request
-description: An idea for something Spatial Context should do
+description: An idea for something Floorplan Plus should do
 labels: ["enhancement"]
 body:
   - type: textarea

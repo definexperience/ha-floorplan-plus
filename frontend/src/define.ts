@@ -18,7 +18,7 @@ export const safeCustomElement =
     const define = () => {
       if (customElements.get(tagName)) {
         console.info(
-          `spatial-context: <${tagName}> already defined — reload the page to pick up the updated panel.`,
+          `floorplan-plus: <${tagName}> already defined — reload the page to pick up the updated panel.`,
         );
         return;
       }

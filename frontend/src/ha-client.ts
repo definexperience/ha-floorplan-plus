@@ -22,7 +22,7 @@ import type {
 } from "./types";
 import { DEFAULT_WALL_MATERIAL, wallMaterial } from "./canvas/materials";
 
-/** Thin wrapper over the five spatial_context/* WebSocket commands + core's image upload API. */
+/** Thin wrapper over the five floorplan_plus/* WebSocket commands + core's image upload API. */
 export class HaClient {
   constructor(private hass: HomeAssistant) {}
 
@@ -30,14 +30,14 @@ export class HaClient {
     const result = await this.hass.connection.sendMessagePromise<{
       floors: FloorMeta[];
     }>({
-      type: "spatial_context/list_floors",
+      type: "floorplan_plus/list_floors",
     });
     return result.floors;
   }
 
   async getLayout(floorId: string): Promise<FloorLayout> {
     return this.hass.connection.sendMessagePromise<FloorLayout>({
-      type: "spatial_context/get_layout",
+      type: "floorplan_plus/get_layout",
       floor_id: floorId,
     });
   }
@@ -47,7 +47,7 @@ export class HaClient {
     layout: FloorLayout,
   ): Promise<{ success: boolean }> {
     return this.hass.connection.sendMessagePromise({
-      type: "spatial_context/save_layout",
+      type: "floorplan_plus/save_layout",
       floor_id: floorId,
       background_image_id: layout.background_image_id,
       background_opacity: layout.background_opacity,
@@ -73,7 +73,7 @@ export class HaClient {
     buildingId: string | null,
   ): Promise<{ success: boolean }> {
     return this.hass.connection.sendMessagePromise({
-      type: "spatial_context/set_building_id",
+      type: "floorplan_plus/set_building_id",
       floor_id: floorId,
       building_id: buildingId,
     });
@@ -81,7 +81,7 @@ export class HaClient {
 
   async getPropertyLayout(): Promise<PropertyLayout> {
     return this.hass.connection.sendMessagePromise<PropertyLayout>({
-      type: "spatial_context/get_property_layout",
+      type: "floorplan_plus/get_property_layout",
     });
   }
 
@@ -89,7 +89,7 @@ export class HaClient {
     layout: PropertyLayout,
   ): Promise<{ success: boolean }> {
     return this.hass.connection.sendMessagePromise({
-      type: "spatial_context/save_property_layout",
+      type: "floorplan_plus/save_property_layout",
       background_image_id: layout.background_image_id,
       background_opacity: layout.background_opacity,
       background_offset_x: layout.background_offset_x,
@@ -109,13 +109,13 @@ export class HaClient {
 
   async getSettings(): Promise<Settings> {
     return this.hass.connection.sendMessagePromise<Settings>({
-      type: "spatial_context/get_settings",
+      type: "floorplan_plus/get_settings",
     });
   }
 
   async saveSettings(settings: Settings): Promise<{ success: boolean }> {
     return this.hass.connection.sendMessagePromise({
-      type: "spatial_context/save_settings",
+      type: "floorplan_plus/save_settings",
       unit_system: settings.unit_system,
       zigbee_timeout_seconds: settings.zigbee_timeout_seconds,
       floor_order: settings.floor_order,
@@ -128,20 +128,20 @@ export class HaClient {
 
   async getVersionInfo(): Promise<VersionInfo> {
     return this.hass.connection.sendMessagePromise<VersionInfo>({
-      type: "spatial_context/version",
+      type: "floorplan_plus/version",
     });
   }
 
   async sendDebugLog(entries: Record<string, unknown>[]): Promise<void> {
     await this.hass.connection.sendMessagePromise({
-      type: "spatial_context/debug_log",
+      type: "floorplan_plus/debug_log",
       entries,
     });
   }
 
   async getDebugReport(): Promise<Record<string, unknown>> {
     return this.hass.connection.sendMessagePromise<Record<string, unknown>>({
-      type: "spatial_context/debug_report",
+      type: "floorplan_plus/debug_report",
     });
   }
 
@@ -149,7 +149,7 @@ export class HaClient {
     const result = await this.hass.connection.sendMessagePromise<{
       areas: AreaMeta[];
     }>({
-      type: "spatial_context/list_areas",
+      type: "floorplan_plus/list_areas",
     });
     return result.areas;
   }
@@ -157,13 +157,13 @@ export class HaClient {
   async listPlaceableEntities(): Promise<PlaceableEntity[]> {
     const result = await this.hass.connection.sendMessagePromise<{
       entities: PlaceableEntity[];
-    }>({ type: "spatial_context/list_placeable_entities" });
+    }>({ type: "floorplan_plus/list_placeable_entities" });
     return result.entities;
   }
 
   async exportSnapshot(): Promise<ExportSnapshot> {
     return this.hass.connection.sendMessagePromise<ExportSnapshot>({
-      type: "spatial_context/export_snapshot",
+      type: "floorplan_plus/export_snapshot",
     });
   }
 
@@ -173,7 +173,7 @@ export class HaClient {
    * 1-2+ minutes on a large mesh. */
   async getZigbeeMesh(forceRefresh = false): Promise<ZigbeeMesh> {
     return this.hass.connection.sendMessagePromise<ZigbeeMesh>({
-      type: "spatial_context/get_zigbee_mesh",
+      type: "floorplan_plus/get_zigbee_mesh",
       force_refresh: forceRefresh,
     });
   }
@@ -182,7 +182,7 @@ export class HaClient {
    * safe to call the moment the Zigbee layer is picked. */
   async getCachedZigbeeMesh(): Promise<ZigbeeMesh | null> {
     return this.hass.connection.sendMessagePromise<ZigbeeMesh | null>({
-      type: "spatial_context/get_zigbee_mesh",
+      type: "floorplan_plus/get_zigbee_mesh",
       cache_only: true,
     });
   }
@@ -190,7 +190,7 @@ export class HaClient {
   /** Best-effort — empty link list if no integration exposes `ap_mac`. */
   async getWifiMesh(): Promise<WifiMesh> {
     return this.hass.connection.sendMessagePromise<WifiMesh>({
-      type: "spatial_context/get_wifi_mesh",
+      type: "floorplan_plus/get_wifi_mesh",
     });
   }
 
@@ -222,7 +222,7 @@ export class HaClient {
   /** Bluetooth address → device candidates (see bluetooth_mesh.py). */
   async getBluetoothDevices(): Promise<{ devices: Record<string, string[]> }> {
     return this.hass.connection.sendMessagePromise({
-      type: "spatial_context/get_bluetooth_devices",
+      type: "floorplan_plus/get_bluetooth_devices",
     });
   }
 

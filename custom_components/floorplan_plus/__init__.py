@@ -1,4 +1,4 @@
-"""Spatial Context integration.
+"""Floorplan Plus integration.
 
 Trace each floor's room layout and place live HA entities on it, so an
 AI assistant can be given real physical/spatial grounding for a house.
@@ -39,13 +39,13 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         await async_register_static_paths(hass)
         async_register_sidebar_panel(hass)
     except Exception:  # noqa: BLE001 - never block HA startup over frontend registration
-        _LOGGER.warning("Failed to register Spatial Context frontend panel", exc_info=True)
+        _LOGGER.warning("Failed to register Floorplan Plus frontend panel", exc_info=True)
 
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Spatial Context from a config entry. Nothing per-entry to do —
+    """Set up Floorplan Plus from a config entry. Nothing per-entry to do —
     everything lives in async_setup (WebSocket commands, frontend panel)."""
     return True
 

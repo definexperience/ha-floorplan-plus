@@ -1,4 +1,4 @@
-"""Frontend static path + sidebar panel registration for Spatial Context.
+"""Frontend static path + sidebar panel registration for Floorplan Plus.
 
 Registers a full-page custom panel (the "browser_mod pattern"). There is no
 Lovelace card, so there is no Lovelace resource to register.
@@ -60,7 +60,7 @@ class PanelBundleView(HomeAssistantView):
     """
 
     url = PANEL_URL
-    name = "spatial_context:panel_bundle"
+    name = "floorplan_plus:panel_bundle"
     # Loaded by the frontend as a plain module import, which carries no
     # auth header — same as the static path it replaces.
     requires_auth = False
@@ -72,7 +72,7 @@ class PanelBundleView(HomeAssistantView):
 
 
 async def async_register_static_paths(hass: HomeAssistant) -> None:
-    """Register /spatial_context/* as a static HTTP path serving www/."""
+    """Register /floorplan_plus/* as a static HTTP path serving www/."""
     try:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(URL_BASE, str(WWW_DIR), False)]
@@ -84,7 +84,7 @@ async def async_register_static_paths(hass: HomeAssistant) -> None:
 
 
 def async_register_sidebar_panel(hass: HomeAssistant) -> None:
-    """Register the Spatial Context sidebar panel (browser_mod pattern)."""
+    """Register the Floorplan Plus sidebar panel (browser_mod pattern)."""
     panel_url = f"{PANEL_URL}?v={_cache_bust_token(PANEL_FILENAME)}"
 
     async_register_built_in_panel(
@@ -98,9 +98,9 @@ def async_register_sidebar_panel(hass: HomeAssistant) -> None:
         require_admin=True,
         config={
             "_panel_custom": {
-                "name": "spatial-context-panel",
+                "name": "floorplan-plus-panel",
                 "js_url": panel_url,
             }
         },
     )
-    _LOGGER.debug("Spatial Context sidebar panel registered")
+    _LOGGER.debug("Floorplan Plus sidebar panel registered")

@@ -58,7 +58,7 @@ export class EntityPickerSidebar extends LitElement {
   // --- resizable width (per-browser, not shared — see #22) --------------
 
   private static readonly WIDTH_STORAGE_KEY =
-    "spatial-context.entityPickerSidebarWidth";
+    "floorplan-plus.entityPickerSidebarWidth";
   private static readonly MIN_WIDTH = 240;
   private static readonly MAX_WIDTH = 600;
 

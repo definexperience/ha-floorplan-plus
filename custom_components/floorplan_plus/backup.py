@@ -1,11 +1,11 @@
-"""A copy of the saved layout for each Spatial Context version that has run.
+"""A copy of the saved layout for each Floorplan Plus version that has run.
 
 The whole layout (every floor, the property view, the settings) lives in one
 file, and a release that changes how it is read or written has nothing to fall
 back on if it gets that wrong. So the first time a version starts, before it
 touches anything, the file is copied next to itself as
-`spatial_context.layout.backup-<version>`. The three most recent copies are
-kept. Restoring one is a file copy over `spatial_context.layout` with Home
+`floorplan_plus.layout.backup-<version>`. The three most recent copies are
+kept. Restoring one is a file copy over `floorplan_plus.layout` with Home
 Assistant stopped.
 """
 
@@ -43,8 +43,8 @@ def backup_before_upgrade(
         )
         for old in backups[:-keep]:
             old.unlink(missing_ok=True)
-        _LOGGER.info("Backed up the Spatial Context layout to %s", target.name)
+        _LOGGER.info("Backed up the Floorplan Plus layout to %s", target.name)
         return target
     except OSError:
-        _LOGGER.warning("Couldn't back up the Spatial Context layout", exc_info=True)
+        _LOGGER.warning("Couldn't back up the Floorplan Plus layout", exc_info=True)
         return None

@@ -1,6 +1,6 @@
-"""Persistent layout storage for Spatial Context.
+"""Persistent layout storage for Floorplan Plus.
 
-A single JSON document at /config/.storage/spatial_context.layout (a Store
+A single JSON document at /config/.storage/floorplan_plus.layout (a Store
 wrapped in a lock), with the floors keyed by floor_id.
 """
 
@@ -39,9 +39,9 @@ class _LayoutStore(Store[dict[str, Any]]):
         if old_major_version == _STORE_VERSION:
             return old_data
         raise NotImplementedError(
-            f"The Spatial Context layout is storage version {old_major_version}, "
+            f"The Floorplan Plus layout is storage version {old_major_version}, "
             f"newer than this install understands (version {_STORE_VERSION}). "
-            "Update Spatial Context; nothing has been changed."
+            "Update Floorplan Plus; nothing has been changed."
         )
 
 
@@ -304,7 +304,7 @@ def _empty_settings() -> dict[str, Any]:
         # (#32) — the panel's own debounce; the manual Save button still
         # works either way.
         "auto_save": True,
-        # Send panel events to <config>/spatial_context_debug.log (see
+        # Send panel events to <config>/floorplan_plus_debug.log (see
         # debug.py) — off unless someone is chasing a problem.
         "debug_logging": False,
     }
