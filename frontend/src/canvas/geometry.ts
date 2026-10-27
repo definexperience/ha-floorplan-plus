@@ -108,6 +108,64 @@ export function roomLabelPoint(points: [number, number][]): [number, number] {
   return point;
 }
 
+/** Where `count` new pins go when dropped into a room in one go: on a
+ * grid around the room's label point, inside the outline, clear of the
+ * label itself and of pins already there, nearest the middle first. The
+ * grid tightens until everything fits; a room too small for that gets
+ * them all on its label point. */
+export function spotsInRoom(
+  points: [number, number][],
+  count: number,
+  occupied: [number, number][] = [],
+): [number, number][] {
+  const [cx, cy] = roomLabelPoint(points);
+  const fallback = () =>
+    Array.from({ length: count }, (): [number, number] => [cx, cy]);
+  if (count <= 0) return [];
+  if (points.length < 3) return fallback();
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const shortSide = Math.min(maxX - minX, maxY - minY);
+  if (shortSide <= 0) return fallback();
+  let step = shortSide / (Math.ceil(Math.sqrt(count + occupied.length)) + 1);
+  while (step >= shortSide / 24) {
+    const spots: [number, number][] = [];
+    for (
+      let i = Math.floor((minX - cx) / step);
+      i <= Math.ceil((maxX - cx) / step);
+      i++
+    ) {
+      for (
+        let j = Math.floor((minY - cy) / step);
+        j <= Math.ceil((maxY - cy) / step);
+        j++
+      ) {
+        // The label point's own spot is where the room's name is drawn.
+        if (i === 0 && j === 0) continue;
+        const x = cx + i * step;
+        const y = cy + j * step;
+        if (!pointInPolygon(x, y, points)) continue;
+        if (occupied.some(([ox, oy]) => distance(x, y, ox, oy) < step * 0.6)) {
+          continue;
+        }
+        spots.push([x, y]);
+      }
+    }
+    if (spots.length >= count) {
+      spots.sort(
+        (a, b) => distance(a[0], a[1], cx, cy) - distance(b[0], b[1], cx, cy),
+      );
+      return spots.slice(0, count);
+    }
+    step /= 1.5;
+  }
+  return fallback();
+}
+
 export function centroid(points: [number, number][]): [number, number] {
   if (points.length === 0) return [0, 0];
   let sx = 0;

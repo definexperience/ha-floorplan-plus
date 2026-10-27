@@ -4,11 +4,12 @@ A floor plan for Home Assistant that is quick to click together and pleasant to 
 
 Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spatial-context) by Greminn, which does the editing, the network layers and the property view. This fork adds what we need for daily use:
 
-- **A view mode for everyone.** Every Home Assistant user can look at the plan; only admins can change it. *(planned)*
-- **Live state on the plan.** Lights, temperature, doors and windows, motion, battery and offline devices at a glance. *(planned)*
-- **Tap through to Home Assistant.** Tap a device for its states and quick toggles, and open it in Home Assistant. *(planned)*
-- **Zoom to a room** when you tap it, and a **dashboard card** for wall tablets and phones. *(planned)*
-- **English, Dutch and German.** *(Dutch planned)*
+- **A view mode for everyone.** Every Home Assistant user can look at the plan; only admins can change it.
+- **Live state on the plan.** Lights glow when they're on, and temperature, doors and windows, motion, battery and offline devices show at a glance.
+- **Tap through to Home Assistant.** Tap a device for its states and quick toggles, and open it in Home Assistant.
+- **Zoom to a room** when you tap it, and a **dashboard card** for wall tablets and phones.
+- **Suggested devices per room.** Link a room to a Home Assistant area and its devices are offered first, ready to drop into the room in one click.
+- **English, Dutch and German.**
 
 It is installed under its own name (`floorplan_plus`), so it can sit next to Spatial Context without clashing.
 
@@ -32,6 +33,20 @@ Prefer to copy files by hand? Put `custom_components/floorplan_plus/` into your 
 4. Repeat for each floor, use **Align Floors** for floors that stack, and place buildings on the **Property** tab.
 
 Changes save automatically. Editing works the same as in Spatial Context, so its [user guide](https://greminn.github.io/ha-spatial-context/) applies: [your first floor plan](https://greminn.github.io/ha-spatial-context/guide/first-floor-plan), [placing devices](https://greminn.github.io/ha-spatial-context/guide/placing-devices), the [Connectivity Map](https://greminn.github.io/ha-spatial-context/guide/connectivity-map) and the [Property tab](https://greminn.github.io/ha-spatial-context/guide/property-tab).
+
+## Dashboard card
+
+Add the **Floorplan Plus** card to any dashboard (**Edit dashboard → Add card**, then search for Floorplan Plus). It shows the same plan as the sidebar with live states, and it is view only for everyone, so it is safe on a shared wall tablet. Editing always happens in the sidebar panel.
+
+```yaml
+type: custom:floorplan-plus-card
+floor: ground_floor   # optional: the floor to open on
+area: kitchen         # optional: zoom in on the room linked to this area
+height: 450           # optional: card height in pixels
+show_header: true     # optional: floor tabs and network layers
+```
+
+The card registers itself; there is no dashboard resource to add.
 
 ## Map data for automations
 

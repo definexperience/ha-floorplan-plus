@@ -24,7 +24,13 @@ export function setLanguage(hass: {
   language?: string;
 }): void {
   const lang = hass.locale?.language ?? hass.language ?? "en";
-  currentLanguage = TRANSLATIONS[lang] ? lang : "en";
+  // "nl-BE" or "de-CH" use the base language's strings.
+  const base = lang.split("-")[0] ?? "en";
+  currentLanguage = TRANSLATIONS[lang]
+    ? lang
+    : TRANSLATIONS[base]
+      ? base
+      : "en";
 }
 
 function lookup(dict: unknown, key: string): string | undefined {

@@ -168,6 +168,9 @@ export class FloorplanCanvas extends LitElement {
    * behavior) or fit fresh (different/no building). See panel.ts's
    * `_selectFloor`. */
   @property({ type: Boolean }) sameBuildingAsPrevious = false;
+  /** A room outline that "fit" and the home button frame instead of the
+   * whole floor — set by a dashboard card that shows one room. */
+  @property({ attribute: false }) homePoints: [number, number][] | null = null;
   @property({ attribute: false }) mode: CanvasMode = "select";
   /** View mode: devices, rooms and network links can be tapped, but
    * nothing can be moved or changed. Pan and zoom still work. */
@@ -376,6 +379,9 @@ export class FloorplanCanvas extends LitElement {
       // — leave the live pan/zoom exactly as it was (existing continuity
       // behavior for floors that haven't explicitly saved a view yet).
     }
+    if (changed.has("homePoints") && this.homePoints && this.hasUpdated) {
+      this.fitToScreen();
+    }
     if (changed.has("alignOverlay")) {
       const prev = changed.get("alignOverlay") as
         AlignOverlay | null | undefined;
@@ -428,6 +434,10 @@ export class FloorplanCanvas extends LitElement {
   }
 
   fitToScreen(): void {
+    if (this.homePoints && this.homePoints.length >= 3) {
+      this._viewBox = this._frame(this.homePoints);
+      return;
+    }
     this._viewBox = this._contentBounds() ?? {
       x: 0,
       y: 0,
@@ -448,6 +458,11 @@ export class FloorplanCanvas extends LitElement {
    * room around them. Instant when the user prefers reduced motion. */
   zoomToPoints(points: [number, number][]): void {
     if (points.length === 0) return;
+    this._animateViewBox(this._frame(points));
+  }
+
+  /** A view box framing these points, with some room around them. */
+  private _frame(points: [number, number][]): ViewBox {
     const xs = points.map(([x]) => x);
     const ys = points.map(([, y]) => y);
     const minX = Math.min(...xs);
@@ -457,13 +472,12 @@ export class FloorplanCanvas extends LitElement {
     const pad = Math.max(w, h) * 0.15 || 40;
     const targetW = clamp(w + pad * 2, MIN_VIEWBOX_WIDTH, MAX_VIEWBOX_WIDTH);
     const targetH = (h + pad * 2) * (targetW / (w + pad * 2));
-    const target: ViewBox = {
+    return {
       x: minX + w / 2 - targetW / 2,
       y: minY + h / 2 - targetH / 2,
       w: targetW,
       h: targetH,
     };
-    this._animateViewBox(target);
   }
 
   /** fitToScreen, but gliding there like zoomToPoints. */
