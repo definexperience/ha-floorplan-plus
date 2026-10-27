@@ -1,10 +1,11 @@
 import en from "./translations/en.json";
 import de from "./translations/de.json";
+import nl from "./translations/nl.json";
 
-/** de.json is machine-drafted — flagged here and in the release notes as
+/** de.json and nl.json are machine-drafted — flagged here and in the release notes as
  * needing a native-speaker review pass before being treated as
- * production-quality German, not just "the infrastructure works." */
-const TRANSLATIONS: Record<string, unknown> = { en, de };
+ * production-quality translations, not just "the infrastructure works." */
+const TRANSLATIONS: Record<string, unknown> = { en, de, nl };
 
 /** Module-level singleton, not a constructor/call-site argument — panel.ts
  * is the only component that actually holds `hass` (see its set hass()),

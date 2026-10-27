@@ -5,6 +5,7 @@ import type {
   AreaMeta,
   CanvasMode,
   FloorMeta,
+  HomeAssistant,
   Opening,
   PlaceableEntity,
   Pin,
@@ -29,6 +30,8 @@ import {
 import { pinDisplayLabel } from "../canvas/device-display";
 import { qualityColor } from "../canvas/mesh-colors";
 import "./row-actions";
+import "./device-card";
+import type { DeviceStatus } from "../canvas/device-state";
 import {
   actionRow,
   deleteButton,
@@ -90,6 +93,13 @@ export class CanvasOverlay extends LitElement {
   @property({ type: Boolean }) editingRoom = false;
   @property({ attribute: false }) areas: AreaMeta[] = [];
   @property({ attribute: false }) selectedPin: Pin | null = null;
+  /** View mode: no tools, and a tapped device gets its live card. */
+  @property({ type: Boolean, reflect: true }) readonly = false;
+  @property({ attribute: false }) hass?: HomeAssistant;
+  @property({ attribute: false }) statuses: Map<string, DeviceStatus> | null =
+    null;
+  /** Where the selected device is, for its card's subtitle. */
+  @property({ attribute: false }) selectedPinWhere: string | null = null;
   /** How many pins are multi-selected (Shift-click / Shift-drag box). */
   @property({ type: Number }) multiPinCount = 0;
   @property({ attribute: false }) selectedWall: Wall | null = null;
@@ -956,15 +966,19 @@ export class CanvasOverlay extends LitElement {
               >
                 ${this._pinLabel(pin)}
               </button>
-              <button
-                class="stack-remove"
-                title=${localize("canvas.pin.removeFromSpot")}
-                aria-label=${localize("canvas.pin.removeFromSpot")}
-                @click=${() =>
-                  this._fire("pin-stack-remove-click", { pinId: pin.id })}
-              >
-                <ha-icon icon="mdi:delete"></ha-icon>
-              </button>
+              ${
+                this.readonly
+                  ? nothing
+                  : html`<button
+                      class="stack-remove"
+                      title=${localize("canvas.pin.removeFromSpot")}
+                      aria-label=${localize("canvas.pin.removeFromSpot")}
+                      @click=${() =>
+                        this._fire("pin-stack-remove-click", { pinId: pin.id })}
+                    >
+                      <ha-icon icon="mdi:delete"></ha-icon>
+                    </button>`
+              }
             </div>
           `,
         )}
@@ -972,7 +986,31 @@ export class CanvasOverlay extends LitElement {
     });
   }
 
+  private _renderDeviceCard(pin: Pin) {
+    return html`<device-card
+      .hass=${this.hass}
+      .deviceId=${pin.device_id}
+      .label=${this._pinLabel(pin)}
+      .subtitle=${this.selectedPinWhere}
+      .entities=${[...this.entityLookup.values()]}
+      .status=${pin.device_id ? (this.statuses?.get(pin.device_id) ?? null) : null}
+      @device-card-close=${this._clearSelection}
+    ></device-card>`;
+  }
+
   override render() {
+    if (this.readonly) {
+      return html`
+        ${this.meshLegend ? renderMeshLegend(this.meshLegend) : nothing}
+        ${
+          this.pinStack
+            ? this._renderPinStack()
+            : this.selectedPin
+              ? this._renderDeviceCard(this.selectedPin)
+              : this._renderSelectionPanel()
+        }
+      `;
+    }
     return html`
       <div class="tool-row">
         ${this._renderModeToolbar()} ${this._renderHintBar()}

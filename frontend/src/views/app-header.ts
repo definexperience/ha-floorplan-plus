@@ -161,6 +161,9 @@ export class AppHeader extends LitElement {
    * arrow and the page's name instead of the menu, brand and floor tabs. */
   @property() page = "";
   @property({ type: Boolean, reflect: true }) light = false;
+  /** Admins see Edit (and Settings); everyone else only views. */
+  @property({ type: Boolean }) canEdit = false;
+  @property({ type: Boolean }) editing = false;
 
   private _fire(name: string, detail?: unknown) {
     this.dispatchEvent(
@@ -208,14 +211,31 @@ export class AppHeader extends LitElement {
       ></floor-tabs>
       <div class="actions">
         <slot></slot>
-        <button
-          class="icon-button"
-          title=${localize("menu.settings")}
-          aria-label=${localize("menu.settings")}
-          @click=${() => this._fire("open-settings")}
-        >
-          <ha-icon icon="mdi:cog"></ha-icon>
-        </button>
+        ${
+          this.canEdit
+            ? html`<button
+                  class="icon-button ${this.editing ? "active" : ""}"
+                  title=${localize(this.editing ? "appHeader.doneEditing" : "appHeader.edit")}
+                  aria-label=${localize(
+                    this.editing ? "appHeader.doneEditing" : "appHeader.edit",
+                  )}
+                  aria-pressed=${this.editing ? "true" : "false"}
+                  @click=${() => this._fire("edit-toggle")}
+                >
+                  <ha-icon
+                    icon=${this.editing ? "mdi:check" : "mdi:pencil"}
+                  ></ha-icon>
+                </button>
+                <button
+                  class="icon-button"
+                  title=${localize("menu.settings")}
+                  aria-label=${localize("menu.settings")}
+                  @click=${() => this._fire("open-settings")}
+                >
+                  <ha-icon icon="mdi:cog"></ha-icon>
+                </button>`
+            : nothing
+        }
         <slot name="end"></slot>
       </div>
     `;

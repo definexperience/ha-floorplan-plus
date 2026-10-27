@@ -7,7 +7,9 @@
     "save": "Save",
     "menu": "Menu",
     "back": "Back",
-    "settings": "Settings"
+    "settings": "Settings",
+    "edit": "Edit plan",
+    "doneEditing": "Done editing"
   },
   "canvas": {
     "mode": {
@@ -117,6 +119,14 @@
       "show": "Show details"
     },
     "calibrateHint": "Click to set the scale"
+  },
+  "deviceCard": {
+    "offline": "Offline",
+    "lowBattery": "Battery low",
+    "noEntities": "Nothing to show for this device",
+    "more": "{count} more in Home Assistant",
+    "openDevice": "Open in Home Assistant",
+    "details": "Details"
   },
   "mapBackground": {
     "noWebgl": "This browser can't draw the map (WebGL2 is needed).",
@@ -265,7 +275,9 @@
     "live": "● Live",
     "loading": "Loading…",
     "refreshedSeconds": "refreshed {n}s ago",
-    "refreshedMinutes": "refreshed {n}m ago"
+    "refreshedMinutes": "refreshed {n}m ago",
+    "scanByAdmin": "Showing the last scan. An admin can refresh it.",
+    "noScanYet": "No scan yet. An admin can load the mesh."
   },
   "errors": {
     "restartHa": "Restart Home Assistant to finish updating Floorplan Plus.",

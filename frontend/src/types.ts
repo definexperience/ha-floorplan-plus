@@ -514,6 +514,13 @@ export interface ResolvedMeshStub {
 }
 
 /** The slice of `hass` this panel actually touches. */
+/** One entity's live state, as HA's frontend holds it in `hass.states`. */
+export interface HassEntityState {
+  entity_id?: string;
+  state: string;
+  attributes: Record<string, unknown>;
+}
+
 export interface HomeAssistant {
   connection: {
     sendMessagePromise<T>(message: Record<string, unknown>): Promise<T>;
@@ -525,7 +532,16 @@ export interface HomeAssistant {
   fetchWithAuth(path: string, init?: RequestInit): Promise<Response>;
   config?: { latitude?: number; longitude?: number; components?: string[] };
   themes?: { darkMode?: boolean };
-  states: Record<string, { attributes: Record<string, unknown> } | undefined>;
+  states: Record<string, HassEntityState | undefined>;
+  /** The signed-in user. Only admins may edit the plan. */
+  user?: { id?: string; name?: string; is_admin: boolean };
+  callService?(
+    domain: string,
+    service: string,
+    data?: Record<string, unknown>,
+  ): Promise<unknown>;
+  /** HA's own state formatter ("On", "21.5 °C"), present since 2023.9. */
+  formatEntityState?(stateObj: HassEntityState): string;
   /** For i18n (see i18n.ts's setLanguage) — the real HA-supplied object
    * always carries at least one of these; both optional here since this
    * is a hand-narrowed local type, not runtime-enforced. */
