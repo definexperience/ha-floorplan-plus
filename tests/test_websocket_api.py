@@ -167,6 +167,12 @@ class SaveLimitsTest(unittest.TestCase):
         wall = {"id": "w1", "material": "glass", "points": [[0, 0], [5, 0]]}
         self._validate(self._layout(rooms=[room], pins=[pin], walls=[wall]))
 
+    def test_pin_display_options_are_kept(self) -> None:
+        pin = {"id": "p1", "device_id": "abc", "x": 1, "y": 2, "show_label": True, "view_only": True}
+        saved = self.api.ws_save_layout.schema(self._layout(pins=[pin]))
+        self.assertTrue(saved["pins"][0]["show_label"])
+        self.assertTrue(saved["pins"][0]["view_only"])
+
     def test_too_many_rooms_are_refused(self) -> None:
         room = {"id": "r", "name": "x", "points": []}
         with self.assertRaises(vol.Invalid):

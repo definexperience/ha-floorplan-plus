@@ -1,6 +1,7 @@
 import { css, html, nothing } from "lit";
 import { qualityColor } from "../canvas/mesh-colors";
 import { localize } from "../i18n";
+import type { Pin } from "../types";
 
 /** HA map-panel style info card shared by the floor and Property overlays:
  * a floating card with a close button, a title and subtitle, inner rounded
@@ -330,6 +331,46 @@ export function fieldRow(icon: string, label: string, control: unknown) {
     <span class="grow">${label}</span>
     ${control}
   </div>`;
+}
+
+/** A placed device's on/off options, shared by the floor and Property
+ * cards: its name on the plan, and whether users who aren't admins may
+ * switch it. */
+export function pinOptionRows(
+  pin: Pick<Pin, "show_label" | "view_only">,
+  onChange: (patch: Partial<Pick<Pin, "show_label" | "view_only">>) => void,
+) {
+  return html`${fieldRow(
+      "mdi:label-outline",
+      localize("canvas.pin.showLabel"),
+      html`<input
+        type="checkbox"
+        class="switch"
+        role="switch"
+        aria-label=${localize("canvas.pin.showLabel")}
+        .checked=${pin.show_label ?? false}
+        @change=${(e: Event) =>
+          onChange({ show_label: (e.target as HTMLInputElement).checked })}
+      />`,
+    )}
+    <div class="info-row">
+      <ha-icon icon="mdi:account-lock-outline"></ha-icon>
+      <span class="grow"
+        >${localize("canvas.pin.usersCanControl")}
+        <div class="info-sub">
+          ${localize("canvas.pin.usersCanControlHint")}
+        </div>
+      </span>
+      <input
+        type="checkbox"
+        class="switch"
+        role="switch"
+        aria-label=${localize("canvas.pin.usersCanControl")}
+        .checked=${!(pin.view_only ?? false)}
+        @change=${(e: Event) =>
+          onChange({ view_only: !(e.target as HTMLInputElement).checked })}
+      />
+    </div>`;
 }
 
 export function selectWrap(select: unknown) {

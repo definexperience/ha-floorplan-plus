@@ -2082,9 +2082,13 @@ export class FloorplanCanvas extends LitElement {
         status ? toneColor(status.tone) : "var(--sc-accent)",
         selected,
         this._pinLabel(pin),
-        status
-          ? { badge: status.badge, lowBattery: status.lowBattery }
-          : undefined,
+        {
+          badge: status?.badge,
+          lowBattery: status?.lowBattery,
+          light: status?.light,
+          caption: pin.show_label ? this._pinLabel(pin) : null,
+          key: pin.id,
+        },
       );
     }
 
@@ -2107,7 +2111,11 @@ export class FloorplanCanvas extends LitElement {
       "var(--sc-accent)",
       selected,
       label,
-      { lowBattery: groupStatuses.some((s) => s.lowBattery) },
+      {
+        lowBattery: groupStatuses.some((s) => s.lowBattery),
+        light: groupStatuses.find((s) => s.light)?.light,
+        key: group.pins[0]!.id,
+      },
     );
   }
 
@@ -2559,11 +2567,11 @@ export class FloorplanCanvas extends LitElement {
           <ha-icon icon="mdi:minus"></ha-icon>
         </button>
         <button
-          @click=${() => this.fitToScreen()}
-          title=${localize("canvasControls.fit")}
-          aria-label=${localize("canvasControls.fit")}
+          @click=${() => this.zoomToFit()}
+          title=${localize("canvasControls.home")}
+          aria-label=${localize("canvasControls.home")}
         >
-          <ha-icon icon="mdi:fit-to-screen-outline"></ha-icon>
+          <ha-icon icon="mdi:home-outline"></ha-icon>
         </button>
       </div>
     `;

@@ -3,6 +3,7 @@ import { property, state } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
 import type {
   HomeAssistant,
+  Pin,
   PlaceableEntity,
   PropertyMeshLink,
   PropertyPlacement,
@@ -14,6 +15,7 @@ import {
   sharedStyles,
   scaleStyles,
   sliderStyles,
+  switchStyles,
   toolRowStyles,
 } from "../styles";
 import "./row-actions";
@@ -25,6 +27,7 @@ import {
   fieldRow,
   infoCardStyles,
   networkGroup,
+  pinOptionRows,
   renderCard,
 } from "./info-card";
 import { meshLegendStyles, renderMeshLegend } from "./mesh-legend";
@@ -58,6 +61,7 @@ export class PropertyOverlay extends LitElement {
     selectStyles,
     scaleStyles,
     sliderStyles,
+    switchStyles,
     infoCardStyles,
     toolRowStyles,
     meshLegendStyles,
@@ -129,6 +133,11 @@ export class PropertyOverlay extends LitElement {
   @property({ attribute: false }) selectedPinDefaultLabel: string | null = null;
   @property({ attribute: false }) selectedPinOverride: string | null = null;
   @property({ attribute: false }) selectedPinDeviceId: string | null = null;
+  /** The selected outdoor device's on/off options. */
+  @property({ attribute: false }) selectedPinOptions: Pick<
+    Pin,
+    "show_label" | "view_only"
+  > | null = null;
   @property({ attribute: false }) meshLinks: PropertyMeshLink[] = [];
   @property({ attribute: false }) networkLabel: string | null = null;
   /** Show the weak → strong key along the bottom (a network layer is on). */
@@ -183,6 +192,7 @@ export class PropertyOverlay extends LitElement {
         .subtitle=${localize("property.outdoorDevice")}
         .entities=${this.entities}
         .status=${id ? (this.statuses?.get(id) ?? null) : null}
+        .viewOnly=${this.selectedPinOptions?.view_only ?? false}
         @device-card-close=${() => this._fire("selection-clear")}
       ></device-card>`;
     }
@@ -208,6 +218,13 @@ export class PropertyOverlay extends LitElement {
           ${actionRow("mdi:shape", localize("property.setIcon"), () =>
             this._fire("outdoor-pin-icon-click"),
           )}
+          ${
+            this.selectedPinOptions
+              ? pinOptionRows(this.selectedPinOptions, (patch) =>
+                  this._fire("outdoor-pin-options-change", patch),
+                )
+              : nothing
+          }
         </div>
         ${this._renderDeviceNetwork()}`,
       footer: deleteButton(localize("property.removeFromProperty"), () =>

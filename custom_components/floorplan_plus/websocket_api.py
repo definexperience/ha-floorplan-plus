@@ -118,6 +118,10 @@ _PIN_SCHEMA = {
     # Mounting height in metres above floor level — matters for e.g. mmWave
     # presence sensors, where low/high placement changes the detection cone.
     vol.Optional("height_m"): vol.Any(vol.Coerce(float), None),
+    # Draw the device's name under its marker.
+    vol.Optional("show_label"): bool,
+    # Non-admin users see the device's states but get no controls for it.
+    vol.Optional("view_only"): bool,
 }
 
 _WALL_SCHEMA = {
