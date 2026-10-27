@@ -6,6 +6,7 @@ DOMAIN = "floorplan_plus"
 
 URL_BASE = "/floorplan_plus"
 PANEL_FILENAME = "floorplan-plus-panel.js"
+CARD_FILENAME = "floorplan-plus-card.js"
 
 SIDEBAR_TITLE = "Floorplan Plus"
 # A standard Material Design icon, so the sidebar entry matches HA's own.

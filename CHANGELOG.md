@@ -4,6 +4,13 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 
 ## Unreleased
 
+### Added
+- A **Floorplan Plus** dashboard card: the plan with live states, view only for everyone. Pick a floor to open on, zoom in on one room, set the height, and show or hide the floor tabs. It registers itself, so there is no dashboard resource to add.
+- **Suggested devices per room** while placing devices: for each room linked to a Home Assistant area, that area's devices that aren't on the plan yet are listed first. Place one, or all of them at once, straight into the room. Selecting a room first narrows the list to that room.
+
+### Fixed
+- The panel now follows the Home Assistant user's language. Dutch and German strings were shipped but the panel always showed English.
+
 ### Changed
 - Renamed to Floorplan Plus (domain `floorplan_plus`), so it can be installed next to Spatial Context without clashing. The panel, actions (`floorplan_plus.get_map`), storage and debug log use the new name.
 - Repository, issue and release links point to this fork. The user guide still links to the original documentation.

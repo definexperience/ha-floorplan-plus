@@ -4,6 +4,8 @@ import {
   pointInPolygon,
   rayBoxExit,
   reassignPinRooms,
+  roomLabelPoint,
+  spotsInRoom,
 } from "./geometry";
 import type { Pin, Room } from "../types";
 
@@ -81,5 +83,52 @@ describe("rayBoxExit", () => {
   it("has no exit for a stationary ray or one pointing away from the edge it is on", () => {
     expect(rayBoxExit(10, 10, 0, 0, box)).toBeNull();
     expect(rayBoxExit(100, 10, 1, 0, box)).toBeNull();
+  });
+});
+
+describe("spotsInRoom", () => {
+  const big: [number, number][] = [
+    [0, 0],
+    [400, 0],
+    [400, 300],
+    [0, 300],
+  ];
+
+  it("gives each new pin its own spot inside the room", () => {
+    const spots = spotsInRoom(big, 5);
+    expect(spots).toHaveLength(5);
+    for (const [x, y] of spots) expect(pointInPolygon(x, y, big)).toBe(true);
+    const keys = new Set(spots.map(([x, y]) => `${x},${y}`));
+    expect(keys.size).toBe(5);
+  });
+
+  it("keeps clear of the room's name and of pins already there", () => {
+    const [lx, ly] = roomLabelPoint(big);
+    const occupied: [number, number][] = [[lx + 75, ly]];
+    const spots = spotsInRoom(big, 4, occupied);
+    for (const [x, y] of spots) {
+      expect(x === lx && y === ly).toBe(false);
+      expect(
+        Math.hypot(x - occupied[0]![0], y - occupied[0]![1]),
+      ).toBeGreaterThan(10);
+    }
+  });
+
+  it("stays inside a concave room", () => {
+    const ell: [number, number][] = [
+      [0, 0],
+      [100, 0],
+      [100, 40],
+      [40, 40],
+      [40, 100],
+      [0, 100],
+    ];
+    for (const [x, y] of spotsInRoom(ell, 6)) {
+      expect(pointInPolygon(x, y, ell)).toBe(true);
+    }
+  });
+
+  it("returns nothing for nothing", () => {
+    expect(spotsInRoom(big, 0)).toEqual([]);
   });
 });

@@ -95,6 +95,14 @@ class AdminGatingTest(unittest.TestCase):
         self.assertIn("require_admin=False", source)
         self.assertNotIn("require_admin=True", source)
 
+    def test_the_card_loads_on_every_page(self) -> None:
+        source = (stubs.PKG_DIR / "frontend.py").read_text()
+        self.assertIn("add_extra_js_url(hass, card_url)", source)
+        # Same token as the sidebar's, so the browser loads the panel once.
+        self.assertIn("&p={_cache_bust_token(PANEL_FILENAME)}", source)
+        init = (stubs.PKG_DIR / "__init__.py").read_text()
+        self.assertIn("async_register_card(hass)", init)
+
 
 @unittest.skipIf(vol is None, "voluptuous is not installed")
 class SaveLimitsTest(unittest.TestCase):

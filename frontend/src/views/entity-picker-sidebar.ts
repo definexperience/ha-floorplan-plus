@@ -2,7 +2,7 @@ import { LitElement, html, nothing, type PropertyValues } from "lit";
 import { property, state } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
 import { PROPERTY_LOCATION_ID } from "../types";
-import type { AreaMeta, FloorMeta, PlaceableEntity } from "../types";
+import type { AreaMeta, FloorMeta, PlaceableEntity, Room } from "../types";
 import { pickDisplayEntity } from "../canvas/device-display";
 import { localize } from "../i18n";
 import { selectStyles, sharedStyles } from "../styles";
@@ -26,6 +26,11 @@ interface DeviceGroup {
   primaryEntityId: string;
 }
 
+interface Suggestion {
+  room: Room;
+  devices: DeviceGroup[];
+}
+
 @safeCustomElement("entity-picker-sidebar")
 export class EntityPickerSidebar extends LitElement {
   static override styles = [
@@ -45,6 +50,11 @@ export class EntityPickerSidebar extends LitElement {
    * is linked to — counted as part of the current floor by the floor
    * filter, since that's where they've been drawn. */
   @property({ attribute: false }) linkedAreaIds: Set<string> = new Set();
+  /** The open floor's rooms: each one linked to an HA area suggests that
+   * area's devices that aren't on the plan yet. */
+  @property({ attribute: false }) rooms: Room[] = [];
+  /** The selected room, if any: then only its suggestions show. */
+  @property({ attribute: false }) focusRoomId: string | null = null;
 
   @state() private _search = "";
   /** null = "follow whichever floor is currently open" (the useful default
@@ -268,6 +278,98 @@ export class EntityPickerSidebar extends LitElement {
     });
   }
 
+  /** Per linked room, its area's devices that are on no plan yet. A
+   * selected room narrows this to that room. */
+  private get _suggestions(): Suggestion[] {
+    const focus = this.rooms.find((r) => r.id === this.focusRoomId);
+    const rooms = focus ? [focus] : this.rooms;
+    const devices = this._devices.filter(
+      (d) =>
+        d.areaId !== null &&
+        !this.placedDeviceIds.has(d.deviceId) &&
+        !this._blockedFloorName(d),
+    );
+    const seen = new Set<string>();
+    const suggestions: Suggestion[] = [];
+    for (const room of rooms) {
+      // Two rooms linked to one area suggest its devices once.
+      if (!room.area_id || room.points.length < 3 || seen.has(room.area_id)) {
+        continue;
+      }
+      seen.add(room.area_id);
+      const inArea = devices.filter((d) => d.areaId === room.area_id);
+      if (inArea.length > 0) suggestions.push({ room, devices: inArea });
+    }
+    return suggestions;
+  }
+
+  private _placeInRoom(event: Event, roomId: string, deviceIds: string[]) {
+    event.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent("suggestion-place", {
+        detail: { roomId, deviceIds },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _renderSuggestions() {
+    if (this._search.trim() || this._placedFilter === "placed") return nothing;
+    const suggestions = this._suggestions;
+    if (suggestions.length === 0) return nothing;
+    return html`<div class="suggestions">
+      ${suggestions.map(
+        ({ room, devices }) => html`
+          <div class="suggest-head">
+            <span class="suggest-title"
+              >${localize("picker.suggestedFor", {
+                room: room.name,
+                count: devices.length,
+              })}</span
+            >
+            ${
+              devices.length > 1
+                ? html`<button
+                    class="suggest-all"
+                    title=${localize("picker.placeAllHint", {
+                      room: room.name,
+                    })}
+                    @click=${(e: Event) =>
+                      this._placeInRoom(
+                        e,
+                        room.id,
+                        devices.map((d) => d.deviceId),
+                      )}
+                  >
+                    ${localize("picker.placeAll")}
+                  </button>`
+                : nothing
+            }
+          </div>
+          ${devices.map((device) =>
+            this._renderRow(
+              device,
+              html`<span class="row-actions">
+                <button
+                  title=${localize("picker.placeInRoom", { room: room.name })}
+                  aria-label=${localize("picker.placeInRoom", {
+                    room: room.name,
+                  })}
+                  @click=${(e: Event) =>
+                    this._placeInRoom(e, room.id, [device.deviceId])}
+                >
+                  <ha-icon icon="mdi:map-marker-plus-outline"></ha-icon>
+                </button>
+              </span>`,
+            ),
+          )}
+        `,
+      )}
+      <div class="suggest-divider">${localize("picker.allDevices")}</div>
+    </div>`;
+  }
+
   /** A row button: act on that device's pin without arming the row. */
   private _emitForDevice(event: Event, name: string, deviceId: string): void {
     event.stopPropagation();
@@ -431,108 +533,102 @@ export class EntityPickerSidebar extends LitElement {
         }
       </div>
       <div class="list">
+        ${this._renderSuggestions()}
         ${
           filtered.length === 0
             ? html`<div class="empty">${localize("picker.noMatches")}</div>`
-            : filtered.map((device) => {
-                const placed = this.placedDeviceIds.has(device.deviceId);
-                const blockedFloorName = this._blockedFloorName(device);
-                const armed = this.armedEntityId === device.primaryEntityId;
-                const subtitle = [device.areaName, device.integrationName]
-                  .filter((part): part is string => !!part)
-                  .join(" - ");
-                return html`
-                  <div
-                    class="item ${armed ? "armed" : ""} ${placed ? "placed" : ""} ${
-                      blockedFloorName ? "blocked" : ""
-                    }"
-                    title=${
-                      blockedFloorName
-                        ? localize("picker.alreadyPlaced", {
-                            floor: blockedFloorName,
-                          })
-                        : [device.deviceName, subtitle]
-                            .filter((part): part is string => !!part)
-                            .join(" · ")
-                    }
-                    @click=${() => {
-                      if (blockedFloorName) return;
-                      this.dispatchEvent(
-                        new CustomEvent("entity-armed", {
-                          detail: { entityId: device.primaryEntityId },
-                          bubbles: true,
-                          composed: true,
-                        }),
-                      );
-                    }}
-                  >
-                    <span class="avatar">
-                      ${
-                        device.integrationDomain
-                          ? html`<img
-                              src="https://brands.home-assistant.io/_/${device.integrationDomain}/icon.png"
-                              alt=""
-                              @error=${(e: Event) => {
-                                const img = e.target as HTMLImageElement;
-                                img.style.display = "none";
-                                img.nextElementSibling?.classList.remove(
-                                  "hidden",
-                                );
-                              }}
-                            />`
-                          : nothing
-                      }
-                      <ha-icon
-                        icon=${GENERIC_DEVICE_ICON_NAME}
-                        class=${device.integrationDomain ? "hidden" : ""}
-                      ></ha-icon>
-                    </span>
-                    <span class="text">
-                      <span class="name">${device.deviceName}</span>
-                      ${
-                        blockedFloorName
-                          ? html`<span class="meta"
-                              >${localize("picker.placedOn", { floor: blockedFloorName })}</span
-                            >`
-                          : subtitle
-                            ? html`<span class="meta">${subtitle}</span>`
-                            : nothing
-                      }
-                      ${placed ? html`<span class="meta">${localize("picker.placed")}</span>` : nothing}
-                    </span>
-                    ${
-                      placed
-                        ? html`<span class="row-actions">
-                            <button
-                              title=${localize("picker.locate")}
-                              aria-label=${localize("picker.locate")}
-                              @click=${(e: Event) =>
-                                this._emitForDevice(
-                                  e,
-                                  "pin-locate",
-                                  device.deviceId,
-                                )}
-                            >
-                              <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
-                            </button>
-                            <button
-                              title=${localize("picker.remove")}
-                              aria-label=${localize("picker.remove")}
-                              @click=${(e: Event) =>
-                                this._emitForDevice(
-                                  e,
-                                  "pin-remove",
-                                  device.deviceId,
-                                )}
-                            >
-                              <ha-icon icon="mdi:delete-outline"></ha-icon>
-                            </button>
-                          </span>`
-                        : nothing
-                    }
-                  </div>
-                `;
+            : filtered.map((device) => this._renderRow(device))
+        }
+      </div>
+    `;
+  }
+
+  /** One device row. `actions` are its buttons when it isn't placed. */
+  private _renderRow(device: DeviceGroup, actions?: unknown) {
+    const placed = this.placedDeviceIds.has(device.deviceId);
+    const blockedFloorName = this._blockedFloorName(device);
+    const armed = this.armedEntityId === device.primaryEntityId;
+    const subtitle = [device.areaName, device.integrationName]
+      .filter((part): part is string => !!part)
+      .join(" - ");
+    return html`
+      <div
+        class="item ${armed ? "armed" : ""} ${placed ? "placed" : ""} ${
+          blockedFloorName ? "blocked" : ""
+        }"
+        title=${
+          blockedFloorName
+            ? localize("picker.alreadyPlaced", {
+                floor: blockedFloorName,
               })
+            : [device.deviceName, subtitle]
+                .filter((part): part is string => !!part)
+                .join(" · ")
+        }
+        @click=${() => {
+          if (blockedFloorName) return;
+          this.dispatchEvent(
+            new CustomEvent("entity-armed", {
+              detail: { entityId: device.primaryEntityId },
+              bubbles: true,
+              composed: true,
+            }),
+          );
+        }}
+      >
+        <span class="avatar">
+          ${
+            device.integrationDomain
+              ? html`<img
+                  src="https://brands.home-assistant.io/_/${device.integrationDomain}/icon.png"
+                  alt=""
+                  @error=${(e: Event) => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.display = "none";
+                    img.nextElementSibling?.classList.remove("hidden");
+                  }}
+                />`
+              : nothing
+          }
+          <ha-icon
+            icon=${GENERIC_DEVICE_ICON_NAME}
+            class=${device.integrationDomain ? "hidden" : ""}
+          ></ha-icon>
+        </span>
+        <span class="text">
+          <span class="name">${device.deviceName}</span>
+          ${
+            blockedFloorName
+              ? html`<span class="meta"
+                  >${localize("picker.placedOn", { floor: blockedFloorName })}</span
+                >`
+              : subtitle
+                ? html`<span class="meta">${subtitle}</span>`
+                : nothing
+          }
+          ${placed ? html`<span class="meta">${localize("picker.placed")}</span>` : nothing}
+        </span>
+        ${
+          placed
+            ? html`<span class="row-actions">
+                <button
+                  title=${localize("picker.locate")}
+                  aria-label=${localize("picker.locate")}
+                  @click=${(e: Event) =>
+                    this._emitForDevice(e, "pin-locate", device.deviceId)}
+                >
+                  <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
+                </button>
+                <button
+                  title=${localize("picker.remove")}
+                  aria-label=${localize("picker.remove")}
+                  @click=${(e: Event) =>
+                    this._emitForDevice(e, "pin-remove", device.deviceId)}
+                >
+                  <ha-icon icon="mdi:delete-outline"></ha-icon>
+                </button>
+              </span>`
+            : (actions ?? nothing)
         }
       </div>
     `;

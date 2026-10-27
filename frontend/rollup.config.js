@@ -145,4 +145,31 @@ const panel = {
   ].filter(Boolean),
 };
 
-export default [panel, mapModule];
+/** The dashboard card: a small ES module Home Assistant loads on every
+ * page, which imports the panel bundle only once a card is shown. */
+const card = {
+  input: "src/card/floorplan-plus-card.ts",
+  output: {
+    file: "../custom_components/floorplan_plus/www/floorplan-plus-card.js",
+    format: "es",
+    sourcemap: isDev,
+    banner: `/*! floorplan-plus-card v${pkg.version} | ${pkg.license} */`,
+  },
+  plugins: [
+    nodeResolve({ browser: true, extensions: [".js", ".ts", ".mjs"] }),
+    typescript({
+      tsconfig: "./tsconfig.json",
+      noEmitOnError: !isDev,
+      compilerOptions: {
+        noEmit: false,
+        declaration: false,
+        sourceMap: isDev,
+        outDir: "../custom_components/floorplan_plus/www",
+      },
+      outputToFilesystem: false,
+    }),
+    !isDev && terser({ module: true, format: { comments: /^!/ } }),
+  ].filter(Boolean),
+};
+
+export default [panel, mapModule, card];

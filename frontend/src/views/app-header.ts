@@ -128,6 +128,21 @@ export class AppHeader extends LitElement {
           display: none;
         }
       }
+      /* In a dashboard card: no name or menu, so the tabs get the room. */
+      :host([compact]) {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: 48px;
+        grid-template-areas: none;
+        height: 48px;
+        padding: 0 var(--ha-space-1, 4px) 0 0;
+      }
+      :host([compact]) floor-tabs {
+        grid-area: auto;
+        border-top: none;
+      }
+      :host([compact]) .actions {
+        grid-area: auto;
+      }
       .actions {
         display: flex;
         align-items: center;
@@ -161,6 +176,8 @@ export class AppHeader extends LitElement {
    * arrow and the page's name instead of the menu, brand and floor tabs. */
   @property() page = "";
   @property({ type: Boolean, reflect: true }) light = false;
+  /** Inside a dashboard card: floor tabs and actions only. */
+  @property({ type: Boolean, reflect: true }) compact = false;
   /** Admins see Edit (and Settings); everyone else only views. */
   @property({ type: Boolean }) canEdit = false;
   @property({ type: Boolean }) editing = false;
@@ -187,6 +204,15 @@ export class AppHeader extends LitElement {
         </div>
       `;
     }
+    const tabs = html`<floor-tabs
+      .floors=${this.floors}
+      .selectedFloorId=${this.selectedFloorId}
+      .propertySelected=${this.propertySelected}
+    ></floor-tabs>`;
+    if (this.compact) {
+      return html`${tabs}
+        <div class="actions"><slot></slot><slot name="end"></slot></div>`;
+    }
     return html`
       <div class="identity">
         ${
@@ -204,11 +230,7 @@ export class AppHeader extends LitElement {
         <span class="brand-mark" aria-hidden="true"></span>
         <h1>Floorplan Plus</h1>
       </div>
-      <floor-tabs
-        .floors=${this.floors}
-        .selectedFloorId=${this.selectedFloorId}
-        .propertySelected=${this.propertySelected}
-      ></floor-tabs>
+      ${tabs}
       <div class="actions">
         <slot></slot>
         ${

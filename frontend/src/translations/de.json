@@ -207,7 +207,12 @@
     "showPlaced": "Platziert",
     "locate": "Im Plan anzeigen",
     "remove": "Aus dem Plan entfernen",
-    "title": "Gerät platzieren"
+    "title": "Gerät platzieren",
+    "suggestedFor": "Vorschläge für {room} · {count}",
+    "placeAll": "Alle platzieren",
+    "placeAllHint": "Alle in {room} platzieren",
+    "placeInRoom": "In {room} platzieren",
+    "allDevices": "Alle Geräte"
   },
   "iconPicker": {
     "title": "Symbol auswählen",

@@ -9,6 +9,13 @@ export const panelStyles = css`
     height: 100dvh;
     background: var(--sc-bg);
   }
+  /* In a dashboard card: as tall as the card makes it. */
+  :host([embedded]) {
+    height: 100%;
+  }
+  app-header[hidden] {
+    display: none;
+  }
   .main {
     flex: 1;
     display: flex;

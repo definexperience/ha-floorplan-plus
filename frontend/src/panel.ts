@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { safeCustomElement } from "./define";
 import type {
+  CardOptions,
   AreaMeta,
   CanvasMode,
   ContentBounds,
@@ -73,6 +74,7 @@ import {
   findRoomForPoint,
   pointInPolygon,
   reassignPinRooms,
+  spotsInRoom,
 } from "./canvas/geometry";
 import { largeUnitLabel, parseLarge, unitsPerDisplayUnit } from "./units";
 import {
@@ -94,7 +96,7 @@ import "./views/property-overlay";
 import "./views/icon-picker-dialog";
 import "./views/confirm-dialog";
 import type { ScDialog } from "./views/confirm-dialog";
-import { localize } from "./i18n";
+import { localize, setLanguage } from "./i18n";
 import { metersPerUnit, panMap, rotateMapTo, zoomMap } from "./map/map-camera";
 import "./views/settings-page";
 import type { PropertyBuilding } from "./views/property-overlay";
@@ -280,9 +282,16 @@ export class FloorplanPlusPanel extends LitElement {
   /** Set by HA when the sidebar is hidden or an overlay (phones, narrow
    * windows) — the only time the header needs its own menu button. */
   @property({ type: Boolean }) narrow = false;
+  /** Shown inside a dashboard card (see card/floorplan-plus-card.ts):
+   * view only, no settings, and sized by the card instead of the window. */
+  @property({ type: Boolean, reflect: true }) embedded = false;
+  /** The card's choices: which floor to open, which HA area's room to
+   * frame, and whether to show the header with floor tabs and layers. */
+  @property({ attribute: false }) cardOptions: CardOptions = {};
 
   set hass(value: HomeAssistant) {
     this._hass = value;
+    setLanguage(value);
     if (!this._initialized) {
       this._initialized = true;
       void this._init();
@@ -304,9 +313,32 @@ export class FloorplanPlusPanel extends LitElement {
     return entity?.area_name ?? null;
   }
 
-  /** Only admins can edit, and the server enforces it (websocket_api.py). */
+  /** Only admins can edit, and the server enforces it (websocket_api.py).
+   * A dashboard card is always view only; editing happens in the panel. */
   private get _canEdit(): boolean {
-    return this._hass?.user?.is_admin ?? false;
+    return !this.embedded && (this._hass?.user?.is_admin ?? false);
+  }
+
+  /** The room a dashboard card frames: the one linked to its HA area, on
+   * the floor the card opened on. */
+  private get _cardRoom(): Room | null {
+    const areaId = this.cardOptions.area;
+    if (!this.embedded || !areaId || this._view !== "floor") return null;
+    if (this._currentFloorId !== this._cardFloorId) return null;
+    return this._layout.rooms.find((r) => r.area_id === areaId) ?? null;
+  }
+
+  /** The floor a dashboard card opens on: the one it names, else the
+   * floor its area is on, else the first. */
+  private get _cardFloorId(): string | null {
+    const floors = this._orderedFloors;
+    const { floor, area } = this.cardOptions;
+    if (floor && floors.some((f) => f.floor_id === floor)) return floor;
+    const areaFloor = this._areas.find((a) => a.area_id === area)?.floor_id;
+    if (areaFloor && floors.some((f) => f.floor_id === areaFloor)) {
+      return areaFloor;
+    }
+    return floors[0]?.floor_id ?? null;
   }
 
   /** Every device placed on the floor shown and on the Property tab. */
@@ -797,10 +829,13 @@ export class FloorplanPlusPanel extends LitElement {
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       floors: floors.length,
     });
-    void this._checkVersion();
-    const firstFloor = this._orderedFloors[0];
-    if (firstFloor) {
-      await this._selectFloor(firstFloor.floor_id, { skipDirtyCheck: true });
+    // A wall tablet has no one to act on a version notice.
+    if (!this.embedded) void this._checkVersion();
+    const firstFloorId = this.embedded
+      ? this._cardFloorId
+      : (this._orderedFloors[0]?.floor_id ?? null);
+    if (firstFloorId) {
+      await this._selectFloor(firstFloorId, { skipDirtyCheck: true });
     }
     this._loading = false;
   }
@@ -1942,11 +1977,15 @@ export class FloorplanPlusPanel extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._setFavicon();
-    this._fitToViewport();
-    window.visualViewport?.addEventListener("resize", this._fitToViewport);
-    window.addEventListener("resize", this._fitToViewport);
-    window.addEventListener("orientationchange", this._fitToViewport);
+    // In a dashboard card, the card sets the size and the tab is the
+    // dashboard's.
+    if (!this.embedded) {
+      this._setFavicon();
+      this._fitToViewport();
+      window.visualViewport?.addEventListener("resize", this._fitToViewport);
+      window.addEventListener("resize", this._fitToViewport);
+      window.addEventListener("orientationchange", this._fitToViewport);
+    }
     window.addEventListener("keydown", this._onKeyDown);
     window.addEventListener("beforeunload", this._onBeforeUnload);
     document.addEventListener("visibilitychange", this._onVisibilityChange);
@@ -2582,6 +2621,34 @@ export class FloorplanPlusPanel extends LitElement {
     return pins.find((p) => p.device_id === deviceId) ?? null;
   }
 
+  /** Places suggested devices straight into their room, spread around
+   * its middle, and selects them so they can be nudged into place. */
+  private _onSuggestionPlace = (
+    e: CustomEvent<{ roomId: string; deviceIds: string[] }>,
+  ) => {
+    const room = this._layout.rooms.find((r) => r.id === e.detail.roomId);
+    if (!room) return;
+    const placed = this._placedDeviceIds;
+    const deviceIds = e.detail.deviceIds.filter((id) => !placed.has(id));
+    if (deviceIds.length === 0) return;
+    const occupied = this._layout.pins
+      .filter((p) => p.room_id === room.id)
+      .map((p): [number, number] => [p.x, p.y]);
+    const spots = spotsInRoom(room.points, deviceIds.length, occupied);
+    const pins = deviceIds.map((deviceId, i) => {
+      const [x, y] = spots[i]!;
+      return emptyPin(
+        deviceId,
+        x,
+        y,
+        findRoomForPoint(x, y, this._layout.rooms) ?? room.id,
+      );
+    });
+    this._updateLayout({ pins: [...this._layout.pins, ...pins] });
+    this._armedEntityId = null;
+    this._applyPinPick(pins.map((p) => p.id));
+  };
+
   private _onPickerPinLocate = (e: CustomEvent<{ deviceId: string }>) => {
     const pin = this._pickerPin(e.detail.deviceId);
     if (!pin) return;
@@ -3190,7 +3257,9 @@ export class FloorplanPlusPanel extends LitElement {
 
     return html`
       <app-header
-        .narrow=${this.narrow}
+        ?hidden=${this.embedded && this.cardOptions.show_header === false}
+        .compact=${this.embedded}
+        .narrow=${this.narrow && !this.embedded}
         ?light=${!(this._hass?.themes?.darkMode ?? false)}
         .floors=${this._orderedFloors}
         .selectedFloorId=${this._currentFloorId}
@@ -3345,62 +3414,73 @@ export class FloorplanPlusPanel extends LitElement {
               </icon-popover>`
             : nothing
         }
-        <icon-popover
-          slot="end"
-          icon="mdi:dots-vertical"
-          label=${localize("menu.more")}
-          .open=${this._moreOptionsPopoverOpen}
-          @toggle=${this._onToggleMoreOptionsPopover}
-        >
-          <button
-            class="menu-item"
-            @click=${() => {
-              this._moreOptionsPopoverOpen = false;
-              window.open(GETTING_STARTED_URL, "_blank", "noopener");
-            }}
-          >
-            <ha-icon icon="mdi:book-open-variant"></ha-icon>
-            ${localize("menu.gettingStarted")}
-          </button>
-          ${
-            this._editing
-              ? html`<button
-                    class="menu-item"
-                    @click=${() => {
-                      this._moreOptionsPopoverOpen = false;
-                      this._onExportClick();
-                    }}
-                  >
-                    <ha-icon icon="mdi:download"></ha-icon>
-                    ${localize("menu.exportJson")}
-                  </button>
-                  <button
-                    class="menu-item"
-                    title=${localize("menu.debugReportHint")}
-                    aria-label=${localize("menu.debugReportHint")}
-                    @click=${() => {
-                      this._moreOptionsPopoverOpen = false;
-                      void this._downloadDebugReport();
-                    }}
-                  >
-                    <ha-icon icon="mdi:bug"></ha-icon>
-                    ${localize("menu.debugReport")}
-                  </button>
-                  <button
-                    class="menu-item danger"
-                    @click=${() => {
-                      this._moreOptionsPopoverOpen = false;
-                      this._onResetClick();
-                    }}
-                  >
-                    <ha-icon icon="mdi:delete-sweep"></ha-icon>
-                    ${this._view === "property" ? localize("menu.resetProperty") : localize("menu.resetFloor")}
-                  </button>`
-              : nothing
-          }
-        </icon-popover>
+        ${this.embedded ? nothing : this._renderMoreOptions()}
       </app-header>
+      ${this._renderBody()}
+    `;
+  }
 
+  private _renderMoreOptions() {
+    return html`
+      <icon-popover
+        slot="end"
+        icon="mdi:dots-vertical"
+        label=${localize("menu.more")}
+        .open=${this._moreOptionsPopoverOpen}
+        @toggle=${this._onToggleMoreOptionsPopover}
+      >
+        <button
+          class="menu-item"
+          @click=${() => {
+            this._moreOptionsPopoverOpen = false;
+            window.open(GETTING_STARTED_URL, "_blank", "noopener");
+          }}
+        >
+          <ha-icon icon="mdi:book-open-variant"></ha-icon>
+          ${localize("menu.gettingStarted")}
+        </button>
+        ${
+          this._editing
+            ? html`<button
+                  class="menu-item"
+                  @click=${() => {
+                    this._moreOptionsPopoverOpen = false;
+                    this._onExportClick();
+                  }}
+                >
+                  <ha-icon icon="mdi:download"></ha-icon>
+                  ${localize("menu.exportJson")}
+                </button>
+                <button
+                  class="menu-item"
+                  title=${localize("menu.debugReportHint")}
+                  aria-label=${localize("menu.debugReportHint")}
+                  @click=${() => {
+                    this._moreOptionsPopoverOpen = false;
+                    void this._downloadDebugReport();
+                  }}
+                >
+                  <ha-icon icon="mdi:bug"></ha-icon>
+                  ${localize("menu.debugReport")}
+                </button>
+                <button
+                  class="menu-item danger"
+                  @click=${() => {
+                    this._moreOptionsPopoverOpen = false;
+                    this._onResetClick();
+                  }}
+                >
+                  <ha-icon icon="mdi:delete-sweep"></ha-icon>
+                  ${this._view === "property" ? localize("menu.resetProperty") : localize("menu.resetFloor")}
+                </button>`
+            : nothing
+        }
+      </icon-popover>
+    `;
+  }
+
+  private _renderBody() {
+    return html`
       ${
         this._settingsOpen
           ? html`<settings-page
@@ -3592,7 +3672,12 @@ export class FloorplanPlusPanel extends LitElement {
                           .backgroundOffsetY=${this._layout.background_offset_y}
                           .backgroundScale=${this._layout.background_scale}
                           .alignOverlay=${this._alignOverlay}
-                          .initialViewBox=${this._layout.view_box}
+                          .initialViewBox=${
+                            // A card has its own shape: fit, don't reuse
+                            // the panel's saved view.
+                            this.embedded ? null : this._layout.view_box
+                          }
+                          .homePoints=${this._cardRoom?.points ?? null}
                           .sameBuildingAsPrevious=${this._sameBuildingAsPreviousFloor}
                           .mode=${this._editing ? this._mode : "select"}
                           .readonly=${!this._editing}
@@ -3727,6 +3812,9 @@ export class FloorplanPlusPanel extends LitElement {
                               .areas=${this._areas}
                               .currentFloorId=${this._currentFloorId}
                               .linkedAreaIds=${this._outdoorAreaIdsOnCurrentFloor}
+                              .rooms=${this._layout.rooms}
+                              .focusRoomId=${this._selectedRoomId}
+                              @suggestion-place=${this._onSuggestionPlace}
                               @entity-armed=${this._onEntityArmed}
                               @pin-locate=${this._onPickerPinLocate}
                               @pin-remove=${this._onPickerPinRemove}

@@ -207,7 +207,12 @@
     "showPlaced": "Placed",
     "locate": "Show on plan",
     "remove": "Remove from plan",
-    "title": "Place device"
+    "title": "Place device",
+    "suggestedFor": "Suggested for {room} · {count}",
+    "placeAll": "Place all",
+    "placeAllHint": "Place all of these in {room}",
+    "placeInRoom": "Place in {room}",
+    "allDevices": "All devices"
   },
   "iconPicker": {
     "title": "Choose an icon",

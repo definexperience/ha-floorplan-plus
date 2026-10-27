@@ -229,6 +229,44 @@ export const entityPickerSidebarStyles = css`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .suggest-head {
+    display: flex;
+    align-items: center;
+    gap: var(--ha-space-2, 8px);
+    padding: var(--ha-space-3, 12px) var(--ha-space-4, 16px)
+      var(--ha-space-1, 4px);
+  }
+  .suggest-title {
+    flex: 1;
+    min-width: 0;
+    color: var(--sc-accent, var(--primary-color));
+    font-size: var(--sc-fs-small, 12px);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .suggest-all {
+    flex: none;
+    padding: 4px 10px;
+    border-radius: 16px;
+    color: var(--sc-accent, var(--primary-color));
+    font-size: var(--sc-fs-small, 12px);
+    font-weight: 500;
+  }
+  .suggest-all:hover {
+    background: var(--sc-hover);
+  }
+  .suggest-divider {
+    padding: var(--ha-space-3, 12px) var(--ha-space-4, 16px)
+      var(--ha-space-1, 4px);
+    border-top: 1px solid var(--sc-divider);
+    margin-top: var(--ha-space-2, 8px);
+    color: var(--sc-fg-secondary);
+    font-size: var(--sc-fs-small, 12px);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
   .empty {
     padding: var(--ha-space-4, 16px);
     color: var(--sc-fg-secondary);

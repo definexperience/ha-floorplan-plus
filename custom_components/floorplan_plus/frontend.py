@@ -1,7 +1,8 @@
-"""Frontend static path + sidebar panel registration for Floorplan Plus.
+"""Frontend static path, sidebar panel and dashboard card for Floorplan Plus.
 
-Registers a full-page custom panel (the "browser_mod pattern"). There is no
-Lovelace card, so there is no Lovelace resource to register.
+Registers a full-page custom panel (the "browser_mod pattern"), and loads
+the small dashboard card module on every page so the card shows up in the
+dashboard card picker without adding a Lovelace resource by hand.
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ import logging
 from pathlib import Path
 
 from homeassistant.components.frontend import (
+    add_extra_js_url,
     async_register_built_in_panel,
 )
 from aiohttp import web
@@ -18,6 +20,7 @@ from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    CARD_FILENAME,
     FRONTEND_URL_PATH,
     PANEL_FILENAME,
     SIDEBAR_ICON,
@@ -104,3 +107,18 @@ def async_register_sidebar_panel(hass: HomeAssistant) -> None:
         },
     )
     _LOGGER.debug("Floorplan Plus sidebar panel registered")
+
+
+def async_register_card(hass: HomeAssistant) -> None:
+    """Load the dashboard card module on every frontend page.
+
+    The card imports the panel bundle itself, from the same URL the
+    sidebar uses (passed as ?p=), so the browser keeps one copy of it.
+    """
+    card_url = (
+        f"{URL_BASE}/{CARD_FILENAME}"
+        f"?v={_cache_bust_token(CARD_FILENAME)}"
+        f"&p={_cache_bust_token(PANEL_FILENAME)}"
+    )
+    add_extra_js_url(hass, card_url)
+    _LOGGER.debug("Floorplan Plus dashboard card registered: %s", card_url)

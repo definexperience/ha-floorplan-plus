@@ -560,3 +560,14 @@ export interface PlacementGhost {
   rooms: [number, number][][];
   walls: [number, number][][];
 }
+
+/** What a dashboard card asks the embedded panel to show — the card's
+ * own config keys (see card/floorplan-plus-card.ts). */
+export interface CardOptions {
+  /** HA floor_id to open on. */
+  floor?: string;
+  /** HA area_id whose room the card frames. */
+  area?: string;
+  /** Floor tabs and the network layers menu. On unless false. */
+  show_header?: boolean;
+}

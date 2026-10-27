@@ -207,7 +207,12 @@
     "showPlaced": "Geplaatst",
     "locate": "Tonen op plattegrond",
     "remove": "Van plattegrond verwijderen",
-    "title": "Apparaat plaatsen"
+    "title": "Apparaat plaatsen",
+    "suggestedFor": "Voorgesteld voor {room} · {count}",
+    "placeAll": "Alles plaatsen",
+    "placeAllHint": "Plaats deze allemaal in {room}",
+    "placeInRoom": "Plaatsen in {room}",
+    "allDevices": "Alle apparaten"
   },
   "iconPicker": {
     "title": "Kies een pictogram",
