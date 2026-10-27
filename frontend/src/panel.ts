@@ -102,7 +102,7 @@ const GETTING_STARTED_URL =
 /** Snap mode is per-browser, like the picker sidebar's width — a drawing
  * habit, not a fact every viewer should share. Browser storage can throw
  * or come back empty; fall back to snapping onto everything. */
-const SNAP_MODE_STORAGE_KEY = "spatial-context-snap-mode";
+const SNAP_MODE_STORAGE_KEY = "floorplan-plus-snap-mode";
 
 function readStoredSnapMode(): SnapMode {
   try {
@@ -118,8 +118,8 @@ function readStoredSnapMode(): SnapMode {
  * calibrated: roughly a typical house. */
 const DEFAULT_BUILDING_LONG_SIDE_M = 12;
 
-@safeCustomElement("spatial-context-panel")
-export class SpatialContextPanel extends LitElement {
+@safeCustomElement("floorplan-plus-panel")
+export class FloorplanPlusPanel extends LitElement {
   static override styles = [
     sharedStyles,
     selectStyles,
@@ -1471,7 +1471,7 @@ export class SpatialContextPanel extends LitElement {
     return /not a valid option|extra keys not allowed|invalid_format/i.test(
       message,
     )
-      ? `${message} — Home Assistant may need a restart to finish updating Spatial Context.`
+      ? `${message} — Home Assistant may need a restart to finish updating Floorplan Plus.`
       : message;
   }
 
@@ -1557,7 +1557,7 @@ export class SpatialContextPanel extends LitElement {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `spatial-context-debug-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `floorplan-plus-debug-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -1647,7 +1647,7 @@ export class SpatialContextPanel extends LitElement {
     }
     this._autoSaveTimer = window.setTimeout(
       () => void this._runAutoSave(),
-      SpatialContextPanel.AUTO_SAVE_DELAY_MS,
+      FloorplanPlusPanel.AUTO_SAVE_DELAY_MS,
     );
   }
 
@@ -1806,11 +1806,11 @@ export class SpatialContextPanel extends LitElement {
     const mark = document.createElement("link");
     mark.rel = "icon";
     mark.type = "image/svg+xml";
-    mark.href = "/spatial_context/spatial-context-favicon.svg";
+    mark.href = "/floorplan_plus/floorplan-plus-favicon.svg";
     const fallback = document.createElement("link");
     fallback.rel = "icon";
     fallback.type = "image/png";
-    fallback.href = "/spatial_context/spatial-context-favicon.png";
+    fallback.href = "/floorplan_plus/floorplan-plus-favicon.png";
     previous.forEach((l) => l.remove());
     head.append(mark, fallback);
     this._faviconRestore = () => {
@@ -1980,7 +1980,7 @@ export class SpatialContextPanel extends LitElement {
    * bypasses the <input accept> restriction entirely, so the MIME check has
    * to live here rather than only on the input element. */
   private async _handleBackgroundFile(file: File): Promise<void> {
-    if (!SpatialContextPanel._ACCEPTED_BACKGROUND_TYPES.has(file.type)) {
+    if (!FloorplanPlusPanel._ACCEPTED_BACKGROUND_TYPES.has(file.type)) {
       await this._notify(localize("errors.bgType"));
       return;
     }
@@ -3554,6 +3554,6 @@ export class SpatialContextPanel extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "spatial-context-panel": SpatialContextPanel;
+    "floorplan-plus-panel": FloorplanPlusPanel;
   }
 }

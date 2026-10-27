@@ -1,4 +1,4 @@
-"""Services for Spatial Context."""
+"""Services for Floorplan Plus."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .zigbee_mesh import async_get_network_map
 
 
 async def async_setup_services(hass: HomeAssistant) -> None:
-    """Register services for the Spatial Context integration."""
+    """Register services for the Floorplan Plus integration."""
 
     async def get_map_service(call: ServiceCall) -> dict:
         """Return the spatial map data."""

@@ -1,4 +1,4 @@
-"""Regression test for the map export (`spatial_context.get_map` / Export JSON).
+"""Regression test for the map export (`floorplan_plus.get_map` / Export JSON).
 
 Runs without Home Assistant installed: the HA and sibling modules the export
 needs are replaced by small stubs, so this exercises export.py's own logic.
@@ -19,7 +19,7 @@ from pathlib import Path
 EXPORT = (
     Path(__file__).resolve().parent.parent
     / "custom_components"
-    / "spatial_context"
+    / "floorplan_plus"
     / "export.py"
 )
 

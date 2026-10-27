@@ -47,7 +47,7 @@ stubs.stub(
 stubs.load("sc_debug_test", "const")
 debug = stubs.load("sc_debug_test", "debug")
 
-STACK = "Error: boom\n at https://ha.example.com:8123/spatial_context_panel.js?v=1:10:5"
+STACK = "Error: boom\n at https://ha.example.com:8123/floorplan_plus_panel.js?v=1:10:5"
 
 
 def run(coro):
@@ -78,7 +78,7 @@ class DebugLogTest(unittest.TestCase):
         (entry,) = self._lines()
         self.assertEqual(entry["event"], "js_error")
         self.assertNotIn("ha.example.com", entry["stack"])
-        self.assertIn("<origin>/spatial_context_panel.js", entry["stack"])
+        self.assertIn("<origin>/floorplan_plus_panel.js", entry["stack"])
 
     def test_nothing_is_written_when_debug_logging_is_off(self) -> None:
         SETTINGS["debug_logging"] = False

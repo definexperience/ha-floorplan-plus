@@ -161,19 +161,19 @@
     "scanTimeoutHint": "Raise it if Load mesh times out on a large mesh",
     "troubleshooting": "Troubleshooting",
     "debugLogging": "Debug logging",
-    "debugLoggingHint": "Writes spatial_context_debug.log in your config folder — ids and counts only",
+    "debugLoggingHint": "Writes floorplan_plus_debug.log in your config folder — ids and counts only",
     "about": "About",
     "version": "Version",
     "github": "GitHub repository",
     "releaseNotes": "Release notes",
     "releaseNotesHint": "What's new in each version",
     "documentation": "Documentation",
-    "documentationHint": "How to set up and use Spatial Context",
+    "documentationHint": "How to set up and use Floorplan Plus",
     "reportIssue": "Report an issue",
     "reportIssueHint": "Attach the debug report from the ⋮ menu to help find the cause",
-    "githubHint": "Greminn/ha-spatial-context — a star helps others find it",
-    "support": "Support the project",
-    "supportHint": "Free and shared as is. Buy me an espresso if it's useful",
+    "githubHint": "definexperience/ha-spatial-context — a star helps others find it",
+    "support": "Support the original project",
+    "supportHint": "Floorplan Plus is built on Spatial Context by Greminn. If it's useful, you can buy Greminn an espresso",
     "licence": "Licence"
   },
   "picker": {
@@ -226,11 +226,11 @@
     "redo": "Redo (Ctrl/Cmd+Shift+Z)"
   },
   "panel": {
-    "loading": "Loading Spatial Context…",
+    "loading": "Loading Floorplan Plus…",
     "noFloors": "No floors found. Add floors under Settings → Areas → Floors, then reopen this panel.",
     "dismiss": "Dismiss",
-    "versionRestart": "Spatial Context was updated — restart Home Assistant to finish. Until then, some changes may not save.",
-    "versionReload": "This page is running an older Spatial Context panel than the one installed. Reload the page (in Safari: Option+Cmd+R).",
+    "versionRestart": "Floorplan Plus was updated — restart Home Assistant to finish. Until then, some changes may not save.",
+    "versionReload": "This page is running an older Floorplan Plus panel than the one installed. Reload the page (in Safari: Option+Cmd+R).",
     "scaleDisagree": "Placed buildings give different scales. Check their sizes against the photo.",
     "scaleFromBuilding": "Scale (from {building}): 1 {unit} ≈ {value} units"
   },
@@ -268,7 +268,7 @@
     "refreshedMinutes": "refreshed {n}m ago"
   },
   "errors": {
-    "restartHa": "Restart Home Assistant to finish updating Spatial Context.",
+    "restartHa": "Restart Home Assistant to finish updating Floorplan Plus.",
     "needsAdmin": "This map needs a Home Assistant admin account.",
     "bluetoothVersion": "The Bluetooth map needs Home Assistant 2025.2 or newer.",
     "zigbeeFailed": "Zigbee mesh request failed",

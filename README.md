@@ -1,84 +1,56 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="brand/extras/social-preview-dark-1280x640.png">
-  <img alt="Spatial Context: give your AI assistant a floor plan of your home." src="brand/extras/social-preview-1280x640.png">
-</picture>
+# Floorplan Plus
 
-Home Assistant knows your devices by name and area, but not where anything actually *is*: how far the hallway sensor is from the router, which walls sit between a Zigbee bulb and its parent, what's on the other side of the garage door. Spatial Context lets you trace your floor plans over the top of your house plans, place your real devices on them, and hand the result to an AI assistant, an automation or a script as real-world, measured data.
+A floor plan for Home Assistant that is quick to click together and pleasant to look at every day. Trace your rooms over a picture of your floor plan, place your real devices on it, see your Zigbee and Wi-Fi network where it physically is, and include the garden and outbuildings on a property view.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/screenshots/hero-dark.png">
-  <img alt="An AI assistant answering questions about the home from the floor plan, beside the Zigbee mesh on the Top Floor" src="site/public/screenshots/hero-light.jpeg">
-</picture>
+Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spatial-context) by Greminn, which does the editing, the network layers and the property view. This fork adds what we need for daily use:
 
-*An AI assistant answering questions about the home from its floor plan, beside the Top Floor with the Zigbee mesh layer on. The conversations are illustrations of what the map makes possible.*
+- **A view mode for everyone.** Every Home Assistant user can look at the plan; only admins can change it. *(planned)*
+- **Live state on the plan.** Lights, temperature, doors and windows, motion, battery and offline devices at a glance. *(planned)*
+- **Tap through to Home Assistant.** Tap a device for its states and quick toggles, and open it in Home Assistant. *(planned)*
+- **Zoom to a room** when you tap it, and a **dashboard card** for wall tablets and phones. *(planned)*
+- **English, Dutch and German.** *(Dutch planned)*
 
-## What you get
-
-- **A floor-plan editor that looks like part of Home Assistant.** One tab per HA floor. Trace rooms and walls over your plans, add doors and windows, calibrate to real metres, and place your actual devices.
-- **Data an AI can reason about.** Rooms, walls (with material, thickness and estimated signal loss), doors and windows, and every device's position in real units, from one action or an export.
-- **A live Connectivity Map.** Zigbee, Wi-Fi, Matter/Thread and Bluetooth links drawn on your plan and coloured by signal quality, so weak spots are visible where they physically are.
-- **A whole-property view.** Place each building on a site photo or a live street or aerial map, along with devices that live outdoors.
-- **Works on a phone**, and in **English and German**, following your Home Assistant profile.
-
-## Documentation
-
-The full guide is at **<https://greminn.github.io/ha-spatial-context/>**:
-
-- [What is Spatial Context?](https://greminn.github.io/ha-spatial-context/guide/what-is-spatial-context) and [your first floor plan](https://greminn.github.io/ha-spatial-context/guide/first-floor-plan)
-- [Using the panel](https://greminn.github.io/ha-spatial-context/guide/using-the-panel), [placing devices](https://greminn.github.io/ha-spatial-context/guide/placing-devices) and [wall materials](https://greminn.github.io/ha-spatial-context/guide/wall-materials)
-- [Connectivity Map](https://greminn.github.io/ha-spatial-context/guide/connectivity-map) (what each layer needs), the [Property tab](https://greminn.github.io/ha-spatial-context/guide/property-tab) and [Settings](https://greminn.github.io/ha-spatial-context/guide/settings)
-- [Using the map with AI](https://greminn.github.io/ha-spatial-context/ai/using-ai), [the map data](https://greminn.github.io/ha-spatial-context/ai/map-data) and [automations and actions](https://greminn.github.io/ha-spatial-context/advanced/automations)
-- [Reporting a problem](https://greminn.github.io/ha-spatial-context/advanced/reporting-a-problem)
+It is installed under its own name (`floorplan_plus`), so it can sit next to Spatial Context without clashing.
 
 ## Installation
 
-Needs **Home Assistant 2024.10** or newer, with your floors set up in **Settings → Areas → Floors**. Spatial Context isn't in the HACS default repository yet, so it's added as a custom repository. A submission to HACS is planned.
+Needs **Home Assistant 2024.10** or newer, with your floors set up in **Settings → Areas → Floors**.
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Greminn&repository=ha-spatial-context&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=definexperience&repository=ha-spatial-context&category=integration)
 
-1. Click the button above, or in HACS choose **⋮ → Custom repositories**, paste `https://github.com/Greminn/ha-spatial-context` and set **Type** to **Integration**.
-2. Install **Spatial Context**.
-3. Restart Home Assistant, then **Settings → Devices & Services → Add Integration → Spatial Context**.
+1. Click the button above, or in HACS choose **⋮ → Custom repositories**, paste `https://github.com/definexperience/ha-spatial-context` and set **Type** to **Integration**.
+2. Install **Floorplan Plus**.
+3. Restart Home Assistant, then **Settings → Devices & Services → Add Integration → Floorplan Plus**.
 
-Prefer to copy files by hand? Put `custom_components/spatial_context/` into your `/config/custom_components/`. The [install guide](https://greminn.github.io/ha-spatial-context/guide/install) has the details.
+Prefer to copy files by hand? Put `custom_components/floorplan_plus/` into your `/config/custom_components/`.
 
 ## Quick start
 
-1. Open **Spatial Context** from the sidebar and pick a floor tab.
+1. Open **Floorplan Plus** from the sidebar and pick a floor tab.
 2. Add a background image, then **Set Scale** by clicking two points a known distance apart.
 3. **Trace Room** and **Trace Wall**, then **Place Device** to drop your devices on the plan.
 4. Repeat for each floor, use **Align Floors** for floors that stack, and place buildings on the **Property** tab.
 
-Changes save automatically. The [first floor plan walkthrough](https://greminn.github.io/ha-spatial-context/guide/first-floor-plan) covers each step.
+Changes save automatically. Editing works the same as in Spatial Context, so its [user guide](https://greminn.github.io/ha-spatial-context/) applies: [your first floor plan](https://greminn.github.io/ha-spatial-context/guide/first-floor-plan), [placing devices](https://greminn.github.io/ha-spatial-context/guide/placing-devices), the [Connectivity Map](https://greminn.github.io/ha-spatial-context/guide/connectivity-map) and the [Property tab](https://greminn.github.io/ha-spatial-context/guide/property-tab).
 
-## Using it with AI assistants and automations
+## Map data for automations
 
-`spatial_context.get_map` returns the whole layout (floors, rooms, walls with material and signal loss, doors, windows and every placed device in real units) as the action's response. It's the same data as **⋮ → Export JSON**.
+`floorplan_plus.get_map` returns the whole layout (floors, rooms, walls, doors, windows and every placed device in real units) as the action's response.
 
 ```yaml
 actions:
-  - action: spatial_context.get_map
+  - action: floorplan_plus.get_map
     response_variable: home_map
 ```
 
-An assistant can work out which room a device is in, how far apart two devices are, and which walls sit between a Zigbee router and a flaky sensor, without knowing anything about the editor. See [the map data](https://greminn.github.io/ha-spatial-context/ai/map-data) for the full shape.
-
-## Support the project
-
-Spatial Context is a personal project, free and shared as is. If it's useful to you and you'd like to say thanks, you can [buy me an espresso](https://buymeacoffee.com/greminn). It's never expected, and bug reports and ideas are just as welcome.
-
-<a href="https://buymeacoffee.com/greminn"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20an%20espresso&emoji=&slug=greminn&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy me an espresso" height="50"></a>
+The shape is described in [the original map data guide](https://greminn.github.io/ha-spatial-context/ai/map-data).
 
 ## Feedback
 
-Found a bug, or have an idea? Please [open an issue](https://github.com/Greminn/ha-spatial-context/issues). Problems and feature ideas are equally welcome, not just polished bug reports.
-
-## Also from me
-
-**Home Desk**: a place for everything that needs your attention in your smart home. Coming soon.
+Found a bug, or have an idea? Please [open an issue](https://github.com/definexperience/ha-spatial-context/issues).
 
 ## Development and licence
 
-Building, testing and deploying are covered in [docs/development.md](docs/development.md). The panel is built from `frontend/` (Lit and TypeScript) and the output is committed, so HACS and a manual copy need no build step.
+Building, testing and releasing are covered in [docs/development.md](docs/development.md). The panel is built from `frontend/` (Lit and TypeScript) and the output is committed, so HACS and a manual copy need no build step.
 
-[MIT](LICENSE)
+[MIT](LICENSE). Based on Spatial Context, copyright Simon Buchanan. If the original is useful to you, you can [support its author](https://buymeacoffee.com/greminn).

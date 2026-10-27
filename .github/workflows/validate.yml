@@ -37,9 +37,9 @@ jobs:
         run: |
           python3 - <<'PY'
           import json
-          manifest = json.load(open("custom_components/spatial_context/manifest.json"))["version"]
+          manifest = json.load(open("custom_components/floorplan_plus/manifest.json"))["version"]
           package = json.load(open("frontend/package.json"))["version"]
-          build = json.load(open("custom_components/spatial_context/www/spatial-context-panel.build.json"))["version"]
+          build = json.load(open("custom_components/floorplan_plus/www/floorplan-plus-panel.build.json"))["version"]
           assert manifest == package == build, (manifest, package, build)
           PY
 

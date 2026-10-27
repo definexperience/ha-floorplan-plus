@@ -1,8 +1,6 @@
 name: docs
+# Manual only in this fork: site/ still holds the original Spatial Context guide.
 on:
-  push:
-    branches: [main]
-    paths: ["site/**", ".github/workflows/docs.yml"]
   workflow_dispatch:
 permissions:
   contents: read

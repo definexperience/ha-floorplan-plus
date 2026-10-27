@@ -1,4 +1,4 @@
-"""Version handshake and opt-in debug logging for Spatial Context.
+"""Version handshake and opt-in debug logging for Floorplan Plus.
 
 Two things that are otherwise invisible from outside the browser:
 
@@ -8,7 +8,7 @@ Two things that are otherwise invisible from outside the browser:
   disagree. `async_get_version_info` reports the latter two so the panel can
   say "reload" or "restart Home Assistant" instead of failing quietly.
 - **What the panel did.** With Settings → Debug logging on, the panel sends
-  short event records here, appended to `<config>/spatial_context_debug.log`
+  short event records here, appended to `<config>/floorplan_plus_debug.log`
   (capped, one rotation) — readable by a maintainer over SSH, or attached to
   an issue via the panel's "Download debug report". Records carry ids and
   counts, never device names or positions.
@@ -41,7 +41,7 @@ _BUILD_INFO = _COMPONENT_DIR / "www" / PANEL_FILENAME.replace(".js", ".build.jso
 _MANIFEST = _COMPONENT_DIR / "manifest.json"
 _LOADED_VERSION_KEY = "loaded_version"
 
-LOG_FILENAME = "spatial_context_debug.log"
+LOG_FILENAME = "floorplan_plus_debug.log"
 _LOG_MAX_BYTES = 1024 * 1024
 _REPORT_TAIL_LINES = 300
 _MAX_LINE_CHARS = 8192
@@ -103,7 +103,7 @@ def _append_lines(path: Path, lines: list[str]) -> None:
         with path.open("a", encoding="utf-8") as handle:
             handle.writelines(line + "\n" for line in lines)
     except OSError:
-        _LOGGER.warning("Couldn't write the Spatial Context debug log", exc_info=True)
+        _LOGGER.warning("Couldn't write the Floorplan Plus debug log", exc_info=True)
 
 
 async def async_append_debug_entries(

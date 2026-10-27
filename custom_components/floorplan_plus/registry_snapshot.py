@@ -1,6 +1,6 @@
 """Live reads from HA's own floor/area/entity/device registries.
 
-Spatial Context never keeps its own copy of "what floors/areas/entities
+Floorplan Plus never keeps its own copy of "what floors/areas/entities
 exist" — that's HA's job (floor_registry, area_registry, entity_registry,
 device_registry). This module only projects those live registries into
 the shapes the frontend needs.

@@ -18,7 +18,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-PKG = Path(__file__).resolve().parent.parent / "custom_components" / "spatial_context"
+PKG = Path(__file__).resolve().parent.parent / "custom_components" / "floorplan_plus"
 
 
 def _stub(name: str, **attrs: object) -> types.ModuleType:
@@ -30,7 +30,7 @@ def _stub(name: str, **attrs: object) -> types.ModuleType:
 
 def _load(name: str) -> types.ModuleType:
     spec = importlib.util.spec_from_file_location(
-        f"spatial_context.{name}", PKG / f"{name}.py", submodule_search_locations=None
+        f"floorplan_plus.{name}", PKG / f"{name}.py", submodule_search_locations=None
     )
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -46,10 +46,10 @@ def _setup() -> tuple[types.ModuleType, types.ModuleType]:
         "homeassistant.helpers",
         device_registry=_stub("homeassistant.helpers.device_registry"),
     )
-    pkg = _stub("spatial_context")
+    pkg = _stub("floorplan_plus")
     pkg.__path__ = [str(PKG)]
-    _stub("spatial_context.const", DOMAIN="spatial_context")
-    _stub("spatial_context.storage", async_get_settings=mock.AsyncMock())
+    _stub("floorplan_plus.const", DOMAIN="floorplan_plus")
+    _stub("floorplan_plus.storage", async_get_settings=mock.AsyncMock())
     return _load("zigbee_mesh"), _load("zha_mesh")
 
 

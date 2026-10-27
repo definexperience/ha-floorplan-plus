@@ -21,7 +21,7 @@ const STOP_WORDS = new Set(["the", "and", "with", "power", "light", "plug"]);
 let indexPromise: Promise<IndexEntry[]> | null = null;
 
 function loadIndex(): Promise<IndexEntry[]> {
-  indexPromise ??= fetch(`/spatial_context/mdi-index.json?v=${__BUILD_ID__}`)
+  indexPromise ??= fetch(`/floorplan_plus/mdi-index.json?v=${__BUILD_ID__}`)
     .then((res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json() as Promise<IndexEntry[]>;

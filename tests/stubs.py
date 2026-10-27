@@ -12,7 +12,7 @@ import sys
 import types
 from pathlib import Path
 
-PKG_DIR = Path(__file__).resolve().parent.parent / "custom_components" / "spatial_context"
+PKG_DIR = Path(__file__).resolve().parent.parent / "custom_components" / "floorplan_plus"
 
 
 def stub(name: str, **attrs: object) -> types.ModuleType:
@@ -29,7 +29,7 @@ def new_package(name: str) -> types.ModuleType:
 
 
 def load(package: str, name: str) -> types.ModuleType:
-    """Load custom_components/spatial_context/<name>.py as <package>.<name>."""
+    """Load custom_components/floorplan_plus/<name>.py as <package>.<name>."""
     spec = importlib.util.spec_from_file_location(f"{package}.{name}", PKG_DIR / f"{name}.py")
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

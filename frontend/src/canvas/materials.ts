@@ -12,7 +12,7 @@ import { localize } from "../i18n";
  * starting value offered when a new wall picks this material or an old
  * wall (saved before thickness existed) needs a fallback — never silently
  * re-applied over a thickness the user already set. Mirrored in
- * custom_components/spatial_context/export.py; keep both in sync if this
+ * custom_components/floorplan_plus/export.py; keep both in sync if this
  * list changes. */
 export interface WallMaterial {
   id: string;

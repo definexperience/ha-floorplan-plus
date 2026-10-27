@@ -5,7 +5,8 @@ import type { Settings } from "../types";
 import { localize } from "../i18n";
 import { selectStyles, sharedStyles, switchStyles } from "../styles";
 
-const REPO = "https://github.com/Greminn/ha-spatial-context";
+const REPO = "https://github.com/definexperience/ha-spatial-context";
+// The user guide is still upstream's; editing works the same in this fork.
 const DOCS = "https://greminn.github.io/ha-spatial-context/";
 const SUPPORT = "https://buymeacoffee.com/greminn";
 

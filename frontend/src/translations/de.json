@@ -161,19 +161,19 @@
     "scanTimeoutHint": "Erhöhen, wenn „Mesh laden“ bei einem großen Mesh abbricht",
     "troubleshooting": "Fehlerbehebung",
     "debugLogging": "Debug-Protokollierung",
-    "debugLoggingHint": "Schreibt spatial_context_debug.log in Ihren Konfigurationsordner – nur IDs und Anzahlen",
+    "debugLoggingHint": "Schreibt floorplan_plus_debug.log in Ihren Konfigurationsordner – nur IDs und Anzahlen",
     "about": "Info",
     "version": "Version",
     "github": "GitHub-Repository",
     "releaseNotes": "Versionshinweise",
     "releaseNotesHint": "Was in jeder Version neu ist",
     "documentation": "Dokumentation",
-    "documentationHint": "So richtest du Spatial Context ein und nutzt es",
+    "documentationHint": "So richtest du Floorplan Plus ein und nutzt es",
     "reportIssue": "Problem melden",
     "reportIssueHint": "Hänge den Debug-Bericht aus dem ⋮-Menü an, um die Ursache zu finden",
-    "githubHint": "Greminn/ha-spatial-context – ein Stern hilft anderen, es zu finden",
-    "support": "Projekt unterstützen",
-    "supportHint": "Kostenlos und ohne Gewähr. Spendiere mir einen Espresso, wenn es dir nützt",
+    "githubHint": "definexperience/ha-spatial-context – ein Stern hilft anderen, es zu finden",
+    "support": "Das Originalprojekt unterstützen",
+    "supportHint": "Floorplan Plus baut auf Spatial Context von Greminn auf. Wenn es dir nützt, kannst du Greminn einen Espresso spendieren",
     "licence": "Lizenz"
   },
   "picker": {
@@ -226,11 +226,11 @@
     "redo": "Wiederholen (Strg/Cmd+Umschalt+Z)"
   },
   "panel": {
-    "loading": "Spatial Context wird geladen…",
+    "loading": "Floorplan Plus wird geladen…",
     "noFloors": "Keine Etagen gefunden. Fügen Sie Etagen unter Einstellungen → Bereiche → Etagen hinzu und öffnen Sie dieses Panel erneut.",
     "dismiss": "Schließen",
-    "versionRestart": "Spatial Context wurde aktualisiert – starten Sie Home Assistant neu, um den Vorgang abzuschließen. Bis dahin werden manche Änderungen möglicherweise nicht gespeichert.",
-    "versionReload": "Diese Seite verwendet ein älteres Spatial-Context-Panel als das installierte. Laden Sie die Seite neu (in Safari: Option+Cmd+R).",
+    "versionRestart": "Floorplan Plus wurde aktualisiert – starten Sie Home Assistant neu, um den Vorgang abzuschließen. Bis dahin werden manche Änderungen möglicherweise nicht gespeichert.",
+    "versionReload": "Diese Seite verwendet ein älteres Floorplan-Plus-Panel als das installierte. Laden Sie die Seite neu (in Safari: Option+Cmd+R).",
     "scaleDisagree": "Die platzierten Gebäude ergeben unterschiedliche Maßstäbe. Prüfen Sie ihre Größen anhand des Fotos.",
     "scaleFromBuilding": "Maßstab (von {building}): 1 {unit} ≈ {value} Einheiten"
   },
@@ -268,7 +268,7 @@
     "refreshedMinutes": "vor {n} Min. aktualisiert"
   },
   "errors": {
-    "restartHa": "Starten Sie Home Assistant neu, um die Aktualisierung von Spatial Context abzuschließen.",
+    "restartHa": "Starten Sie Home Assistant neu, um die Aktualisierung von Floorplan Plus abzuschließen.",
     "needsAdmin": "Diese Karte benötigt ein Home-Assistant-Administratorkonto.",
     "bluetoothVersion": "Die Bluetooth-Karte benötigt Home Assistant 2025.2 oder neuer.",
     "zigbeeFailed": "Zigbee-Mesh-Anfrage fehlgeschlagen",

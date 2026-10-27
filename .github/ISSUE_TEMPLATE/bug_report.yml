@@ -39,8 +39,8 @@ body:
   - type: input
     id: sc-version
     attributes:
-      label: Spatial Context version
-      description: Settings → Devices & Services → Spatial Context, or the panel's own header subtitle.
+      label: Floorplan Plus version
+      description: Settings → Devices & Services → Floorplan Plus, or the panel's own header subtitle.
       placeholder: "e.g. 0.1.0-beta.1"
     validations:
       required: true

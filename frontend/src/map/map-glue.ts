@@ -9,7 +9,7 @@ import type {
 
 /** Lazily loaded by the Property canvas (see property-canvas.ts's
  * `_ensureMap`) — built separately from the panel bundle into
- * www/map/spatial-context-map.mjs, with MapLibre's own files beside it.
+ * www/map/floorplan-plus-map.mjs, with MapLibre's own files beside it.
  *
  * Draws the same vector map as HA's map dashboard: Shortbread tiles from
  * core's `map_tiles` proxy, styled by @versatiles/style, with the proxy's
