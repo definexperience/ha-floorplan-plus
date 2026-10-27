@@ -10,6 +10,46 @@ export interface DeviceStatus {
   tone: DeviceTone;
   badge: string | null;
   lowBattery: boolean;
+  /** A light that's on: the glow drawn around its pin, in the light's own
+   * colour, stronger the brighter it is. */
+  light?: LightGlow | null;
+}
+
+export interface LightGlow {
+  /** CSS colour, e.g. "rgb(255,180,90)". */
+  color: string;
+  /** Brightness from 0 to 1. */
+  level: number;
+}
+
+/** A light with no colour of its own (a plain dimmable bulb) glows in a
+ * warm white. */
+const WARM_WHITE = "rgb(255,214,140)";
+
+/** The glow for a light entity's state, or null when it's off, offline,
+ * or not a light. */
+export function lightGlow(
+  entity: PlaceableEntity,
+  state: HassEntityState | undefined,
+): LightGlow | null {
+  if (entity.domain !== "light" || state?.state !== "on") return null;
+  const rgb = state.attributes?.["rgb_color"];
+  const color =
+    Array.isArray(rgb) &&
+    rgb.length === 3 &&
+    rgb.every((c) => typeof c === "number" && Number.isFinite(c))
+      ? `rgb(${rgb.map((c) => Math.round(clamp(c as number, 0, 255))).join(",")})`
+      : WARM_WHITE;
+  const brightness = state.attributes?.["brightness"];
+  const level =
+    typeof brightness === "number" && Number.isFinite(brightness)
+      ? clamp(brightness / 255, 0, 1)
+      : 1;
+  return { color, level };
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, n));
 }
 
 /** Below this a battery counts as low, matching HA's own battery icons. */
@@ -109,6 +149,7 @@ export function deviceStatus(
   if (!rep) return { tone: "neutral", badge: null, lowBattery: false };
 
   let tone = toneFor(rep, states[rep.entity_id]);
+  const light = lightGlow(rep, states[rep.entity_id]);
   let badge: string | null = null;
   let lowBattery = false;
 
@@ -143,7 +184,7 @@ export function deviceStatus(
       tone = "alert";
     }
   }
-  return { tone, badge, lowBattery };
+  return { tone, badge, lowBattery, light };
 }
 
 /** Pin fill per tone. HA's own theme variables first, so a theme recolours
@@ -168,7 +209,9 @@ export function toneColor(tone: DeviceTone): string {
 export function statusSignature(statuses: Map<string, DeviceStatus>): string {
   return [...statuses.entries()]
     .map(
-      ([id, s]) => `${id}:${s.tone}:${s.badge ?? ""}:${s.lowBattery ? 1 : 0}`,
+      ([id, s]) =>
+        `${id}:${s.tone}:${s.badge ?? ""}:${s.lowBattery ? 1 : 0}:` +
+        (s.light ? `${s.light.color}@${s.light.level.toFixed(2)}` : ""),
     )
     .join("|");
 }

@@ -984,6 +984,9 @@ export class PropertyCanvas extends LitElement {
       pin.device_id && this.statuses
         ? this.statuses.get(pin.device_id)
         : undefined;
+    const label =
+      pin.label_override ??
+      pinDisplayLabel(pin.device_id, this.entityLookup.values());
     return this._pinIcons.renderMarker(
       pin.x,
       pin.y,
@@ -991,11 +994,14 @@ export class PropertyCanvas extends LitElement {
       this._pinIcons.iconForPin(pin, this.entityLookup.values()),
       status ? toneColor(status.tone) : "var(--sc-accent)",
       pin.id === this.selectedPinId,
-      pin.label_override ??
-        pinDisplayLabel(pin.device_id, this.entityLookup.values()),
-      status
-        ? { badge: status.badge, lowBattery: status.lowBattery }
-        : undefined,
+      label,
+      {
+        badge: status?.badge,
+        lowBattery: status?.lowBattery,
+        light: status?.light,
+        caption: pin.show_label ? label : null,
+        key: pin.id,
+      },
     );
   }
 
@@ -1068,10 +1074,10 @@ export class PropertyCanvas extends LitElement {
         </button>
         <button
           @click=${() => this.fitToScreen()}
-          title=${localize("canvasControls.fit")}
-          aria-label=${localize("canvasControls.fit")}
+          title=${localize("canvasControls.home")}
+          aria-label=${localize("canvasControls.home")}
         >
-          <ha-icon icon="mdi:fit-to-screen-outline"></ha-icon>
+          <ha-icon icon="mdi:home-outline"></ha-icon>
         </button>
       </div>
     `;

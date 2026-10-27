@@ -1,6 +1,7 @@
 import { css, nothing, svg } from "lit";
 import type { ReactiveControllerHost } from "lit";
 import type { PlaceableEntity, Pin } from "../types";
+import type { LightGlow } from "./device-state";
 import { pinIntegrationDomain } from "./device-display";
 import { fetchIconPathByName } from "./icon-cache";
 import { GENERIC_DEVICE_ICON_PATH } from "./pin-icons";
@@ -56,8 +57,20 @@ export const pinStyles = css`
     stroke: white;
     stroke-width: 1.5;
   }
+  .pin-caption {
+    fill: var(--sc-fg, #212121);
+    stroke: var(--sc-panel-bg, #fff);
+    stroke-linejoin: round;
+    paint-order: stroke;
+    font-family: var(--ha-font-family-body, Roboto, sans-serif);
+    font-weight: 500;
+    text-anchor: middle;
+    dominant-baseline: hanging;
+  }
   .pin-badge,
-  .pin-battery {
+  .pin-battery,
+  .pin-caption,
+  .pin-glow {
     pointer-events: none;
   }
 `;
@@ -65,8 +78,14 @@ export const pinStyles = css`
 /** What view mode adds to a marker: a short reading beside it and a red
  * dot for a low battery. */
 export interface PinExtras {
-  badge?: string | null;
-  lowBattery?: boolean;
+  badge?: string | null | undefined;
+  lowBattery?: boolean | undefined;
+  /** A light that's on glows around its marker. */
+  light?: LightGlow | null | undefined;
+  /** The device's name, drawn under the marker. */
+  caption?: string | null | undefined;
+  /** Makes the glow's gradient id unique within the canvas. */
+  key?: string | undefined;
 }
 
 /** Which icon to draw for a placed device, per host canvas — holds that
@@ -140,9 +159,31 @@ export class PinIconResolver {
     const fontSize = r * 0.9;
     const badgeW = badge ? fontSize * (0.62 * badge.length + 0.9) : 0;
     const badgeH = fontSize * 1.5;
+    const light = extras.light ?? null;
+    const caption = extras.caption ?? null;
+    const glowId = `pin-glow-${extras.key ?? `${x}-${y}`}`;
+    // Brighter light, wider and stronger glow; a dimmed one still shows.
+    const glowR = r * (2.2 + 2.3 * (light?.level ?? 0));
+    const glowOpacity = 0.4 + 0.5 * (light?.level ?? 0);
     return svg`
       <g>
         <title>${label}</title>
+        ${
+          light
+            ? svg`<radialGradient id=${glowId}>
+                <stop offset="0%" stop-color=${light.color} stop-opacity=${glowOpacity}></stop>
+                <stop offset="45%" stop-color=${light.color} stop-opacity=${glowOpacity * 0.6}></stop>
+                <stop offset="100%" stop-color=${light.color} stop-opacity="0"></stop>
+              </radialGradient>
+              <circle
+                class="pin-glow"
+                cx=${x}
+                cy=${y}
+                r=${glowR}
+                fill="url(#${glowId})"
+              ></circle>`
+            : nothing
+        }
         <circle
           class="pin-dot ${selected ? "selected" : ""}"
           cx=${x}
@@ -202,6 +243,17 @@ export class PinIconResolver {
                 cy=${y - r * 0.75}
                 r=${r * 0.32}
               ></circle>`
+            : nothing
+        }
+        ${
+          caption
+            ? svg`<text
+                class="pin-caption"
+                x=${x}
+                y=${y + r * 1.25}
+                font-size=${r * 0.95}
+                stroke-width=${r * 0.22}
+              >${caption}</text>`
             : nothing
         }
         <circle class="pin-hit" cx=${x} cy=${y} r=${r * 1.4}></circle>

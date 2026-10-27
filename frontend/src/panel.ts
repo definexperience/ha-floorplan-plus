@@ -1336,6 +1336,11 @@ export class FloorplanPlusPanel extends LitElement {
     });
   };
 
+  private _onOutdoorPinOptionsChange = (e: CustomEvent<Partial<Pin>>) => {
+    const pin = this._selectedOutdoorPin;
+    if (pin) this._patchOutdoorPin(pin.id, e.detail);
+  };
+
   /** The Property info cards' close button. */
   private _onPropertySelectionClear = () => {
     this._selectedPlacementId = null;
@@ -2424,6 +2429,11 @@ export class FloorplanPlusPanel extends LitElement {
     const pin = this._selectedPin;
     if (!pin) return;
     this._patchPin(pin.id, { label_override: e.detail.label.trim() || null });
+  };
+
+  private _onPinOptionsChange = (e: CustomEvent<Partial<Pin>>) => {
+    const pin = this._selectedPin;
+    if (pin) this._patchPin(pin.id, e.detail);
   };
 
   private _onPinSetIcon = () => {
@@ -3517,6 +3527,8 @@ export class FloorplanPlusPanel extends LitElement {
                           }
                           .selectedPinOverride=${this._selectedOutdoorPin?.label_override ?? null}
                           .selectedPinDeviceId=${this._selectedOutdoorPin?.device_id ?? null}
+                          .selectedPinOptions=${this._selectedOutdoorPin}
+                          @outdoor-pin-options-change=${this._onOutdoorPinOptionsChange}
                           .meshLinks=${this._propertyMeshLinks}
                           .networkLabel=${this._networkLabel}
                           .floorNameById=${this._floorNameById}
@@ -3688,6 +3700,7 @@ export class FloorplanPlusPanel extends LitElement {
                           @pin-label-change=${this._onPinLabelChange}
                           @pin-set-icon-click=${this._onPinSetIcon}
                           @pin-height-change=${this._onPinHeightChange}
+                          @pin-options-change=${this._onPinOptionsChange}
                           @pin-delete-click=${this._onPinDelete}
                           @wall-material-change=${this._onWallMaterialChange}
                           @wall-thickness-change=${this._onWallThicknessChange}

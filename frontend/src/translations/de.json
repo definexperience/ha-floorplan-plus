@@ -80,7 +80,10 @@
       "setIcon": "Symbol festlegen",
       "delete": "Gerät entfernen",
       "removeFromSpot": "Von dieser Stelle entfernen",
-      "stackTitle": "{count} Geräte an dieser Stelle"
+      "stackTitle": "{count} Geräte an dieser Stelle",
+      "showLabel": "Namen im Plan anzeigen",
+      "usersCanControl": "Benutzer dürfen schalten",
+      "usersCanControlHint": "Aus: Benutzer ohne Adminrechte sehen nur den Status"
     },
     "wall": {
       "material": "Wandmaterial",
@@ -126,7 +129,8 @@
     "noEntities": "Für dieses Gerät gibt es nichts anzuzeigen",
     "more": "{count} weitere in Home Assistant",
     "openDevice": "In Home Assistant öffnen",
-    "details": "Details"
+    "details": "Details",
+    "viewOnly": "Nur ansehen"
   },
   "mapBackground": {
     "noWebgl": "Dieser Browser kann die Karte nicht darstellen (WebGL2 erforderlich).",
@@ -352,7 +356,7 @@
   "canvasControls": {
     "zoomIn": "Vergrößern",
     "zoomOut": "Verkleinern",
-    "fit": "An Bildschirm anpassen"
+    "home": "Zurück zum ganzen Plan"
   },
   "materials": {
     "timber_frame": "Holzständerwand (Trockenbau)",

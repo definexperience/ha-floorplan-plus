@@ -80,7 +80,10 @@
       "setIcon": "Set icon",
       "delete": "Remove device",
       "removeFromSpot": "Remove from this spot",
-      "stackTitle": "{count} devices at this spot"
+      "stackTitle": "{count} devices at this spot",
+      "showLabel": "Show name on the plan",
+      "usersCanControl": "Users can switch it",
+      "usersCanControlHint": "Off: users who aren't admins only see its state"
     },
     "wall": {
       "material": "Wall material",
@@ -126,7 +129,8 @@
     "noEntities": "Nothing to show for this device",
     "more": "{count} more in Home Assistant",
     "openDevice": "Open in Home Assistant",
-    "details": "Details"
+    "details": "Details",
+    "viewOnly": "View only"
   },
   "mapBackground": {
     "noWebgl": "This browser can't draw the map (WebGL2 is needed).",
@@ -352,7 +356,7 @@
   "canvasControls": {
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "fit": "Fit to screen"
+    "home": "Back to the whole plan"
   },
   "materials": {
     "timber_frame": "Timber framed (drywall)",

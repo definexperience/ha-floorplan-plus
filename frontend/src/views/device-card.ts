@@ -70,6 +70,14 @@ export class DeviceCard extends LitElement {
       .entity-value.offline {
         color: var(--sc-danger);
       }
+      .view-only {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .view-only ha-icon {
+        --mdc-icon-size: 18px;
+      }
     `,
   ];
 
@@ -80,6 +88,14 @@ export class DeviceCard extends LitElement {
   /** Every placeable entity; the card picks this device's own. */
   @property({ attribute: false }) entities: PlaceableEntity[] = [];
   @property({ attribute: false }) status: DeviceStatus | null = null;
+  /** The admin made this device view-only: users who aren't admins see
+   * its states but get no switches and no more-info dialog (which has
+   * its own controls). */
+  @property({ attribute: false }) viewOnly = false;
+
+  private get _canControl(): boolean {
+    return (this.hass?.user?.is_admin ?? false) || !this.viewOnly;
+  }
 
   private _fire(name: string, detail?: unknown) {
     this.dispatchEvent(
@@ -124,7 +140,13 @@ export class DeviceCard extends LitElement {
   private _renderRow(e: PlaceableEntity) {
     const st = this.hass?.states[e.entity_id];
     const offline = !st || st.state === "unavailable";
-    const toggle = TOGGLE_DOMAINS.has(e.domain) && !offline;
+    const canControl = this._canControl;
+    const toggle = canControl && TOGGLE_DOMAINS.has(e.domain) && !offline;
+    if (!canControl) {
+      return html`<div class="info-row">
+        ${this._renderRowContent(e, st, offline, false)}
+      </div>`;
+    }
     return html`<div
       class="info-row entity-row"
       role="button"
@@ -137,7 +159,17 @@ export class DeviceCard extends LitElement {
         }
       }}
     >
-      ${
+      ${this._renderRowContent(e, st, offline, toggle)}
+    </div>`;
+  }
+
+  private _renderRowContent(
+    e: PlaceableEntity,
+    st: HassEntityState | undefined,
+    offline: boolean,
+    toggle: boolean,
+  ) {
+    return html` ${
         st
           ? html`<ha-state-icon
               .hass=${this.hass}
@@ -163,8 +195,7 @@ export class DeviceCard extends LitElement {
           : html`<span class="entity-value ${offline ? "offline" : ""}"
               >${offline ? localize("deviceCard.offline") : this._value(st)}</span
             >`
-      }
-    </div>`;
+      }`;
   }
 
   override render() {
@@ -214,20 +245,25 @@ export class DeviceCard extends LitElement {
       `,
       footer: html`
         ${
-          isAdmin && this.deviceId
-            ? html`<button class="primary" @click=${this._openDevicePage}>
-                <ha-icon icon="mdi:open-in-app"></ha-icon>
-                ${localize("deviceCard.openDevice")}
-              </button>`
-            : rep
-              ? html`<button
-                  class="primary"
-                  @click=${() => this._moreInfo(rep.entity_id)}
-                >
-                  <ha-icon icon="mdi:information-outline"></ha-icon>
-                  ${localize("deviceCard.details")}
+          !this._canControl
+            ? html`<span class="info-sub view-only">
+                <ha-icon icon="mdi:eye-outline"></ha-icon>
+                ${localize("deviceCard.viewOnly")}
+              </span>`
+            : isAdmin && this.deviceId
+              ? html`<button class="primary" @click=${this._openDevicePage}>
+                  <ha-icon icon="mdi:open-in-app"></ha-icon>
+                  ${localize("deviceCard.openDevice")}
                 </button>`
-              : nothing
+              : rep
+                ? html`<button
+                    class="primary"
+                    @click=${() => this._moreInfo(rep.entity_id)}
+                  >
+                    <ha-icon icon="mdi:information-outline"></ha-icon>
+                    ${localize("deviceCard.details")}
+                  </button>`
+                : nothing
         }
       `,
     });

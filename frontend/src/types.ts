@@ -43,6 +43,11 @@ export interface Pin {
   /** Mounting height in metres above floor level, e.g. for judging a
    * mmWave sensor's detection cone. Null when not specified. */
   height_m: number | null;
+  /** Draw the device's name under its marker. Off when missing. */
+  show_label?: boolean;
+  /** Users who aren't admins see this device's states but can't switch it
+   * from the plan. Admins always can. Off when missing. */
+  view_only?: boolean;
 }
 
 export interface Wall {

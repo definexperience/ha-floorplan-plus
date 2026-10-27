@@ -40,6 +40,21 @@ describe("deviceStatus", () => {
     );
   });
 
+  it("glows a light that is on in its colour and brightness", () => {
+    const entities = [entity("light.lamp", "d1")];
+    expect(
+      deviceStatus("d1", entities, {
+        "light.lamp": st("on", { rgb_color: [255, 0, 128], brightness: 51 }),
+      }).light,
+    ).toEqual({ color: "rgb(255,0,128)", level: 0.2 });
+    expect(
+      deviceStatus("d1", entities, { "light.lamp": st("on") }).light,
+    ).toEqual({ color: "rgb(255,214,140)", level: 1 });
+    expect(
+      deviceStatus("d1", entities, { "light.lamp": st("off") }).light,
+    ).toBeNull();
+  });
+
   it("marks a device offline when its main entity is unavailable", () => {
     const entities = [entity("switch.plug", "d1")];
     expect(
@@ -86,6 +101,7 @@ describe("deviceStatus", () => {
       tone: "neutral",
       badge: "19.8°",
       lowBattery: true,
+      light: null,
     });
   });
 
@@ -121,7 +137,19 @@ describe("statusSignature", () => {
     const c = new Map([
       ["d1", { tone: "active" as const, badge: "20°", lowBattery: false }],
     ]);
+    const d = new Map([
+      [
+        "d1",
+        {
+          tone: "active" as const,
+          badge: "20°",
+          lowBattery: false,
+          light: { color: "rgb(255,214,140)", level: 0.5 },
+        },
+      ],
+    ]);
     expect(statusSignature(a)).toBe(statusSignature(b));
     expect(statusSignature(a)).not.toBe(statusSignature(c));
+    expect(statusSignature(c)).not.toBe(statusSignature(d));
   });
 });

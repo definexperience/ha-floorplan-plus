@@ -38,6 +38,7 @@ import {
   fieldRow,
   infoCardStyles,
   networkGroup,
+  pinOptionRows,
   renderCard,
   selectWrap,
 } from "./info-card";
@@ -750,6 +751,9 @@ export class CanvasOverlay extends LitElement {
                   })}
               />`,
             )}
+            ${pinOptionRows(pin, (patch) =>
+              this._fire("pin-options-change", patch),
+            )}
           </div>
           ${this._renderDeviceNetwork(pin)}`,
         footer: this._deleteButton(
@@ -994,6 +998,7 @@ export class CanvasOverlay extends LitElement {
       .subtitle=${this.selectedPinWhere}
       .entities=${[...this.entityLookup.values()]}
       .status=${pin.device_id ? (this.statuses?.get(pin.device_id) ?? null) : null}
+      .viewOnly=${pin.view_only ?? false}
       @device-card-close=${this._clearSelection}
     ></device-card>`;
   }

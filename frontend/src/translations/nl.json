@@ -80,7 +80,10 @@
       "setIcon": "Pictogram instellen",
       "delete": "Apparaat verwijderen",
       "removeFromSpot": "Van deze plek verwijderen",
-      "stackTitle": "{count} apparaten op deze plek"
+      "stackTitle": "{count} apparaten op deze plek",
+      "showLabel": "Naam op de plattegrond tonen",
+      "usersCanControl": "Gebruikers mogen schakelen",
+      "usersCanControlHint": "Uit: gebruikers die geen beheerder zijn zien alleen de status"
     },
     "wall": {
       "material": "Muurmateriaal",
@@ -126,7 +129,8 @@
     "noEntities": "Niets te tonen voor dit apparaat",
     "more": "Nog {count} in Home Assistant",
     "openDevice": "Openen in Home Assistant",
-    "details": "Details"
+    "details": "Details",
+    "viewOnly": "Alleen bekijken"
   },
   "mapBackground": {
     "noWebgl": "Deze browser kan de kaart niet tekenen (WebGL2 is nodig).",
@@ -352,7 +356,7 @@
   "canvasControls": {
     "zoomIn": "Inzoomen",
     "zoomOut": "Uitzoomen",
-    "fit": "Passend maken"
+    "home": "Terug naar de hele plattegrond"
   },
   "materials": {
     "timber_frame": "Houtskeletbouw (gipsplaat)",
