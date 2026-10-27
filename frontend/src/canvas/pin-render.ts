@@ -2,9 +2,9 @@ import { css, nothing, svg } from "lit";
 import type { ReactiveControllerHost } from "lit";
 import type { PlaceableEntity, Pin } from "../types";
 import type { LightGlow } from "./device-state";
-import { pinIntegrationDomain } from "./device-display";
+import { pickDisplayEntity, pinIntegrationDomain } from "./device-display";
 import { fetchIconPathByName } from "./icon-cache";
-import { GENERIC_DEVICE_ICON_PATH } from "./pin-icons";
+import { GENERIC_DEVICE_ICON_PATH, LIGHT_ICON_PATH } from "./pin-icons";
 
 /** Device-pin drawing shared by floorplan-canvas.ts and property-canvas.ts
  * (outdoor devices), so a device looks the same wherever it's placed. */
@@ -118,16 +118,20 @@ export class PinIconResolver {
     return null;
   }
 
-  /** icon_override first (a human's own explicit choice), then that
-   * device's integration's own brand logo (a real device-level fact — see
-   * device-display.ts), then a generic fallback. Never derived from any
-   * entity's domain. */
+  /** icon_override first (a human's own explicit choice), then a light
+   * bulb for a device whose main entity is a light, then that device's
+   * integration's own brand logo (a real device-level fact — see
+   * device-display.ts), then a generic fallback. */
   iconForPin(pin: Pin, entities: Iterable<PlaceableEntity>): PinIcon {
     if (pin.icon_override) {
       const overridePath = this._iconForOverride(pin.icon_override);
       if (overridePath) return { kind: "path", d: overridePath };
     }
-    const integrationDomain = pinIntegrationDomain(pin.device_id, entities);
+    const all = [...entities];
+    if (pickDisplayEntity(pin.device_id, all)?.domain === "light") {
+      return { kind: "path", d: LIGHT_ICON_PATH };
+    }
+    const integrationDomain = pinIntegrationDomain(pin.device_id, all);
     if (integrationDomain && !this._failedBrandIcons.has(integrationDomain)) {
       return {
         kind: "image",
