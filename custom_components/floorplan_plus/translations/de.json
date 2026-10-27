@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Floorplan Plus",
-        "description": "Zeichnen Sie den Grundriss jeder Etage und platzieren Sie Ihre Geräte darauf, damit einem KI-Assistenten echter physischer Kontext zu Ihrem Zuhause zur Verfügung steht."
+        "description": "Zeichne jede Etage über ein Bild deines Grundrisses und platziere deine Geräte darauf, um ihren aktuellen Zustand und deine Netzwerke dort zu sehen, wo sie wirklich sind."
       }
     },
     "abort": {

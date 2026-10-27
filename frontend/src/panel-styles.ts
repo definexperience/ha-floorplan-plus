@@ -49,6 +49,10 @@ export const panelStyles = css`
     /* Room for the controls row the overlay draws across the top. */
     padding-top: var(--ha-space-14, 56px);
   }
+  /* View mode has no controls row. */
+  .canvas-area.view {
+    padding-top: 0;
+  }
   .canvas-area.drag-over {
     outline: 2px dashed var(--sc-accent);
     outline-offset: -2px;

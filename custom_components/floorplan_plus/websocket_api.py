@@ -1,8 +1,11 @@
 """WebSocket API for Floorplan Plus.
 
-Every command except `version` requires an admin account: the panel is
-admin-only, but websocket commands can be called by any logged-in user
-whatever the sidebar shows, so each one checks for itself.
+Every Home Assistant user can view the plan, so the read commands below are
+open to any logged-in user. Everything that changes the plan or its
+settings, exports it, or touches the debug log requires an admin account:
+websocket commands can be called by any logged-in user whatever the panel
+shows, so each write checks for itself. A Zigbee scan is the one read that
+also needs an admin (see ws_get_zigbee_mesh).
 """
 
 from __future__ import annotations
@@ -49,7 +52,6 @@ def _client_error(err: Exception, what: str) -> str:
     return f"{what} failed. See the Home Assistant log for details."
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/list_floors"})
 @websocket_api.async_response
 async def ws_list_floors(
@@ -62,7 +64,6 @@ async def ws_list_floors(
     connection.send_result(msg["id"], {"floors": floors})
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "floorplan_plus/get_layout",
@@ -269,7 +270,6 @@ async def ws_set_building_id(
     connection.send_result(msg["id"], {"success": True})
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command(
     {vol.Required("type"): "floorplan_plus/get_property_layout"}
 )
@@ -362,7 +362,6 @@ _SETTINGS_SCHEMA = {
 }
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/get_settings"})
 @websocket_api.async_response
 async def ws_get_settings(
@@ -398,7 +397,6 @@ async def ws_save_settings(
     connection.send_result(msg["id"], {"success": True})
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/list_areas"})
 @websocket_api.async_response
 async def ws_list_areas(
@@ -410,7 +408,6 @@ async def ws_list_areas(
     connection.send_result(msg["id"], {"areas": registry_snapshot.async_list_areas(hass)})
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command(
     {vol.Required("type"): "floorplan_plus/list_placeable_entities"}
 )
@@ -449,7 +446,6 @@ async def ws_export_snapshot(
     )
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "floorplan_plus/get_zigbee_mesh",
@@ -474,7 +470,10 @@ async def ws_get_zigbee_mesh(
     cache_only=True returns the cached result or null, never scanning —
     what the panel sends the moment the Zigbee layer is picked.
     """
-    if msg["cache_only"]:
+    # A scan sends an MQTT request to the Zigbee bridge and can run for
+    # minutes, so only an admin can start one; everyone else gets the last
+    # scan, or nothing yet.
+    if msg["cache_only"] or not connection.user.is_admin:
         connection.send_result(msg["id"], zigbee_mesh.get_cached_network_map(hass))
         return
     try:
@@ -489,7 +488,6 @@ async def ws_get_zigbee_mesh(
     connection.send_result(msg["id"], mesh)
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command({vol.Required("type"): "floorplan_plus/get_wifi_mesh"})
 @websocket_api.async_response
 async def ws_get_wifi_mesh(
@@ -513,7 +511,6 @@ async def ws_get_wifi_mesh(
     connection.send_result(msg["id"], mesh)
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command(
     {vol.Required("type"): "floorplan_plus/get_bluetooth_devices"}
 )

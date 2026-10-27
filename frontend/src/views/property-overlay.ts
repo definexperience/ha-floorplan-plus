@@ -2,6 +2,8 @@ import { LitElement, html, css, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
 import type {
+  HomeAssistant,
+  PlaceableEntity,
   PropertyMeshLink,
   PropertyPlacement,
   MeshLegendInfo,
@@ -15,6 +17,8 @@ import {
   toolRowStyles,
 } from "../styles";
 import "./row-actions";
+import "./device-card";
+import type { DeviceStatus } from "../canvas/device-state";
 import {
   actionRow,
   deleteButton,
@@ -110,6 +114,13 @@ export class PropertyOverlay extends LitElement {
     "select" | "place" | "place-pin" | "map" = "select";
   /** Whether a street map is on, which is what "Move map" adjusts. */
   @property({ attribute: false }) mapActive = false;
+  /** View mode: no tools; a tapped device gets its live card and a tapped
+   * building only offers its floor. */
+  @property({ type: Boolean, reflect: true }) readonly = false;
+  @property({ attribute: false }) hass?: HomeAssistant;
+  @property({ attribute: false }) entities: PlaceableEntity[] = [];
+  @property({ attribute: false }) statuses: Map<string, DeviceStatus> | null =
+    null;
   @property({ attribute: false }) mapRotation = 0;
   /** Display name of the selected outdoor device pin, or null. */
   @property({ attribute: false }) selectedPinLabel: string | null = null;
@@ -163,6 +174,18 @@ export class PropertyOverlay extends LitElement {
 
   private _renderPinPanel() {
     if (this.selectedPinLabel === null) return nothing;
+    if (this.readonly) {
+      const id = this.selectedPinDeviceId;
+      return html`<device-card
+        .hass=${this.hass}
+        .deviceId=${id}
+        .label=${this.selectedPinLabel}
+        .subtitle=${localize("property.outdoorDevice")}
+        .entities=${this.entities}
+        .status=${id ? (this.statuses?.get(id) ?? null) : null}
+        @device-card-close=${() => this._fire("selection-clear")}
+      ></device-card>`;
+    }
     return this._card({
       title: this.selectedPinLabel,
       subtitle: localize("property.outdoorDevice"),
@@ -313,6 +336,20 @@ export class PropertyOverlay extends LitElement {
   private _renderPlacementPanel() {
     const placement = this.selectedPlacement;
     if (!placement) return nothing;
+    if (this.readonly) {
+      return this._card({
+        title: this._selectedLabel(),
+        subtitle: localize("property.building"),
+        onClose: () => this._fire("selection-clear"),
+        body: html`<div class="info-group">
+          ${actionRow(
+            "mdi:arrow-right-circle",
+            localize("property.goToFloor"),
+            () => this._fire("placement-goto-floor-click"),
+          )}
+        </div>`,
+      });
+    }
     return this._card({
       title: this._selectedLabel(),
       subtitle: localize("property.building"),
@@ -367,6 +404,13 @@ export class PropertyOverlay extends LitElement {
   }
 
   override render() {
+    if (this.readonly) {
+      return html`
+        ${this.meshLegend ? renderMeshLegend(this.meshLegend) : nothing}
+        ${this._renderPinPanel()} ${this._renderMeshLinkPanel()}
+        ${this._renderPlacementPanel()}
+      `;
+    }
     return html`
       <div class="tool-row">
         <div class="mode-toolbar">

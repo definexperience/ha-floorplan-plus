@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Floorplan Plus",
+        "description": "Teken elke verdieping over een afbeelding van je plattegrond en plaats je apparaten erop, zodat je hun actuele status en je netwerken ziet waar ze echt zijn."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Floorplan Plus is al ingesteld."
+    }
+  },
+  "services": {
+    "get_map": {
+      "name": "Plattegrond ophalen",
+      "description": "Geeft de volledige plattegrond terug, met verdiepingen, ruimtes, muren en apparaten."
+    },
+    "refresh_zigbee_mesh": {
+      "name": "Zigbee-mesh vernieuwen",
+      "description": "Start een nieuwe Zigbee2MQTT-netwerkscan en bewaart het resultaat, zodat \"Mesh laden\" in het paneel het direct kan tonen. Bedoeld voor een geplande automatisering 's nachts, niet voor direct gebruik (een scan kan 1–2 minuten duren)."
+    }
+  }
+}

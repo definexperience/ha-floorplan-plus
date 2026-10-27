@@ -30,6 +30,11 @@ import type {
 } from "./types";
 import { PROPERTY_LOCATION_ID } from "./types";
 import { pinDisplayLabel } from "./canvas/device-display";
+import {
+  deviceStatus,
+  statusSignature,
+  type DeviceStatus,
+} from "./canvas/device-state";
 import { EditHistory } from "./history";
 import { MeshDataController } from "./mesh-data";
 import { debugLog } from "./debug-log";
@@ -134,6 +139,16 @@ export class FloorplanPlusPanel extends LitElement {
   @state() private _entities: PlaceableEntity[] = [];
   @state() private _areas: AreaMeta[] = [];
   @state() private _mode: CanvasMode = "select";
+  /** Edit mode, admins only. Everyone starts in view mode: the plan with
+   * live device states, tap a device for its card, tap a room to zoom. */
+  @state() private _editing = false;
+  /** Live status per placed device id, for the pins in view mode. Only
+   * replaced when something visible changes (see _refreshDeviceStatuses). */
+  @state() private _deviceStatuses: Map<string, DeviceStatus> = new Map();
+  private _deviceStatusSignature = "";
+  /** The selected device's entity states as last rendered, so its card
+   * re-renders when one of them changes. */
+  private _selectedDeviceStates: unknown[] = [];
   @state() private _snapMode: SnapMode = readStoredSnapMode();
   /** Drop-zone highlight while dragging a file over the canvas — see
    * _onCanvasDragOver/_onCanvasDrop. */
@@ -272,7 +287,97 @@ export class FloorplanPlusPanel extends LitElement {
       this._initialized = true;
       void this._init();
     }
+    if (!this._editing) this._refreshLiveState();
   }
+
+  /** The selected device's room, else its HA area, for its card. */
+  private get _selectedPinWhere(): string | null {
+    const pin = this._selectedPin;
+    if (!pin) return null;
+    const room = pin.room_id
+      ? this._layout.rooms.find((r) => r.id === pin.room_id)
+      : undefined;
+    if (room) return room.name;
+    const entity = this._entities.find(
+      (e) => e.device_id === pin.device_id && e.area_name,
+    );
+    return entity?.area_name ?? null;
+  }
+
+  /** Only admins can edit, and the server enforces it (websocket_api.py). */
+  private get _canEdit(): boolean {
+    return this._hass?.user?.is_admin ?? false;
+  }
+
+  /** Every device placed on the floor shown and on the Property tab. */
+  private get _placedDeviceIdsEverywhere(): string[] {
+    const ids = new Set<string>();
+    for (const pin of [...this._layout.pins, ...this._propertyLayout.pins]) {
+      if (pin.device_id) ids.add(pin.device_id);
+    }
+    return [...ids];
+  }
+
+  private _refreshDeviceStatuses(): void {
+    const states = this._hass?.states ?? {};
+    const statuses = new Map<string, DeviceStatus>();
+    for (const id of this._placedDeviceIdsEverywhere) {
+      statuses.set(id, deviceStatus(id, this._entities, states));
+    }
+    const signature = statusSignature(statuses);
+    if (signature !== this._deviceStatusSignature) {
+      this._deviceStatusSignature = signature;
+      this._deviceStatuses = statuses;
+    }
+  }
+
+  /** Called on every hass update in view mode: recolours pins whose look
+   * changed, and re-renders an open device card when its states change. */
+  private _refreshLiveState(): void {
+    this._refreshDeviceStatuses();
+    const deviceId =
+      this._view === "property"
+        ? this._selectedOutdoorPin?.device_id
+        : this._selectedPin?.device_id;
+    if (!deviceId) {
+      this._selectedDeviceStates = [];
+      return;
+    }
+    const states = this._entities
+      .filter((e) => e.device_id === deviceId)
+      .map((e) => this._hass?.states[e.entity_id]);
+    if (
+      states.length !== this._selectedDeviceStates.length ||
+      states.some((s, i) => s !== this._selectedDeviceStates[i])
+    ) {
+      this._selectedDeviceStates = states;
+      this.requestUpdate();
+    }
+  }
+
+  private _onEditToggle = async () => {
+    if (!this._canEdit) return;
+    if (this._editing) {
+      // Save what's pending before leaving, so view mode shows it.
+      if (this._dirty) await this._save().catch(() => undefined);
+      if (this._propertyDirty) {
+        await this._saveProperty().catch(() => undefined);
+      }
+      if (this._dirty || this._propertyDirty) return;
+    }
+    this._onCancelPending();
+    this._resetSelection();
+    this._pinStackIds = null;
+    this._mode = "select";
+    this._propertyMode = "select";
+    this._armedBuildingKey = null;
+    this._selectedPlacementId = null;
+    this._selectedOutdoorPinId = null;
+    this._selectedPropertyMeshLinkKey = null;
+    this._settingsOpen = false;
+    this._editing = !this._editing;
+    if (!this._editing) this._refreshLiveState();
+  };
   get hass(): HomeAssistant | undefined {
     return this._hass;
   }
@@ -683,7 +788,8 @@ export class FloorplanPlusPanel extends LitElement {
     this._areas = areas;
     this._propertyLayout = propertyLayout;
     this._settings = settings;
-    debugLog.configure(this._client, settings.debug_logging);
+    // The debug log is written through an admin-only command.
+    debugLog.configure(this._client, settings.debug_logging && this._canEdit);
     debugLog.log("panel_open", {
       panel_version: __VERSION__,
       panel_build: __BUILD_ID__,
@@ -1573,6 +1679,15 @@ export class FloorplanPlusPanel extends LitElement {
   /** Picking something on the canvas puts the header menus away (a layer
    * that's switched on stays on; only its menu closes). */
   override willUpdate(changed: Map<string, unknown>): void {
+    if (
+      !this._editing &&
+      (changed.has("_layout") ||
+        changed.has("_propertyLayout") ||
+        changed.has("_entities") ||
+        changed.has("_editing"))
+    ) {
+      this._refreshDeviceStatuses();
+    }
     const selectionKeys = [
       "_selectedRoomId",
       "_selectedPinId",
@@ -1889,6 +2004,14 @@ export class FloorplanPlusPanel extends LitElement {
     if (this._isTypingTarget()) return;
     // The icon picker handles its own keys; nothing behind it should react.
     if (this._iconPickerFor) return;
+    // View mode: Esc closes the open card, nothing else.
+    if (!this._editing) {
+      if (e.key === "Escape") {
+        this._onSelectionClear();
+        this._onPropertySelectionClear();
+      }
+      return;
+    }
 
     if (e.key === "Escape") {
       e.preventDefault();
@@ -1997,6 +2120,7 @@ export class FloorplanPlusPanel extends LitElement {
   }
 
   private _onCanvasDragOver = (e: DragEvent) => {
+    if (!this._editing) return;
     if (!e.dataTransfer?.types.includes("Files")) return;
     e.preventDefault();
     this._dragOverCanvas = true;
@@ -2007,6 +2131,7 @@ export class FloorplanPlusPanel extends LitElement {
   };
 
   private _onCanvasDrop = (e: DragEvent) => {
+    if (!this._editing) return;
     if (!e.dataTransfer?.types.includes("Files")) return;
     e.preventDefault();
     this._dragOverCanvas = false;
@@ -2527,6 +2652,10 @@ export class FloorplanPlusPanel extends LitElement {
   };
 
   private _onRoomSelect = (e: CustomEvent<{ roomId: string | null }>) => {
+    if (!this._editing) {
+      this._onViewRoomTap(e.detail.roomId);
+      return;
+    }
     this._selectedRoomId = e.detail.roomId;
     if (e.detail.roomId === null) {
       this._editingRoomId = null;
@@ -2541,6 +2670,25 @@ export class FloorplanPlusPanel extends LitElement {
       this._selectedMeshStub = null;
     }
   };
+
+  /** View mode: a tap on a room glides to it; a tap on empty space glides
+   * back out, unless it only closed an open card. */
+  private _onViewRoomTap(roomId: string | null): void {
+    const somethingOpen =
+      this._selectedPinId !== null ||
+      this._pinStackIds !== null ||
+      this._selectedMeshLink !== null ||
+      this._selectedMeshStub !== null;
+    if (roomId === null) {
+      if (!somethingOpen) this._canvas?.zoomToFit();
+      return;
+    }
+    const room = this._layout.rooms.find((r) => r.id === roomId);
+    if (!room) return;
+    this._resetSelection();
+    this._pinStackIds = null;
+    this._canvas?.zoomToPoints(room.points);
+  }
 
   private _onWallTraceComplete = (
     e: CustomEvent<{ points: [number, number][] }>,
@@ -3038,6 +3186,9 @@ export class FloorplanPlusPanel extends LitElement {
         .selectedFloorId=${this._currentFloorId}
         .propertySelected=${this._view === "property"}
         .page=${this._settingsOpen ? "settings" : ""}
+        .canEdit=${this._canEdit}
+        .editing=${this._editing}
+        @edit-toggle=${this._onEditToggle}
         @open-settings=${this._onOpenSettings}
         @page-back=${() => (this._settingsOpen = false)}
         @floor-selected=${this._onFloorSelected}
@@ -3093,23 +3244,43 @@ export class FloorplanPlusPanel extends LitElement {
                         <div class="menu-divider"></div>
                         ${
                           this._mesh.networkType === "zigbee"
-                            ? html`<button
-                                  class="menu-item"
-                                  ?disabled=${this._mesh.zigbeeLoading}
-                                  @click=${this._onLoadMesh}
-                                >
-                                  <ha-icon icon="mdi:refresh"></ha-icon>
-                                  ${
-                                    this._mesh.zigbeeLoading
-                                      ? localize("network.loadingZigbee", {
-                                          seconds:
-                                            this._mesh.zigbeeElapsedSeconds,
-                                        })
-                                      : this._mesh.zigbeeFetchedAt
-                                        ? localize("network.refresh")
-                                        : localize("network.load")
-                                  }
-                                </button>
+                            ? html`${
+                                  this._canEdit
+                                    ? nothing
+                                    : html`<span
+                                        class="hint"
+                                        style="padding: 4px 16px 8px"
+                                        >${localize(
+                                          this._mesh.zigbeeFetchedAt
+                                            ? "network.scanByAdmin"
+                                            : "network.noScanYet",
+                                        )}</span
+                                      >`
+                                }${
+                                  this._canEdit
+                                    ? html`<button
+                                        class="menu-item"
+                                        ?disabled=${this._mesh.zigbeeLoading}
+                                        @click=${this._onLoadMesh}
+                                      >
+                                        <ha-icon icon="mdi:refresh"></ha-icon>
+                                        ${
+                                          this._mesh.zigbeeLoading
+                                            ? localize(
+                                                "network.loadingZigbee",
+                                                {
+                                                  seconds:
+                                                    this._mesh
+                                                      .zigbeeElapsedSeconds,
+                                                },
+                                              )
+                                            : this._mesh.zigbeeFetchedAt
+                                              ? localize("network.refresh")
+                                              : localize("network.load")
+                                        }
+                                      </button>`
+                                    : nothing
+                                }
                                 <label class="popover-row">
                                   ${localize("network.showAll")}
                                   <input
@@ -3181,37 +3352,42 @@ export class FloorplanPlusPanel extends LitElement {
             <ha-icon icon="mdi:book-open-variant"></ha-icon>
             ${localize("menu.gettingStarted")}
           </button>
-          <button
-            class="menu-item"
-            @click=${() => {
-              this._moreOptionsPopoverOpen = false;
-              this._onExportClick();
-            }}
-          >
-            <ha-icon icon="mdi:download"></ha-icon>
-            ${localize("menu.exportJson")}
-          </button>
-          <button
-            class="menu-item"
-            title=${localize("menu.debugReportHint")}
-            aria-label=${localize("menu.debugReportHint")}
-            @click=${() => {
-              this._moreOptionsPopoverOpen = false;
-              void this._downloadDebugReport();
-            }}
-          >
-            <ha-icon icon="mdi:bug"></ha-icon> ${localize("menu.debugReport")}
-          </button>
-          <button
-            class="menu-item danger"
-            @click=${() => {
-              this._moreOptionsPopoverOpen = false;
-              this._onResetClick();
-            }}
-          >
-            <ha-icon icon="mdi:delete-sweep"></ha-icon>
-            ${this._view === "property" ? localize("menu.resetProperty") : localize("menu.resetFloor")}
-          </button>
+          ${
+            this._editing
+              ? html`<button
+                    class="menu-item"
+                    @click=${() => {
+                      this._moreOptionsPopoverOpen = false;
+                      this._onExportClick();
+                    }}
+                  >
+                    <ha-icon icon="mdi:download"></ha-icon>
+                    ${localize("menu.exportJson")}
+                  </button>
+                  <button
+                    class="menu-item"
+                    title=${localize("menu.debugReportHint")}
+                    aria-label=${localize("menu.debugReportHint")}
+                    @click=${() => {
+                      this._moreOptionsPopoverOpen = false;
+                      void this._downloadDebugReport();
+                    }}
+                  >
+                    <ha-icon icon="mdi:bug"></ha-icon>
+                    ${localize("menu.debugReport")}
+                  </button>
+                  <button
+                    class="menu-item danger"
+                    @click=${() => {
+                      this._moreOptionsPopoverOpen = false;
+                      this._onResetClick();
+                    }}
+                  >
+                    <ha-icon icon="mdi:delete-sweep"></ha-icon>
+                    ${this._view === "property" ? localize("menu.resetProperty") : localize("menu.resetFloor")}
+                  </button>`
+              : nothing
+          }
         </icon-popover>
       </app-header>
 
@@ -3259,7 +3435,7 @@ export class FloorplanPlusPanel extends LitElement {
                 this._view === "property"
                   ? html`
                       <div
-                        class="canvas-area ${this._dragOverCanvas ? "drag-over" : ""}"
+                        class="canvas-area ${this._dragOverCanvas ? "drag-over" : ""} ${this._editing ? "" : "view"}"
                         @dragover=${this._onCanvasDragOver}
                         @dragleave=${this._onCanvasDragLeave}
                         @drop=${this._onCanvasDrop}
@@ -3281,7 +3457,9 @@ export class FloorplanPlusPanel extends LitElement {
                           .backgroundOffsetY=${this._propertyLayout.background_offset_y}
                           .backgroundScale=${this._propertyLayout.background_scale}
                           .initialViewBox=${this._propertyLayout.view_box}
-                          .mode=${this._propertyMode}
+                          .mode=${this._editing ? this._propertyMode : "select"}
+                          .readonly=${!this._editing}
+                          .statuses=${this._editing ? null : this._deviceStatuses}
                           .selectedPlacementId=${this._selectedPlacementId}
                           .pins=${this._propertyLayout.pins}
                           .selectedPinId=${this._selectedOutdoorPinId}
@@ -3301,6 +3479,10 @@ export class FloorplanPlusPanel extends LitElement {
                           @placement-select=${this._onPlacementSelect}
                         ></property-canvas>
                         <property-overlay
+                          .readonly=${!this._editing}
+                          .hass=${this._hass}
+                          .entities=${this._entities}
+                          .statuses=${this._deviceStatuses}
                           .dirty=${this._propertyDirty}
                           .saving=${this._propertySaving}
                           .canUndo=${this._canUndo}
@@ -3356,7 +3538,7 @@ export class FloorplanPlusPanel extends LitElement {
                         >
                       </div>
                       ${
-                        this._propertyMode === "place-pin"
+                        this._editing && this._propertyMode === "place-pin"
                           ? html`<entity-picker-sidebar
                               @picker-close=${this._onPickerClose}
                               .entities=${this._entities}
@@ -3375,7 +3557,7 @@ export class FloorplanPlusPanel extends LitElement {
                     `
                   : html`
                       <div
-                        class="canvas-area ${this._dragOverCanvas ? "drag-over" : ""}"
+                        class="canvas-area ${this._dragOverCanvas ? "drag-over" : ""} ${this._editing ? "" : "view"}"
                         @dragover=${this._onCanvasDragOver}
                         @dragleave=${this._onCanvasDragLeave}
                         @drop=${this._onCanvasDrop}
@@ -3400,7 +3582,9 @@ export class FloorplanPlusPanel extends LitElement {
                           .alignOverlay=${this._alignOverlay}
                           .initialViewBox=${this._layout.view_box}
                           .sameBuildingAsPrevious=${this._sameBuildingAsPreviousFloor}
-                          .mode=${this._mode}
+                          .mode=${this._editing ? this._mode : "select"}
+                          .readonly=${!this._editing}
+                          .statuses=${this._editing ? null : this._deviceStatuses}
                           .snapMode=${this._snapMode}
                           .armedEntityId=${this._armedEntityId}
                           .armedOpeningType=${this._armedOpeningType}
@@ -3439,6 +3623,10 @@ export class FloorplanPlusPanel extends LitElement {
                         ></floorplan-canvas>
 
                         <canvas-overlay
+                          .readonly=${!this._editing}
+                          .hass=${this._hass}
+                          .statuses=${this._deviceStatuses}
+                          .selectedPinWhere=${this._selectedPinWhere}
                           .dirty=${this._dirty}
                           .saving=${this._saving}
                           .canUndo=${this._canUndo}
@@ -3516,7 +3704,7 @@ export class FloorplanPlusPanel extends LitElement {
                         >
                       </div>
                       ${
-                        this._mode === "place"
+                        this._editing && this._mode === "place"
                           ? html`<entity-picker-sidebar
                               @picker-close=${this._onPickerClose}
                               .entities=${this._entities}
