@@ -5,6 +5,11 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 ## Unreleased
 
 ### Added
+- A **home button** in the zoom controls that glides back to the whole plan.
+- **Per-device permissions**: admins can make a device view only, so users who aren't admins see its state but get no switches or Home Assistant dialog for it.
+- **Show name on the plan**, per device.
+- A light that's on **glows** around its marker in its own colour, wider and stronger the brighter it is. Lights are drawn as a light bulb unless another icon was picked.
+- A Floorplan Plus logo and icon, shown in Home Assistant and HACS.
 - A **Floorplan Plus** dashboard card: the plan with live states, view only for everyone. Pick a floor to open on, zoom in on one room, set the height, and show or hide the floor tabs. It registers itself, so there is no dashboard resource to add.
 - **Suggested devices per room** while placing devices: for each room linked to a Home Assistant area, that area's devices that aren't on the plan yet are listed first. Place one, or all of them at once, straight into the room. Selecting a room first narrows the list to that room.
 
@@ -13,7 +18,8 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 
 ### Changed
 - Renamed to Floorplan Plus (domain `floorplan_plus`), so it can be installed next to Spatial Context without clashing. The panel, actions (`floorplan_plus.get_map`), storage and debug log use the new name.
-- Repository, issue and release links point to this fork. The user guide still links to the original documentation.
+- The repository is renamed to `definexperience/ha-floorplan-plus`, and repository, issue and release links point to it. See the README for re-adding it in HACS.
+- The README documents everything this fork adds, with screenshots, and how to update through HACS. The user guide still links to the original documentation.
 
 Notes for the original releases are on the [Spatial Context releases page](https://github.com/Greminn/ha-spatial-context/releases).
 

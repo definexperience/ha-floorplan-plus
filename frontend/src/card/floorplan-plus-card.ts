@@ -237,6 +237,6 @@ if (
     name: t("name"),
     description: t("description"),
     preview: true,
-    documentationURL: "https://github.com/definexperience/ha-spatial-context",
+    documentationURL: "https://github.com/definexperience/ha-floorplan-plus",
   });
 }
