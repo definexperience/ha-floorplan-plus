@@ -5,9 +5,9 @@
   "codeowners": ["@definexperience"],
   "config_flow": true,
   "dependencies": ["http", "frontend", "panel_custom", "websocket_api", "image_upload"],
-  "documentation": "https://github.com/definexperience/ha-spatial-context",
+  "documentation": "https://github.com/definexperience/ha-floorplan-plus",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/definexperience/ha-spatial-context/issues",
+  "issue_tracker": "https://github.com/definexperience/ha-floorplan-plus/issues",
   "requirements": [],
   "version": "1.0.0"
 }
