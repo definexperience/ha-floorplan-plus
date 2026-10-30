@@ -130,7 +130,9 @@
     "more": "Nog {count} in Home Assistant",
     "openDevice": "Openen in Home Assistant",
     "details": "Details",
-    "viewOnly": "Alleen bekijken"
+    "viewOnly": "Alleen bekijken",
+    "turnOff": "{name} uitzetten",
+    "turnOn": "{name} aanzetten"
   },
   "mapBackground": {
     "noWebgl": "Deze browser kan de kaart niet tekenen (WebGL2 is nodig).",
