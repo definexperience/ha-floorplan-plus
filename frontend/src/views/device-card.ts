@@ -78,6 +78,23 @@ export class DeviceCard extends LitElement {
       .view-only ha-icon {
         --mdc-icon-size: 18px;
       }
+      /* Assumed-state (stateless) switches: HA's separate off/on buttons. */
+      .assumed {
+        display: inline-flex;
+        flex: none;
+      }
+      .assumed button {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        justify-content: center;
+      }
+      .assumed button.state-active ha-icon {
+        color: var(--sc-accent);
+      }
     `,
   ];
 
@@ -118,6 +135,41 @@ export class DeviceCard extends LitElement {
   private _toggle(entityId: string) {
     const domain = entityId.split(".")[0]!;
     void this.hass?.callService?.(domain, "toggle", { entity_id: entityId });
+  }
+
+  private _turn(entityId: string, on: boolean) {
+    const domain = entityId.split(".")[0]!;
+    void this.hass?.callService?.(domain, on ? "turn_on" : "turn_off", {
+      entity_id: entityId,
+    });
+  }
+
+  /** HA's ha-entity-toggle: an entity that only assumes its state (RF/IR
+   * switches and the like) or whose state is unknown gets separate off and
+   * on buttons instead of a switch, since a switch would claim a state the
+   * entity can't report. */
+  private _renderAssumed(e: PlaceableEntity, st: HassEntityState | undefined) {
+    const name = this._rowName(e, st);
+    const known = st?.state === "on" || st?.state === "off";
+    const stop = (ev: Event) => ev.stopPropagation();
+    return html`<span class="assumed" @click=${stop} @keydown=${stop}>
+      <button
+        class=${known && st?.state === "off" ? "state-active" : ""}
+        title=${localize("deviceCard.turnOff", { name })}
+        aria-label=${localize("deviceCard.turnOff", { name })}
+        @click=${() => this._turn(e.entity_id, false)}
+      >
+        <ha-icon icon="mdi:flash-off"></ha-icon>
+      </button>
+      <button
+        class=${known && st?.state === "on" ? "state-active" : ""}
+        title=${localize("deviceCard.turnOn", { name })}
+        aria-label=${localize("deviceCard.turnOn", { name })}
+        @click=${() => this._turn(e.entity_id, true)}
+      >
+        <ha-icon icon="mdi:flash"></ha-icon>
+      </button>
+    </span>`;
   }
 
   private _rowName(e: PlaceableEntity, st: HassEntityState | undefined) {
@@ -181,20 +233,23 @@ export class DeviceCard extends LitElement {
         >${this._rowName(e, st)}</span
       >
       ${
-        toggle
-          ? html`<input
-              type="checkbox"
-              class="switch"
-              role="switch"
-              aria-label=${this._rowName(e, st)}
-              .checked=${st?.state === "on"}
-              @click=${(ev: Event) => ev.stopPropagation()}
-              @keydown=${(ev: Event) => ev.stopPropagation()}
-              @change=${() => this._toggle(e.entity_id)}
-            />`
-          : html`<span class="entity-value ${offline ? "offline" : ""}"
-              >${offline ? localize("deviceCard.offline") : this._value(st)}</span
-            >`
+        toggle &&
+        (st?.attributes?.["assumed_state"] === true || st?.state === "unknown")
+          ? this._renderAssumed(e, st)
+          : toggle
+            ? html`<input
+                type="checkbox"
+                class="switch"
+                role="switch"
+                aria-label=${this._rowName(e, st)}
+                .checked=${st?.state === "on"}
+                @click=${(ev: Event) => ev.stopPropagation()}
+                @keydown=${(ev: Event) => ev.stopPropagation()}
+                @change=${() => this._toggle(e.entity_id)}
+              />`
+            : html`<span class="entity-value ${offline ? "offline" : ""}"
+                >${offline ? localize("deviceCard.offline") : this._value(st)}</span
+              >`
       }`;
   }
 

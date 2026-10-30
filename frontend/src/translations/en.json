@@ -130,7 +130,9 @@
     "more": "{count} more in Home Assistant",
     "openDevice": "Open in Home Assistant",
     "details": "Details",
-    "viewOnly": "View only"
+    "viewOnly": "View only",
+    "turnOff": "Turn {name} off",
+    "turnOn": "Turn {name} on"
   },
   "mapBackground": {
     "noWebgl": "This browser can't draw the map (WebGL2 is needed).",

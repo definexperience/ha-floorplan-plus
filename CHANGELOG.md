@@ -14,6 +14,7 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 - **Suggested devices per room** while placing devices: for each room linked to a Home Assistant area, that area's devices that aren't on the plan yet are listed first. Place one, or all of them at once, straight into the room. Selecting a room first narrows the list to that room.
 
 ### Fixed
+- Stateless switches (RF, IR and others that only assume their state) get separate **off** and **on** buttons in the device card, like Home Assistant shows them, instead of a switch that claims a state they can't report.
 - Adding the dashboard card no longer hangs. The card often loaded before Home Assistant's own frontend was ready, so the card picker and editor kept waiting for it.
 - The panel now follows the Home Assistant user's language. Dutch and German strings were shipped but the panel always showed English.
 
