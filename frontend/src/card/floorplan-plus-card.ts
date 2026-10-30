@@ -215,28 +215,47 @@ class FloorplanPlusCard extends HTMLElement {
   }
 }
 
-if (!customElements.get("floorplan-plus-card")) {
-  customElements.define("floorplan-plus-card", FloorplanPlusCard);
+/** Defines the card and lists it in the card picker.
+ *
+ * Waits for HA's own <home-assistant> first. frontend.py's
+ * add_extra_js_url puts this module in the page next to HA's app bundle,
+ * and this small file usually finishes first. HA's app then swaps
+ * window.customElements for its scoped registry polyfill, which can't see
+ * anything defined on the browser's registry before it: the card picker
+ * and editor wait for <floorplan-plus-card> forever and the dialog hangs.
+ * Once <home-assistant> is defined the swap has happened, so the card
+ * lands in the registry HA actually reads. (The browser's registry also
+ * learns about <home-assistant>, so this resolves with or without the
+ * polyfill.)
+ */
+async function register(): Promise<void> {
+  await customElements.whenDefined("home-assistant");
+
+  if (!customElements.get("floorplan-plus-card")) {
+    customElements.define("floorplan-plus-card", FloorplanPlusCard);
+  }
+
+  const windowWithCards = window as unknown as {
+    customCards?: {
+      type: string;
+      name: string;
+      description: string;
+      preview?: boolean;
+      documentationURL?: string;
+    }[];
+  };
+  windowWithCards.customCards = windowWithCards.customCards ?? [];
+  if (
+    !windowWithCards.customCards.some((c) => c.type === "floorplan-plus-card")
+  ) {
+    windowWithCards.customCards.push({
+      type: "floorplan-plus-card",
+      name: t("name"),
+      description: t("description"),
+      preview: true,
+      documentationURL: "https://github.com/definexperience/ha-floorplan-plus",
+    });
+  }
 }
 
-const windowWithCards = window as unknown as {
-  customCards?: {
-    type: string;
-    name: string;
-    description: string;
-    preview?: boolean;
-    documentationURL?: string;
-  }[];
-};
-windowWithCards.customCards = windowWithCards.customCards ?? [];
-if (
-  !windowWithCards.customCards.some((c) => c.type === "floorplan-plus-card")
-) {
-  windowWithCards.customCards.push({
-    type: "floorplan-plus-card",
-    name: t("name"),
-    description: t("description"),
-    preview: true,
-    documentationURL: "https://github.com/definexperience/ha-floorplan-plus",
-  });
-}
+void register();
