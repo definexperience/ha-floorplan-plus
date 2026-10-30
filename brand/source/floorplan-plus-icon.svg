@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><defs><mask id="mlight" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+<path fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round" d="M32 5 4.5 28.5H10V57.5Q10 59.5 12 59.5H52Q54 59.5 54 57.5V28.5H59.5Z"/>
+<rect fill="#000" x="15" y="31" width="34" height="23.5" rx="1"/>
+<rect fill="#fff" x="30" y="31" width="2.6" height="13"/>
+<rect fill="#fff" x="30" y="49.5" width="2.6" height="5"/>
+<rect fill="#fff" x="15" y="41.5" width="4" height="2.6"/>
+<rect fill="#fff" x="24.5" y="41.5" width="5.5" height="2.6"/>
+<rect fill="#000" x="35.5" y="35.5" width="28.5" height="28.5" rx="14.25"/>
+</mask></defs>
+<rect fill="#039be5" width="64" height="64" mask="url(#mlight)"/>
+<circle fill="#ffb300" cx="49.75" cy="49.75" r="11.25"/>
+<path fill="#ffffff" d="M48.25 43.5h3v4.75h4.75v3h-4.75v4.75h-3v-4.75h-4.75v-3h4.75z"/></svg>

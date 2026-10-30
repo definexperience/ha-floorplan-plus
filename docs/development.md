@@ -10,7 +10,7 @@
 | `frontend/` | The Lit + TypeScript panel (`src/`), rollup build, `scripts/dev/push.mjs` (rsync to a dev Home Assistant) |
 | `tests/` | The Python tests, plus `run_all.sh` (the panel's own tests sit beside its source as `frontend/src/**/*.test.ts`) |
 | `site/` | The documentation site (VitePress), published to GitHub Pages |
-| `brand/` | The brand pack (SVG masters, favicons, avatars, social previews); the integration's own images are in `custom_components/floorplan_plus/brand/` |
+| `brand/` | The Floorplan Plus brand pack (SVG masters and favicons; see `brand/README.md`) and the original Spatial Context pack in `brand/spatial-context/`; the integration's own images are in `custom_components/floorplan_plus/brand/` |
 | `docs/` | This file and the README screenshots |
 | `.github/` | `workflows/validate.yml` (CI), `workflows/docs.yml` (publishes `site/`), issue templates |
 
