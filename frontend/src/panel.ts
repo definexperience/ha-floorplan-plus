@@ -2019,7 +2019,13 @@ export class FloorplanPlusPanel extends LitElement {
     const entities = this._entities;
     return pins.filter((pin) =>
       isOnVisibleLayer(
-        deviceLayerIds(pin.device_id, entities, this._deviceLabels, defs),
+        deviceLayerIds(
+          pin.device_id,
+          entities,
+          this._deviceLabels,
+          defs,
+          pin.layer ?? null,
+        ),
         this._layersOff,
       ),
     );
@@ -2037,6 +2043,7 @@ export class FloorplanPlusPanel extends LitElement {
         this._entities,
         this._deviceLabels,
         defs,
+        pin.layer ?? null,
       )) {
         counts.set(id, (counts.get(id) ?? 0) + 1);
       }

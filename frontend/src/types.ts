@@ -57,6 +57,9 @@ export interface Pin {
   /** A radar's or camera's coverage, drawn as a wedge from its marker
    * (see canvas/detection-zone.ts). Null/missing = not drawn. */
   detection_zone?: DetectionZone | null;
+  /** The standard layer the admin put this device on (a BuiltinLayerId
+   * from canvas/layers.ts). Null/missing = picked automatically. */
+  layer?: string | null;
 }
 
 export interface DetectionZone {

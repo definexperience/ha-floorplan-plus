@@ -438,6 +438,8 @@
     "useLabel": "Use a Home Assistant label as a layer…",
     "removed": "Removed layers (tap to restore)",
     "networks": "Network layers in the menu",
-    "failed": "Couldn't save the change to Home Assistant."
+    "failed": "Couldn't save the change to Home Assistant.",
+    "standard": "Standard layer",
+    "automatic": "Automatic ({layer})"
   }
 }

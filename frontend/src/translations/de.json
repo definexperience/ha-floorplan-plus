@@ -438,6 +438,8 @@
     "useLabel": "Ein Home Assistant-Label als Ebene verwenden…",
     "removed": "Entfernte Ebenen (zum Wiederherstellen tippen)",
     "networks": "Netzwerkebenen im Menü",
-    "failed": "Die Änderung konnte nicht in Home Assistant gespeichert werden."
+    "failed": "Die Änderung konnte nicht in Home Assistant gespeichert werden.",
+    "standard": "Standardebene",
+    "automatic": "Automatisch ({layer})"
   }
 }

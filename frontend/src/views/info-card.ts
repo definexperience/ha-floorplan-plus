@@ -1,7 +1,11 @@
 import { css, html, nothing } from "lit";
 import { qualityColor } from "../canvas/mesh-colors";
 import { localize } from "../i18n";
-import type { LayerDef } from "../canvas/layers";
+import {
+  BUILTIN_LAYERS,
+  type BuiltinLayerId,
+  type LayerDef,
+} from "../canvas/layers";
 import type { PlaceableEntity, Pin } from "../types";
 
 /** HA map-panel style info card shared by the floor and Property overlays:
@@ -339,7 +343,7 @@ export function fieldRow(icon: string, label: string, control: unknown) {
  * switch it. */
 export type PinOptions = Pick<
   Pin,
-  "show_label" | "view_only" | "badge_entity_id"
+  "show_label" | "view_only" | "badge_entity_id" | "layer"
 >;
 
 export function pinOptionRows(
@@ -415,17 +419,43 @@ export function pinOptionRows(
     </div>`;
 }
 
-/** The custom layers (HA labels) a placed device is on, one switch per
- * layer. `onChange` gets the device's whole new label list, keeping any
+/** The layers a placed device is on: its standard layer (automatic, or
+ * one the admin picks) and a switch per custom layer (HA label).
+ * `onLabelsChange` gets the device's whole new label list, keeping any
  * labels that aren't layers. */
-export function pinLayerRows(
-  labelLayers: LayerDef[],
-  deviceLabels: string[],
-  onChange: (labels: string[]) => void,
-) {
-  if (labelLayers.length === 0) return nothing;
+export function pinLayerRows(opts: {
+  autoLayer: BuiltinLayerId;
+  layer: string | null;
+  onLayerChange: (layer: string | null) => void;
+  labelLayers: LayerDef[];
+  deviceLabels: string[];
+  onLabelsChange: (labels: string[]) => void;
+}) {
+  const { labelLayers, deviceLabels } = opts;
+  const name = (id: string) => localize(`layers.builtin.${id}`);
   return html`<div class="info-group">
     <div class="info-group-title">${localize("layers.title")}</div>
+    ${fieldRow(
+      "mdi:layers-outline",
+      localize("layers.standard"),
+      selectWrap(
+        html`<select
+          aria-label=${localize("layers.standard")}
+          @change=${(e: Event) =>
+            opts.onLayerChange((e.target as HTMLSelectElement).value || null)}
+        >
+          <option value="" ?selected=${!opts.layer}>
+            ${localize("layers.automatic", { layer: name(opts.autoLayer) })}
+          </option>
+          ${BUILTIN_LAYERS.map(
+            (l) =>
+              html`<option value=${l.id} ?selected=${l.id === opts.layer}>
+                ${name(l.id)}
+              </option>`,
+          )}
+        </select>`,
+      ),
+    )}
     ${labelLayers.map((layer) =>
       fieldRow(
         layer.icon,
@@ -439,7 +469,7 @@ export function pinLayerRows(
           @change=${(e: Event) => {
             const on = (e.target as HTMLInputElement).checked;
             const rest = deviceLabels.filter((l) => l !== layer.labelId);
-            onChange(on ? [...rest, layer.labelId!] : rest);
+            opts.onLabelsChange(on ? [...rest, layer.labelId!] : rest);
           }}
         />`,
       ),

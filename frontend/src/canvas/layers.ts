@@ -130,15 +130,32 @@ export function layerDefs(
   return defs;
 }
 
+function isBuiltinLayerId(id: string | null | undefined): id is BuiltinLayerId {
+  return BUILTIN_LAYERS.some((l) => l.id === id);
+}
+
+/** The standard layer a device is on: the admin's pick (the pin's
+ * `layer`), else the one its main entity gives it. */
+export function standardLayerFor(
+  deviceId: string | null,
+  entities: Iterable<PlaceableEntity>,
+  override: string | null = null,
+): BuiltinLayerId {
+  return isBuiltinLayerId(override)
+    ? override
+    : builtinLayerFor(pickDisplayEntity(deviceId, entities));
+}
+
 /** The layers (of `defs`) a device is on. */
 export function deviceLayerIds(
   deviceId: string | null,
   entities: Iterable<PlaceableEntity>,
   deviceLabels: ReadonlyMap<string, readonly string[]>,
   defs: readonly LayerDef[],
+  override: string | null = null,
 ): string[] {
   if (!deviceId) return [];
-  const builtin = builtinLayerFor(pickDisplayEntity(deviceId, entities));
+  const builtin = standardLayerFor(deviceId, entities, override);
   const labels = new Set(deviceLabels.get(deviceId) ?? []);
   return defs
     .filter((d) =>

@@ -37,7 +37,7 @@ import { qualityColor } from "../canvas/mesh-colors";
 import "./row-actions";
 import "./device-card";
 import type { DeviceStatus } from "../canvas/device-state";
-import type { LayerDef } from "../canvas/layers";
+import { builtinLayerFor, type LayerDef } from "../canvas/layers";
 import {
   actionRow,
   deleteButton,
@@ -979,15 +979,24 @@ export class CanvasOverlay extends LitElement {
           </div>
           ${
             pin.device_id
-              ? pinLayerRows(
-                  this.labelLayers,
-                  this.deviceLabels.get(pin.device_id) ?? [],
-                  (labels) =>
+              ? pinLayerRows({
+                  autoLayer: builtinLayerFor(
+                    pickDisplayEntity(
+                      pin.device_id,
+                      this.entityLookup.values(),
+                    ),
+                  ),
+                  layer: pin.layer ?? null,
+                  onLayerChange: (layer) =>
+                    this._fire("pin-options-change", { layer }),
+                  labelLayers: this.labelLayers,
+                  deviceLabels: this.deviceLabels.get(pin.device_id) ?? [],
+                  onLabelsChange: (labels) =>
                     this._fire("device-labels-change", {
                       deviceId: pin.device_id,
                       labels,
                     }),
-                )
+                })
               : nothing
           }
           ${this._renderDeviceNetwork(pin)}`,

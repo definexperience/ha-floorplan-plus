@@ -78,6 +78,12 @@ describe("layers", () => {
       labelLayerId("kids"),
     ]);
     expect(deviceLayerIds(null, entities, deviceLabels, defs)).toEqual([]);
+    expect(
+      deviceLayerIds("d1", entities, deviceLabels, defs, "security"),
+    ).toEqual(["security", labelLayerId("garden"), labelLayerId("kids")]);
+    expect(
+      deviceLayerIds("d1", entities, deviceLabels, defs, "not-a-layer"),
+    ).toEqual(["lights", labelLayerId("garden"), labelLayerId("kids")]);
   });
 
   it("shows a device while any of its layers is on", () => {

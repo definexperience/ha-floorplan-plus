@@ -20,7 +20,8 @@ import {
 import "./row-actions";
 import "./device-card";
 import type { DeviceStatus } from "../canvas/device-state";
-import type { LayerDef } from "../canvas/layers";
+import { builtinLayerFor, type LayerDef } from "../canvas/layers";
+import { pickDisplayEntity } from "../canvas/device-display";
 import {
   actionRow,
   deleteButton,
@@ -238,15 +239,22 @@ export class PropertyOverlay extends LitElement {
         </div>
         ${
           this.selectedPinDeviceId
-            ? pinLayerRows(
-                this.labelLayers,
-                this.deviceLabels.get(this.selectedPinDeviceId) ?? [],
-                (labels) =>
+            ? pinLayerRows({
+                autoLayer: builtinLayerFor(
+                  pickDisplayEntity(this.selectedPinDeviceId, this.entities),
+                ),
+                layer: this.selectedPinOptions?.layer ?? null,
+                onLayerChange: (layer) =>
+                  this._fire("outdoor-pin-options-change", { layer }),
+                labelLayers: this.labelLayers,
+                deviceLabels:
+                  this.deviceLabels.get(this.selectedPinDeviceId) ?? [],
+                onLabelsChange: (labels) =>
                   this._fire("device-labels-change", {
                     deviceId: this.selectedPinDeviceId,
                     labels,
                   }),
-              )
+              })
             : nothing
         }
         ${this._renderDeviceNetwork()}`,

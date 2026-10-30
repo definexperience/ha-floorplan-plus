@@ -148,6 +148,8 @@ _PIN_SCHEMA = {
             vol.Optional("entity_id"): vol.Any(_TEXT, None),
         },
     ),
+    # The standard layer an admin put the device on; none = automatic.
+    vol.Optional("layer"): vol.Any(_TEXT, None),
 }
 
 _WALL_SCHEMA = {
