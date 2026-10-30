@@ -147,7 +147,9 @@
     "more": "{count} weitere in Home Assistant",
     "openDevice": "In Home Assistant öffnen",
     "details": "Details",
-    "viewOnly": "Nur ansehen"
+    "viewOnly": "Nur ansehen",
+    "turnOff": "{name} ausschalten",
+    "turnOn": "{name} einschalten"
   },
   "mapBackground": {
     "noWebgl": "Dieser Browser kann die Karte nicht darstellen (WebGL2 erforderlich).",
