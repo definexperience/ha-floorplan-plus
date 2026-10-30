@@ -189,6 +189,9 @@ export class FloorplanPlusPanel extends LitElement {
   @state() private _selectedRoomId: string | null = null;
   @state() private _editingRoomId: string | null = null;
   @state() private _selectedPinId: string | null = null;
+  /** The light whose lit area is being traced (trace mode draws it
+   * instead of a new room). */
+  @state() private _lightAreaPinId: string | null = null;
   /** Pins picked together (Shift-click / Shift-drag box); 2 or more. */
   @state() private _multiPinIds: string[] = [];
   /** Set when a click/placement lands where 2+ pins share a spot — the
@@ -1644,6 +1647,7 @@ export class FloorplanPlusPanel extends LitElement {
     // "Place Device" closes the entity-picker sidebar again) rather than
     // being a no-op re-selection of the same mode.
     this._mode = this._mode === e.detail.mode ? "select" : e.detail.mode;
+    this._lightAreaPinId = null;
     this._armedEntityId = null;
     this._armedOpeningType = null;
     if (this._mode !== "select") {
@@ -3119,9 +3123,29 @@ export class FloorplanPlusPanel extends LitElement {
 
   // --- canvas ---------------------------------------------------------
 
+  /** Trace a light's lit area: the trace tool, finishing on the pin. */
+  private _onLightAreaDrawClick = () => {
+    const pin = this._selectedPin;
+    if (!pin) return;
+    this._mode = "trace";
+    this._lightAreaPinId = pin.id;
+    this._editingRoomId = null;
+    this._editingWallId = null;
+  };
+
   private _onRoomTraceComplete = (
     e: CustomEvent<{ points: [number, number][] }>,
   ) => {
+    const lightPinId = this._lightAreaPinId;
+    if (lightPinId) {
+      this._lightAreaPinId = null;
+      this._mode = "select";
+      this._patchPin(lightPinId, {
+        light_area: { mode: "shape", points: e.detail.points },
+      });
+      this._selectedPinId = lightPinId;
+      return;
+    }
     const room = newRoom("New Room", e.detail.points, null);
     const rooms = [...this._layout.rooms, room];
     this._updateLayout({
@@ -4199,6 +4223,8 @@ export class FloorplanPlusPanel extends LitElement {
                           @pin-set-icon-click=${this._onPinSetIcon}
                           @pin-height-change=${this._onPinHeightChange}
                           @pin-options-change=${this._onPinOptionsChange}
+                          @light-area-draw-click=${this._onLightAreaDrawClick}
+                          .lightAreaTracing=${this._lightAreaPinId !== null}
                           .labelLayers=${this._labelLayerDefs}
                           .deviceLabels=${this._deviceLabels}
                           @device-labels-change=${this._onDeviceLabelsChange}

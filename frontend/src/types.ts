@@ -51,6 +51,15 @@ export interface Pin {
   /** One of the device's own entities whose state is shown next to its
    * marker. Only an admin's explicit pick: null/missing shows nothing. */
   badge_entity_id?: string | null;
+  /** A light's lit area, drawn in its colour while it's on, in place of
+   * the glow around its marker. Null/missing = the glow. */
+  light_area?: LightArea | null;
+}
+
+/** "room": the light's whole room. "shape": a polygon the admin drew. */
+export interface LightArea {
+  mode: "room" | "shape";
+  points?: [number, number][];
 }
 
 export interface Wall {

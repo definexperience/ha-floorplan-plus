@@ -41,7 +41,8 @@
       "alignAgainst": "Uitlijnen op:",
       "noBackground": "Die verdieping heeft geen achtergrondafbeelding om op uit te lijnen.",
       "alignDrag": "Sleep om te verplaatsen, gebruik +/− om de grootte aan te passen en kies daarna Toepassen.",
-      "multiSelected": "{count} apparaten geselecteerd. Sleep er één om ze samen te verplaatsen."
+      "multiSelected": "{count} apparaten geselecteerd. Sleep er één om ze samen te verplaatsen.",
+      "lightArea": "Klik rond het gebied dat deze lamp verlicht. Klik op het eerste punt om af te ronden."
     },
     "openingType": {
       "door": "deur",
@@ -85,7 +86,12 @@
       "readingNone": "Geen",
       "showLabel": "Naam op de plattegrond tonen",
       "usersCanControl": "Gebruikers mogen schakelen",
-      "usersCanControlHint": "Uit: gebruikers die geen beheerder zijn zien alleen de status"
+      "usersCanControlHint": "Uit: gebruikers die geen beheerder zijn zien alleen de status",
+      "lightArea": "Verlicht gebied",
+      "lightArea_glow": "Gloed rond het icoon",
+      "lightArea_room": "Hele ruimte",
+      "lightArea_shape": "Getekende vorm",
+      "lightAreaRedraw": "Verlicht gebied opnieuw tekenen"
     },
     "wall": {
       "material": "Muurmateriaal",

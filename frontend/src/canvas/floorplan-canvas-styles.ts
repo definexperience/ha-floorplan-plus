@@ -268,4 +268,15 @@ export const floorplanCanvasStyles = css`
   }
   ${zoomControlsStyles}
   ${scaleStyles}
+  .light-area {
+    pointer-events: none;
+  }
+  .light-area-outline {
+    fill: none;
+    stroke: var(--sc-accent);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 4;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
 `;

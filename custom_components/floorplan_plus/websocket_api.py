@@ -125,6 +125,15 @@ _PIN_SCHEMA = {
     # One of the device's own entities to show beside its marker; none
     # unless an admin picked one.
     vol.Optional("badge_entity_id"): vol.Any(_TEXT, None),
+    # A light's lit area, drawn instead of the glow around its marker: its
+    # whole room, or a shape drawn on the plan.
+    vol.Optional("light_area"): vol.Any(
+        None,
+        {
+            vol.Required("mode"): vol.In(["room", "shape"]),
+            vol.Optional("points"): _POINTS,
+        },
+    ),
 }
 
 _WALL_SCHEMA = {

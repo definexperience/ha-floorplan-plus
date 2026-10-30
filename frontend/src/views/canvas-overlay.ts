@@ -27,7 +27,7 @@ import {
   materialLabel,
   wallThicknessCm,
 } from "../canvas/materials";
-import { pinDisplayLabel } from "../canvas/device-display";
+import { pickDisplayEntity, pinDisplayLabel } from "../canvas/device-display";
 import { qualityColor } from "../canvas/mesh-colors";
 import "./row-actions";
 import "./device-card";
@@ -119,6 +119,8 @@ export class CanvasOverlay extends LitElement {
   /** Custom layers (HA labels) and each device's labels, for the selected
    * device's layer switches. */
   @property({ attribute: false }) labelLayers: LayerDef[] = [];
+  /** Trace mode is drawing a light's lit area, not a room. */
+  @property({ type: Boolean }) lightAreaTracing = false;
   @property({ attribute: false }) deviceLabels: Map<string, string[]> =
     new Map();
   @property({ attribute: false }) selectedOpening: Opening | null = null;
@@ -298,9 +300,11 @@ export class CanvasOverlay extends LitElement {
       return html`<div class="hint-bar floating-panel">
         <span class="hint"
           >${
-            this.hasPendingTrace
-              ? localize("canvas.hint.closeRoom")
-              : localize("canvas.hint.addPoints")
+            this.lightAreaTracing
+              ? localize("canvas.hint.lightArea")
+              : this.hasPendingTrace
+                ? localize("canvas.hint.closeRoom")
+                : localize("canvas.hint.addPoints")
           }</span
         >
         ${this._renderSnapSelect()}
@@ -469,6 +473,53 @@ export class CanvasOverlay extends LitElement {
   private _actionRow = actionRow;
   private _fieldRow = fieldRow;
   private _selectWrap = selectWrap;
+
+  /** A light's lit area: the glow around its marker, its whole room, or a
+   * shape drawn on the plan. Lights only. */
+  private _renderLightAreaRows(pin: Pin) {
+    if (
+      pickDisplayEntity(pin.device_id, this.entityLookup.values())?.domain !==
+      "light"
+    ) {
+      return nothing;
+    }
+    const mode = pin.light_area?.mode ?? "glow";
+    return html`${this._fieldRow(
+      "mdi:lightbulb-on-outline",
+      localize("canvas.pin.lightArea"),
+      this._selectWrap(
+        html`<select
+          aria-label=${localize("canvas.pin.lightArea")}
+          @change=${(e: Event) => {
+            const value = (e.target as HTMLSelectElement).value;
+            if (value === "shape") {
+              this._fire("light-area-draw-click");
+            } else {
+              this._fire("pin-options-change", {
+                light_area: value === "room" ? { mode: "room" } : null,
+              });
+            }
+          }}
+        >
+          ${(["glow", "room", "shape"] as const).map(
+            (m) =>
+              html`<option value=${m} ?selected=${m === mode}>
+                ${localize(`canvas.pin.lightArea_${m}`)}
+              </option>`,
+          )}
+        </select>`,
+      ),
+    )}
+    ${
+      mode === "shape"
+        ? this._actionRow(
+            "mdi:vector-polygon",
+            localize("canvas.pin.lightAreaRedraw"),
+            () => this._fire("light-area-draw-click"),
+          )
+        : nothing
+    }`;
+  }
   private _deleteButton(label: string, event: string) {
     return deleteButton(label, () => this._fire(event));
   }
@@ -758,6 +809,7 @@ export class CanvasOverlay extends LitElement {
                   })}
               />`,
             )}
+            ${this._renderLightAreaRows(pin)}
             ${pinOptionRows(
               pin,
               (patch) => this._fire("pin-options-change", patch),

@@ -41,7 +41,8 @@
       "alignAgainst": "Align against:",
       "noBackground": "That floor has no background image to align against.",
       "alignDrag": "Drag to move, use +/− to resize, then Apply.",
-      "multiSelected": "{count} devices selected. Drag one to move them together."
+      "multiSelected": "{count} devices selected. Drag one to move them together.",
+      "lightArea": "Click around the area this light lights up. Click the first point to finish."
     },
     "openingType": {
       "door": "door",
@@ -85,7 +86,12 @@
       "readingNone": "None",
       "showLabel": "Show name on the plan",
       "usersCanControl": "Users can switch it",
-      "usersCanControlHint": "Off: users who aren't admins only see its state"
+      "usersCanControlHint": "Off: users who aren't admins only see its state",
+      "lightArea": "Lit area",
+      "lightArea_glow": "Glow around the icon",
+      "lightArea_room": "Whole room",
+      "lightArea_shape": "Drawn shape",
+      "lightAreaRedraw": "Redraw lit area"
     },
     "wall": {
       "material": "Wall material",

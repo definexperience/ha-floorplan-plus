@@ -31,6 +31,7 @@ import {
   pointToPolylineDistance,
   snapToAxis,
   isMouseWheel,
+  findRoomForPoint,
 } from "./geometry";
 import {
   findMeshLinkAt,
@@ -2074,6 +2075,45 @@ export class FloorplanCanvas extends LitElement {
     }));
   }
 
+  /** The polygon a pin's light area covers, or null when it has none. */
+  private _lightAreaPoints(pin: Pin): [number, number][] | null {
+    const area = pin.light_area;
+    if (!area) return null;
+    if (area.mode === "shape") {
+      return area.points && area.points.length >= 3 ? area.points : null;
+    }
+    const roomId = pin.room_id ?? findRoomForPoint(pin.x, pin.y, this.rooms);
+    const room = this.rooms.find((r) => r.id === roomId);
+    if (!room || room.points.length < 3) return null;
+    return this._effectivePoints("room", room.id, room.points);
+  }
+
+  /** Lit areas of lights that are on (view mode), drawn under the rooms
+   * so names stay readable. While editing, each drawn area shows as a
+   * dashed outline instead. */
+  private _renderLightAreas() {
+    return this._displayPins.map((pin) => {
+      const points = this._lightAreaPoints(pin);
+      if (!points) return nothing;
+      const pointsAttr = points.map(([x, y]) => `${x},${y}`).join(" ");
+      if (!this.statuses) {
+        return pin.light_area?.mode === "shape"
+          ? svg`<polygon class="light-area-outline" points=${pointsAttr}></polygon>`
+          : nothing;
+      }
+      const light = pin.device_id
+        ? this.statuses.get(pin.device_id)?.light
+        : null;
+      if (!light) return nothing;
+      return svg`<polygon
+        class="light-area"
+        points=${pointsAttr}
+        fill=${light.color}
+        fill-opacity=${0.18 + 0.37 * light.level}
+      ></polygon>`;
+    });
+  }
+
   private _renderPinGroup(group: { x: number; y: number; pins: Pin[] }) {
     const r = this._pxToUnits(PIN_RADIUS_PX);
 
@@ -2099,7 +2139,8 @@ export class FloorplanCanvas extends LitElement {
         {
           badge: status?.badge,
           lowBattery: status?.lowBattery,
-          light: status?.light,
+          // A light with a lit area shows that instead of a glow.
+          light: this._lightAreaPoints(pin) ? null : status?.light,
           caption: pin.show_label ? this._pinLabel(pin) : null,
           key: pin.id,
         },
@@ -2551,6 +2592,7 @@ export class FloorplanCanvas extends LitElement {
           @pointercancel=${this._onPointerUp}
           @pointerleave=${this._onPointerLeave}
         >
+          ${this._renderLightAreas()}
           ${this.rooms.map((room) => this._renderRoom(room))}
           ${this.walls.map((wall) => this._renderWall(wall))}
           ${this.openings.map((opening) => this._renderOpening(opening))}

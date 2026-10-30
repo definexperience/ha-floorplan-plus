@@ -41,7 +41,8 @@
       "alignAgainst": "Ausrichten an:",
       "noBackground": "Diese Etage hat kein Hintergrundbild zum Ausrichten.",
       "alignDrag": "Zum Verschieben ziehen, mit +/− die Größe ändern, dann „Anwenden“.",
-      "multiSelected": "{count} Geräte ausgewählt. Ein Gerät ziehen, um alle gemeinsam zu verschieben."
+      "multiSelected": "{count} Geräte ausgewählt. Ein Gerät ziehen, um alle gemeinsam zu verschieben.",
+      "lightArea": "Klicke rund um den Bereich, den diese Lampe beleuchtet. Klicke auf den ersten Punkt, um abzuschließen."
     },
     "openingType": {
       "door": "eine Tür",
@@ -85,7 +86,12 @@
       "readingNone": "Keiner",
       "showLabel": "Namen im Plan anzeigen",
       "usersCanControl": "Benutzer dürfen schalten",
-      "usersCanControlHint": "Aus: Benutzer ohne Adminrechte sehen nur den Status"
+      "usersCanControlHint": "Aus: Benutzer ohne Adminrechte sehen nur den Status",
+      "lightArea": "Beleuchteter Bereich",
+      "lightArea_glow": "Schein um das Symbol",
+      "lightArea_room": "Ganzer Raum",
+      "lightArea_shape": "Gezeichnete Form",
+      "lightAreaRedraw": "Beleuchteten Bereich neu zeichnen"
     },
     "wall": {
       "material": "Wandmaterial",

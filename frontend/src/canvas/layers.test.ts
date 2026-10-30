@@ -61,7 +61,7 @@ describe("layers", () => {
       "security",
       labelLayerId("kids"),
     ]);
-    expect(defs.at(-1)).toMatchObject({
+    expect(defs[defs.length - 1]).toMatchObject({
       kind: "label",
       name: "Kids",
       icon: "mdi:label-outline",
