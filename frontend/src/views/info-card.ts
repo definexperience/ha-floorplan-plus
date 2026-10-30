@@ -1,7 +1,12 @@
 import { css, html, nothing } from "lit";
 import { qualityColor } from "../canvas/mesh-colors";
 import { localize } from "../i18n";
-import type { Pin } from "../types";
+import {
+  BUILTIN_LAYERS,
+  type BuiltinLayerId,
+  type LayerDef,
+} from "../canvas/layers";
+import type { PlaceableEntity, Pin } from "../types";
 
 /** HA map-panel style info card shared by the floor and Property overlays:
  * a floating card with a close button, a title and subtitle, inner rounded
@@ -336,11 +341,52 @@ export function fieldRow(icon: string, label: string, control: unknown) {
 /** A placed device's on/off options, shared by the floor and Property
  * cards: its name on the plan, and whether users who aren't admins may
  * switch it. */
+export type PinOptions = Pick<
+  Pin,
+  "show_label" | "view_only" | "badge_entity_id" | "layer"
+>;
+
 export function pinOptionRows(
-  pin: Pick<Pin, "show_label" | "view_only">,
-  onChange: (patch: Partial<Pick<Pin, "show_label" | "view_only">>) => void,
+  pin: PinOptions,
+  onChange: (patch: Partial<PinOptions>) => void,
+  /** The device's own entities, offered as its reading on the plan. */
+  deviceEntities: PlaceableEntity[] = [],
 ) {
-  return html`${fieldRow(
+  const readings = [...deviceEntities].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  return html`${
+      readings.length > 0
+        ? fieldRow(
+            "mdi:numeric",
+            localize("canvas.pin.reading"),
+            selectWrap(
+              html`<select
+                aria-label=${localize("canvas.pin.reading")}
+                @change=${(e: Event) =>
+                  onChange({
+                    badge_entity_id:
+                      (e.target as HTMLSelectElement).value || null,
+                  })}
+              >
+                <option value="" ?selected=${!pin.badge_entity_id}>
+                  ${localize("canvas.pin.readingNone")}
+                </option>
+                ${readings.map(
+                  (e) =>
+                    html`<option
+                      value=${e.entity_id}
+                      ?selected=${e.entity_id === pin.badge_entity_id}
+                    >
+                      ${e.name}
+                    </option>`,
+                )}
+              </select>`,
+            ),
+          )
+        : nothing
+    }
+    ${fieldRow(
       "mdi:label-outline",
       localize("canvas.pin.showLabel"),
       html`<input
@@ -371,6 +417,64 @@ export function pinOptionRows(
           onChange({ view_only: !(e.target as HTMLInputElement).checked })}
       />
     </div>`;
+}
+
+/** The layers a placed device is on: its standard layer (automatic, or
+ * one the admin picks) and a switch per custom layer (HA label).
+ * `onLabelsChange` gets the device's whole new label list, keeping any
+ * labels that aren't layers. */
+export function pinLayerRows(opts: {
+  autoLayer: BuiltinLayerId;
+  layer: string | null;
+  onLayerChange: (layer: string | null) => void;
+  labelLayers: LayerDef[];
+  deviceLabels: string[];
+  onLabelsChange: (labels: string[]) => void;
+}) {
+  const { labelLayers, deviceLabels } = opts;
+  const name = (id: string) => localize(`layers.builtin.${id}`);
+  return html`<div class="info-group">
+    <div class="info-group-title">${localize("layers.title")}</div>
+    ${fieldRow(
+      "mdi:layers-outline",
+      localize("layers.standard"),
+      selectWrap(
+        html`<select
+          aria-label=${localize("layers.standard")}
+          @change=${(e: Event) =>
+            opts.onLayerChange((e.target as HTMLSelectElement).value || null)}
+        >
+          <option value="" ?selected=${!opts.layer}>
+            ${localize("layers.automatic", { layer: name(opts.autoLayer) })}
+          </option>
+          ${BUILTIN_LAYERS.map(
+            (l) =>
+              html`<option value=${l.id} ?selected=${l.id === opts.layer}>
+                ${name(l.id)}
+              </option>`,
+          )}
+        </select>`,
+      ),
+    )}
+    ${labelLayers.map((layer) =>
+      fieldRow(
+        layer.icon,
+        layer.name ?? "",
+        html`<input
+          type="checkbox"
+          class="switch"
+          role="switch"
+          aria-label=${layer.name ?? ""}
+          .checked=${deviceLabels.includes(layer.labelId!)}
+          @change=${(e: Event) => {
+            const on = (e.target as HTMLInputElement).checked;
+            const rest = deviceLabels.filter((l) => l !== layer.labelId);
+            opts.onLabelsChange(on ? [...rest, layer.labelId!] : rest);
+          }}
+        />`,
+      ),
+    )}
+  </div>`;
 }
 
 export function selectWrap(select: unknown) {

@@ -122,6 +122,34 @@ _PIN_SCHEMA = {
     vol.Optional("show_label"): bool,
     # Non-admin users see the device's states but get no controls for it.
     vol.Optional("view_only"): bool,
+    # One of the device's own entities to show beside its marker; none
+    # unless an admin picked one.
+    vol.Optional("badge_entity_id"): vol.Any(_TEXT, None),
+    # A light's lit area, drawn instead of the glow around its marker: its
+    # whole room, or a shape drawn on the plan.
+    vol.Optional("light_area"): vol.Any(
+        None,
+        {
+            vol.Required("mode"): vol.In(["room", "shape"]),
+            vol.Optional("points"): _POINTS,
+        },
+    ),
+    # A radar's or camera's coverage wedge, drawn when an admin turns it on.
+    vol.Optional("detection_zone"): vol.Any(
+        None,
+        {
+            vol.Required("range_m"): vol.All(
+                vol.Coerce(float), vol.Range(min=0.1, max=100)
+            ),
+            vol.Required("angle_deg"): vol.All(
+                vol.Coerce(float), vol.Range(min=1, max=360)
+            ),
+            vol.Required("rotation_deg"): vol.Coerce(float),
+            vol.Optional("entity_id"): vol.Any(_TEXT, None),
+        },
+    ),
+    # The standard layer an admin put the device on; none = automatic.
+    vol.Optional("layer"): vol.Any(_TEXT, None),
 }
 
 _WALL_SCHEMA = {
@@ -363,6 +391,12 @@ _SETTINGS_SCHEMA = {
     ),
     vol.Optional("auto_save", default=True): bool,
     vol.Optional("debug_logging", default=False): bool,
+    vol.Optional("hidden_layers", default=list): vol.All(
+        [str], vol.Length(max=64)
+    ),
+    vol.Optional("label_layers", default=list): vol.All(
+        [str], vol.Length(max=64)
+    ),
 }
 
 

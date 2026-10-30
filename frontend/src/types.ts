@@ -48,6 +48,33 @@ export interface Pin {
   /** Users who aren't admins see this device's states but can't switch it
    * from the plan. Admins always can. Off when missing. */
   view_only?: boolean;
+  /** One of the device's own entities whose state is shown next to its
+   * marker. Only an admin's explicit pick: null/missing shows nothing. */
+  badge_entity_id?: string | null;
+  /** A light's lit area, drawn in its colour while it's on, in place of
+   * the glow around its marker. Null/missing = the glow. */
+  light_area?: LightArea | null;
+  /** A radar's or camera's coverage, drawn as a wedge from its marker
+   * (see canvas/detection-zone.ts). Null/missing = not drawn. */
+  detection_zone?: DetectionZone | null;
+  /** The standard layer the admin put this device on (a BuiltinLayerId
+   * from canvas/layers.ts). Null/missing = picked automatically. */
+  layer?: string | null;
+}
+
+export interface DetectionZone {
+  range_m: number;
+  angle_deg: number;
+  /** Which way it faces: 0 = up on the plan, clockwise. */
+  rotation_deg: number;
+  /** The binary sensor that colours it; null = picked automatically. */
+  entity_id: string | null;
+}
+
+/** "room": the light's whole room. "shape": a polygon the admin drew. */
+export interface LightArea {
+  mode: "room" | "shape";
+  points?: [number, number][];
 }
 
 export interface Wall {
@@ -99,6 +126,11 @@ export interface Settings {
   auto_save: boolean;
   /** Send panel events to the backend's debug log file (see debug.py). */
   debug_logging: boolean;
+  /** Standard layers (canvas/layers.ts's BUILTIN_LAYERS) and network
+   * layers (NetworkType) the admin removed for everyone. */
+  hidden_layers: string[];
+  /** Home Assistant label ids used as extra layers, in menu order. */
+  label_layers: string[];
 }
 
 /** What the backend reports for the version handshake (see debug.py). */
@@ -570,4 +602,13 @@ export interface CardOptions {
   area?: string;
   /** Floor tabs and the network layers menu. On unless false. */
   show_header?: boolean;
+  /** Standard and network layers people can pick in this card. Together
+   * with label_layers; both empty or missing = every layer. */
+  layers?: string[];
+  /** HA label ids of custom layers people can pick in this card. */
+  label_layers?: string[];
+  /** Standard layers that start switched off in this card. */
+  hidden_layers?: string[];
+  /** Custom layers (HA label ids) that start switched off in this card. */
+  hidden_label_layers?: string[];
 }

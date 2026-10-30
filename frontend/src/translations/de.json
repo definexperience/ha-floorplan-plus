@@ -41,7 +41,8 @@
       "alignAgainst": "Ausrichten an:",
       "noBackground": "Diese Etage hat kein Hintergrundbild zum Ausrichten.",
       "alignDrag": "Zum Verschieben ziehen, mit +/− die Größe ändern, dann „Anwenden“.",
-      "multiSelected": "{count} Geräte ausgewählt. Ein Gerät ziehen, um alle gemeinsam zu verschieben."
+      "multiSelected": "{count} Geräte ausgewählt. Ein Gerät ziehen, um alle gemeinsam zu verschieben.",
+      "lightArea": "Klicke rund um den Bereich, den diese Lampe beleuchtet. Klicke auf den ersten Punkt, um abzuschließen."
     },
     "openingType": {
       "door": "eine Tür",
@@ -81,9 +82,25 @@
       "delete": "Gerät entfernen",
       "removeFromSpot": "Von dieser Stelle entfernen",
       "stackTitle": "{count} Geräte an dieser Stelle",
+      "reading": "Wert auf dem Grundriss",
+      "readingNone": "Keiner",
       "showLabel": "Namen im Plan anzeigen",
       "usersCanControl": "Benutzer dürfen schalten",
-      "usersCanControlHint": "Aus: Benutzer ohne Adminrechte sehen nur den Status"
+      "usersCanControlHint": "Aus: Benutzer ohne Adminrechte sehen nur den Status",
+      "lightArea": "Beleuchteter Bereich",
+      "lightArea_glow": "Schein um das Symbol",
+      "lightArea_room": "Ganzer Raum",
+      "lightArea_shape": "Gezeichnete Form",
+      "lightAreaRedraw": "Beleuchteten Bereich neu zeichnen",
+      "zone": "Erfassungsbereich",
+      "zoneNeedsScale": "Lege zuerst den Maßstab des Grundrisses fest (das Lineal), damit der Bereich in echten Abständen gezeichnet werden kann.",
+      "zoneRange": "Reichweite ({unit})",
+      "zoneAngle": "Breite (Grad)",
+      "zoneDirection": "Richtung (Grad)",
+      "zoneTurnLeft": "Nach links drehen",
+      "zoneTurnRight": "Nach rechts drehen",
+      "zoneSensor": "Färbt sich mit",
+      "zoneSensorAuto": "Automatisch"
     },
     "wall": {
       "material": "Wandmaterial",
@@ -400,5 +417,31 @@
     "blue_grey": "Blaugrau",
     "black": "Schwarz",
     "white": "Weiß"
+  },
+  "layers": {
+    "title": "Ebenen",
+    "builtin": {
+      "lights": "Lampen",
+      "switches": "Schalter",
+      "sensors": "Sensoren",
+      "climate": "Klima",
+      "screens": "Bildschirme und Medien",
+      "cameras": "Kameras",
+      "security": "Sicherheit",
+      "other": "Andere Geräte"
+    },
+    "new": "Neue Ebene",
+    "newPrompt": "Name der neuen Ebene. Sie wird als Home Assistant-Label gespeichert, sodass du sie auch anderswo in Home Assistant nutzen kannst.",
+    "create": "Erstellen",
+    "rename": "Umbenennen",
+    "renamePrompt": "Neuer Name für diese Ebene (und ihr Home Assistant-Label)",
+    "remove": "Ebene entfernen",
+    "removeConfirm": "\"{name}\" nicht mehr als Ebene verwenden? Das Home Assistant-Label selbst und die Geräte, die es tragen, bleiben erhalten.",
+    "useLabel": "Ein Home Assistant-Label als Ebene verwenden…",
+    "removed": "Entfernte Ebenen (zum Wiederherstellen tippen)",
+    "networks": "Netzwerkebenen im Menü",
+    "failed": "Die Änderung konnte nicht in Home Assistant gespeichert werden.",
+    "standard": "Standardebene",
+    "automatic": "Automatisch ({layer})"
   }
 }

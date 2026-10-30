@@ -21,6 +21,7 @@ import type {
   BluetoothAdvertisementEvent,
 } from "./types";
 import { DEFAULT_WALL_MATERIAL, wallMaterial } from "./canvas/materials";
+import type { LabelEntry } from "./canvas/layers";
 
 /** Thin wrapper over the five floorplan_plus/* WebSocket commands + core's image upload API. */
 export class HaClient {
@@ -123,6 +124,47 @@ export class HaClient {
       thread_border_router_device_id: settings.thread_border_router_device_id,
       auto_save: settings.auto_save,
       debug_logging: settings.debug_logging,
+      hidden_layers: settings.hidden_layers,
+      label_layers: settings.label_layers,
+    });
+  }
+
+  /** Home Assistant's labels — the custom layers' names and icons. */
+  async listLabels(): Promise<LabelEntry[]> {
+    return this.hass.connection.sendMessagePromise<LabelEntry[]>({
+      type: "config/label_registry/list",
+    });
+  }
+
+  /** device_id -> the HA label ids it carries. */
+  async listDeviceLabels(): Promise<Map<string, string[]>> {
+    const devices = await this.hass.connection.sendMessagePromise<
+      { id: string; labels?: string[] }[]
+    >({ type: "config/device_registry/list" });
+    return new Map(devices.map((d) => [d.id, d.labels ?? []]));
+  }
+
+  /** Admin only, like every HA registry change. */
+  async createLabel(name: string): Promise<LabelEntry> {
+    return this.hass.connection.sendMessagePromise<LabelEntry>({
+      type: "config/label_registry/create",
+      name,
+    });
+  }
+
+  async renameLabel(labelId: string, name: string): Promise<LabelEntry> {
+    return this.hass.connection.sendMessagePromise<LabelEntry>({
+      type: "config/label_registry/update",
+      label_id: labelId,
+      name,
+    });
+  }
+
+  async setDeviceLabels(deviceId: string, labels: string[]): Promise<void> {
+    await this.hass.connection.sendMessagePromise({
+      type: "config/device_registry/update",
+      device_id: deviceId,
+      labels,
     });
   }
 
@@ -373,6 +415,8 @@ export function emptySettings(): Settings {
     thread_border_router_device_id: null,
     auto_save: true,
     debug_logging: false,
+    hidden_layers: [],
+    label_layers: [],
   };
 }
 

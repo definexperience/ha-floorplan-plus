@@ -139,4 +139,21 @@ export const canvasOverlayStyles = css`
   .room-opacity {
     width: 140px;
   }
+  .zone-turn {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .zone-turn button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .zone-turn ha-icon {
+    --mdc-icon-size: 18px;
+  }
 `;

@@ -13,6 +13,9 @@ export interface DeviceStatus {
   /** A light that's on: the glow drawn around its pin, in the light's own
    * colour, stronger the brighter it is. */
   light?: LightGlow | null;
+  /** Whether the sensor behind the device's detection zone sees someone
+   * (see panel.ts's _refreshDeviceStatuses). */
+  detected?: boolean;
 }
 
 export interface LightGlow {
@@ -135,12 +138,27 @@ function numeric(state: HassEntityState | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** What a badge says for one entity's state: HA's own formatter when the
+ * frontend has one, else the raw state plus its unit. */
+export type StateFormatter = (state: HassEntityState) => string;
+
+function plainFormat(state: HassEntityState): string {
+  const unit = state.attributes?.["unit_of_measurement"];
+  return typeof unit === "string" && unit
+    ? `${state.state} ${unit}`
+    : state.state;
+}
+
 /** A device's status in view mode. `entities` may hold every placeable
- * entity; only this device's own are used. */
+ * entity; only this device's own are used. The badge shows the reading
+ * the admin picked for this device (`badgeEntityId`), and nothing when
+ * none was picked. */
 export function deviceStatus(
   deviceId: string | null,
   entities: Iterable<PlaceableEntity>,
   states: Record<string, HassEntityState | undefined>,
+  badgeEntityId: string | null = null,
+  format: StateFormatter = plainFormat,
 ): DeviceStatus {
   const own = [...entities].filter(
     (e) => deviceId !== null && e.device_id === deviceId,
@@ -151,15 +169,17 @@ export function deviceStatus(
   let tone = toneFor(rep, states[rep.entity_id]);
   const light = lightGlow(rep, states[rep.entity_id]);
   let badge: string | null = null;
+  const badgeState = own.some((e) => e.entity_id === badgeEntityId)
+    ? states[badgeEntityId!]
+    : undefined;
+  if (badgeState && !UNAVAILABLE.has(badgeState.state)) {
+    badge = format(badgeState);
+  }
   let lowBattery = false;
 
   for (const e of own) {
     const st = states[e.entity_id];
     const dc = deviceClassOf(e, st);
-    if (e.domain === "sensor" && dc === "temperature" && badge === null) {
-      const value = numeric(st);
-      if (value !== null) badge = `${Math.round(value * 10) / 10}°`;
-    }
     if (e.domain === "sensor" && dc === "battery") {
       const value = numeric(st);
       if (value !== null && value < LOW_BATTERY_PERCENT) lowBattery = true;
@@ -211,7 +231,8 @@ export function statusSignature(statuses: Map<string, DeviceStatus>): string {
     .map(
       ([id, s]) =>
         `${id}:${s.tone}:${s.badge ?? ""}:${s.lowBattery ? 1 : 0}:` +
-        (s.light ? `${s.light.color}@${s.light.level.toFixed(2)}` : ""),
+        (s.light ? `${s.light.color}@${s.light.level.toFixed(2)}` : "") +
+        (s.detected ? ":d" : ""),
     )
     .join("|");
 }

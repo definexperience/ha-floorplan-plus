@@ -88,21 +88,33 @@ describe("deviceStatus", () => {
     ).toBe("active");
   });
 
-  it("puts the temperature in the badge and flags a low battery", () => {
+  it("shows no badge unless a reading was picked, and flags a low battery", () => {
     const entities = [
       entity("sensor.kitchen_temp", "d1", "temperature"),
       entity("sensor.kitchen_battery", "d1", "battery", "diagnostic"),
     ];
-    const status = deviceStatus("d1", entities, {
-      "sensor.kitchen_temp": st("19.84"),
+    const states = {
+      "sensor.kitchen_temp": st("19.84", { unit_of_measurement: "°C" }),
       "sensor.kitchen_battery": st("12"),
-    });
-    expect(status).toEqual({
+    };
+    expect(deviceStatus("d1", entities, states)).toEqual({
       tone: "neutral",
-      badge: "19.8°",
+      badge: null,
       lowBattery: true,
       light: null,
     });
+    expect(
+      deviceStatus("d1", entities, states, "sensor.kitchen_temp").badge,
+    ).toBe("19.84 °C");
+    expect(
+      deviceStatus(
+        "d1",
+        entities,
+        states,
+        "sensor.kitchen_temp",
+        (s) => `${Math.round(Number(s.state))}°`,
+      ).badge,
+    ).toBe("20°");
   });
 
   it("ignores other devices' entities and unknown readings", () => {
@@ -110,11 +122,16 @@ describe("deviceStatus", () => {
       entity("sensor.a_temp", "a", "temperature"),
       entity("sensor.b_temp", "b", "temperature"),
     ];
-    const status = deviceStatus("a", entities, {
+    const states = {
       "sensor.a_temp": st("unknown"),
       "sensor.b_temp": st("21"),
-    });
-    expect(status.badge).toBeNull();
+    };
+    expect(
+      deviceStatus("a", entities, states, "sensor.a_temp").badge,
+    ).toBeNull();
+    expect(
+      deviceStatus("a", entities, states, "sensor.b_temp").badge,
+    ).toBeNull();
   });
 
   it("returns a neutral status for a device it knows nothing about", () => {

@@ -268,4 +268,36 @@ export const floorplanCanvasStyles = css`
   }
   ${zoomControlsStyles}
   ${scaleStyles}
+  .light-area {
+    pointer-events: none;
+  }
+  .light-area-outline {
+    fill: none;
+    stroke: var(--sc-accent);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 4;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+  .detection-zone {
+    fill: var(--state-inactive-color, #9e9e9e);
+    fill-opacity: 0.14;
+    stroke: var(--state-inactive-color, #9e9e9e);
+    stroke-opacity: 0.5;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+  .detection-zone.detected {
+    fill: var(--success-color, #43a047);
+    fill-opacity: 0.32;
+    stroke: var(--success-color, #43a047);
+    stroke-opacity: 0.8;
+  }
+  .detection-zone.editing {
+    fill: var(--sc-accent);
+    fill-opacity: 0.08;
+    stroke: var(--sc-accent);
+    stroke-dasharray: 6 4;
+  }
 `;

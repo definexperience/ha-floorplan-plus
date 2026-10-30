@@ -12,6 +12,10 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 - A Floorplan Plus logo and icon, shown in Home Assistant and HACS.
 - A **Floorplan Plus** dashboard card: the plan with live states, view only for everyone. Pick a floor to open on, zoom in on one room, set the height, and show or hide the floor tabs. It registers itself, so there is no dashboard resource to add.
 - **Suggested devices per room** while placing devices: for each room linked to a Home Assistant area, that area's devices that aren't on the plan yet are listed first. Place one, or all of them at once, straight into the room. Selecting a room first narrows the list to that room.
+- **Layers**. Every device sits on a standard layer (lights, switches, sensors, climate, screens and media, cameras, security, other), picked from its main entity or chosen per device. Home Assistant labels can be used as extra layers, and a device can be on several. Everyone can switch layers on and off from the new Layers menu; layers with nothing on the current floor are left out outside edit mode. In edit mode admins create, rename and remove layers, restore removed standard layers and hide network layers, all from the plan. The dashboard card can limit which layers it offers (devices on the others are hidden there) and which start hidden.
+- **Reading on the plan**, per device: pick which of its entities is shown next to its marker, formatted by Home Assistant.
+- **Lit area** for lights: instead of the glow, fill the light's whole room or a shape traced on the plan, in the light's colour while it's on.
+- **Detection zone**, per device: a wedge with its range, width and direction, grey while clear and green while its presence sensor detects someone. Not drawn while the device is offline. Needs the floor's scale.
 
 ### Fixed
 - Stateless switches (RF, IR and others that only assume their state) get separate **off** and **on** buttons in the device card, like Home Assistant shows them, instead of a switch that claims a state they can't report.
@@ -19,6 +23,7 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 - The panel now follows the Home Assistant user's language. Dutch and German strings were shipped but the panel always showed English.
 
 ### Changed
+- A device no longer shows its temperature next to its marker automatically. Pick a reading in its options to show one.
 - Renamed to Floorplan Plus (domain `floorplan_plus`), so it can be installed next to Spatial Context without clashing. The panel, actions (`floorplan_plus.get_map`), storage and debug log use the new name.
 - The repository is renamed to `definexperience/ha-floorplan-plus`, and repository, issue and release links point to it. See the README for re-adding it in HACS.
 - The README documents everything this fork adds, with screenshots, and how to update through HACS. The user guide still links to the original documentation.

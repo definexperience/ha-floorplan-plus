@@ -8,6 +8,7 @@ import type {
   ContentBounds,
   FloorLayout,
   FloorMeta,
+  HassEntityState,
   HomeAssistant,
   NetworkType,
   Opening,
@@ -37,7 +38,7 @@ import {
   type DeviceStatus,
 } from "./canvas/device-state";
 import { EditHistory } from "./history";
-import { MeshDataController } from "./mesh-data";
+import { MeshDataController, meshErrorMessage } from "./mesh-data";
 import { debugLog } from "./debug-log";
 import {
   buildingAspectRatio,
@@ -87,6 +88,17 @@ import "./canvas/floorplan-canvas";
 import type { AlignOverlay, FloorplanCanvas } from "./canvas/floorplan-canvas";
 import "./canvas/property-canvas";
 import type { PropertyCanvas } from "./canvas/property-canvas";
+import {
+  BUILTIN_LAYERS,
+  NETWORK_LAYERS,
+  deviceLayerIds,
+  isOnVisibleLayer,
+  labelLayerId,
+  layerDefs,
+  type LabelEntry,
+  type LayerDef,
+} from "./canvas/layers";
+import { zoneEntityId } from "./canvas/detection-zone";
 import "./views/app-header";
 import "./views/canvas-overlay";
 import "./views/icon-popover";
@@ -110,6 +122,24 @@ const GETTING_STARTED_URL =
  * habit, not a fact every viewer should share. Browser storage can throw
  * or come back empty; fall back to snapping onto everything. */
 const SNAP_MODE_STORAGE_KEY = "floorplan-plus-snap-mode";
+
+/** Layers this browser switched off, in the sidebar panel (a dashboard
+ * card starts from its own options instead). */
+const LAYERS_OFF_STORAGE_KEY = "floorplan-plus-layers-off";
+
+function readStoredLayersOff(): Set<string> {
+  try {
+    const raw = JSON.parse(
+      localStorage.getItem(LAYERS_OFF_STORAGE_KEY) ?? "[]",
+    );
+    if (Array.isArray(raw)) {
+      return new Set(raw.filter((x): x is string => typeof x === "string"));
+    }
+  } catch {
+    // Fall through to every layer on.
+  }
+  return new Set();
+}
 
 function readStoredSnapMode(): SnapMode {
   try {
@@ -160,6 +190,9 @@ export class FloorplanPlusPanel extends LitElement {
   @state() private _selectedRoomId: string | null = null;
   @state() private _editingRoomId: string | null = null;
   @state() private _selectedPinId: string | null = null;
+  /** The light whose lit area is being traced (trace mode draws it
+   * instead of a new room). */
+  @state() private _lightAreaPinId: string | null = null;
   /** Pins picked together (Shift-click / Shift-drag box); 2 or more. */
   @state() private _multiPinIds: string[] = [];
   /** Set when a click/placement lands where 2+ pins share a spot — the
@@ -186,6 +219,13 @@ export class FloorplanPlusPanel extends LitElement {
   private _mesh = new MeshDataController(this, () => this._client);
   @state() private _backgroundPopoverOpen = false;
   @state() private _meshPopoverOpen = false;
+  @state() private _layersPopoverOpen = false;
+  /** HA labels, and the labels each device carries: the custom layers. */
+  @state() private _labels: LabelEntry[] = [];
+  @state() private _deviceLabels: Map<string, string[]> = new Map();
+  /** Layers this viewer switched off. Set once the card options are known
+   * (see _init). */
+  @state() private _layersOff: Set<string> = new Set();
   /** Shared across every viewer of the panel (see ha-client.ts's
    * getSettings/saveSettings) — not per-browser, same as floors/property. */
   @state() private _settings: Settings = emptySettings();
@@ -353,8 +393,37 @@ export class FloorplanPlusPanel extends LitElement {
   private _refreshDeviceStatuses(): void {
     const states = this._hass?.states ?? {};
     const statuses = new Map<string, DeviceStatus>();
+    const badgeEntity = new Map<string, string>();
+    for (const pin of [...this._layout.pins, ...this._propertyLayout.pins]) {
+      if (pin.device_id && pin.badge_entity_id) {
+        badgeEntity.set(pin.device_id, pin.badge_entity_id);
+      }
+    }
+    const hass = this._hass;
+    const format = hass?.formatEntityState
+      ? (st: HassEntityState) => hass.formatEntityState!(st)
+      : undefined;
     for (const id of this._placedDeviceIdsEverywhere) {
-      statuses.set(id, deviceStatus(id, this._entities, states));
+      statuses.set(
+        id,
+        deviceStatus(
+          id,
+          this._entities,
+          states,
+          badgeEntity.get(id) ?? null,
+          format,
+        ),
+      );
+    }
+    for (const pin of this._layout.pins) {
+      const status = pin.device_id ? statuses.get(pin.device_id) : undefined;
+      if (!status || !pin.detection_zone) continue;
+      const entityId = zoneEntityId(
+        pin.detection_zone,
+        pin.device_id,
+        this._entities,
+      );
+      if (entityId && states[entityId]?.state === "on") status.detected = true;
     }
     const signature = statusSignature(statuses);
     if (signature !== this._deviceStatusSignature) {
@@ -820,6 +889,13 @@ export class FloorplanPlusPanel extends LitElement {
     this._areas = areas;
     this._propertyLayout = propertyLayout;
     this._settings = settings;
+    this._layersOff = this.embedded
+      ? new Set([
+          ...(this.cardOptions.hidden_layers ?? []),
+          ...(this.cardOptions.hidden_label_layers ?? []).map(labelLayerId),
+        ])
+      : readStoredLayersOff();
+    void this._loadLabels();
     // The debug log is written through an admin-only command.
     debugLog.configure(this._client, settings.debug_logging && this._canEdit);
     debugLog.log("panel_open", {
@@ -1582,6 +1658,7 @@ export class FloorplanPlusPanel extends LitElement {
     // "Place Device" closes the entity-picker sidebar again) rather than
     // being a no-op re-selection of the same mode.
     this._mode = this._mode === e.detail.mode ? "select" : e.detail.mode;
+    this._lightAreaPinId = null;
     this._armedEntityId = null;
     this._armedOpeningType = null;
     if (this._mode !== "select") {
@@ -1877,6 +1954,380 @@ export class FloorplanPlusPanel extends LitElement {
     this._pinStackIds = null;
   };
 
+  /** HA's labels and device labels; without them only the standard
+   * layers exist. */
+  private async _loadLabels(): Promise<void> {
+    try {
+      const [labels, deviceLabels] = await Promise.all([
+        this._client.listLabels(),
+        this._client.listDeviceLabels(),
+      ]);
+      this._labels = labels;
+      this._deviceLabels = deviceLabels;
+    } catch (err) {
+      console.warn("floorplan-plus: couldn't load labels", err);
+    }
+  }
+
+  /** Every layer in use (see canvas/layers.ts). */
+  private get _layerDefs(): LayerDef[] {
+    return layerDefs(
+      this._settings.hidden_layers ?? [],
+      this._settings.label_layers ?? [],
+      this._labels,
+    );
+  }
+
+  /** The custom layers, for a device's layer switches. */
+  private get _labelLayerDefs(): LayerDef[] {
+    return this._layerDefs.filter((d) => d.kind === "label");
+  }
+
+  /** Whether this card limits which layers people can pick. */
+  private get _cardLimitsLayers(): boolean {
+    return (
+      this.embedded &&
+      ((this.cardOptions.layers?.length ?? 0) > 0 ||
+        (this.cardOptions.label_layers?.length ?? 0) > 0)
+    );
+  }
+
+  private _layerSelectable(def: LayerDef): boolean {
+    if (!this._cardLimitsLayers) return true;
+    return def.kind === "label"
+      ? (this.cardOptions.label_layers ?? []).includes(def.labelId!)
+      : (this.cardOptions.layers ?? []).includes(def.id);
+  }
+
+  /** Network layers listed in the Connectivity menu: all of them while
+   * editing, else those the admin kept and this card allows. */
+  private get _selectableNetworks(): typeof NETWORK_LAYERS {
+    if (this._editing) return NETWORK_LAYERS;
+    const hidden = new Set(this._settings.hidden_layers ?? []);
+    return NETWORK_LAYERS.filter(
+      (n) =>
+        !hidden.has(n.id) &&
+        (!this._cardLimitsLayers ||
+          (this.cardOptions.layers ?? []).includes(n.id)),
+    );
+  }
+
+  /** `pins` without those whose every layer is switched off. */
+  private _pinsOnVisibleLayers(pins: Pin[]): Pin[] {
+    const defs = this._layerDefs;
+    // A card that limits its layers hides the ones it doesn't offer.
+    const off = new Set(this._layersOff);
+    for (const d of defs) {
+      if (!this._layerSelectable(d)) off.add(d.id);
+    }
+    if (off.size === 0) return pins;
+    const entities = this._entities;
+    return pins.filter((pin) =>
+      isOnVisibleLayer(
+        deviceLayerIds(
+          pin.device_id,
+          entities,
+          this._deviceLabels,
+          defs,
+          pin.layer ?? null,
+        ),
+        off,
+      ),
+    );
+  }
+
+  /** How many devices on the floor (or Property tab) shown sit on each
+   * layer. */
+  private _layerCounts(defs: LayerDef[]): Map<string, number> {
+    const pins =
+      this._view === "property" ? this._propertyLayout.pins : this._layout.pins;
+    const counts = new Map<string, number>();
+    for (const pin of pins) {
+      for (const id of deviceLayerIds(
+        pin.device_id,
+        this._entities,
+        this._deviceLabels,
+        defs,
+        pin.layer ?? null,
+      )) {
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }
+
+  private _layerName(def: LayerDef): string {
+    return def.kind === "label"
+      ? (def.name ?? "")
+      : localize(`layers.builtin.${def.id}`);
+  }
+
+  private _onLayerToggle(id: string): void {
+    const off = new Set(this._layersOff);
+    if (off.has(id)) off.delete(id);
+    else off.add(id);
+    this._layersOff = off;
+    if (this.embedded) return;
+    try {
+      localStorage.setItem(LAYERS_OFF_STORAGE_KEY, JSON.stringify([...off]));
+    } catch {
+      // Remembered for this visit only.
+    }
+  }
+
+  private _onToggleLayersPopover = () => {
+    this._layersPopoverOpen = !this._layersPopoverOpen;
+    this._meshPopoverOpen = false;
+    this._backgroundPopoverOpen = false;
+    this._moreOptionsPopoverOpen = false;
+  };
+
+  /** Removes a standard or network layer for everyone, or brings it back. */
+  private _onLayerHiddenToggle(id: string): void {
+    const hidden = new Set(this._settings.hidden_layers ?? []);
+    if (hidden.has(id)) hidden.delete(id);
+    else hidden.add(id);
+    this._onSettingsChange(
+      new CustomEvent("settings-change", {
+        detail: { hidden_layers: [...hidden] },
+      }),
+    );
+  }
+
+  private _setLabelLayers(labelLayers: string[]): void {
+    this._onSettingsChange(
+      new CustomEvent("settings-change", {
+        detail: { label_layers: labelLayers },
+      }),
+    );
+  }
+
+  /** A new custom layer: a new HA label, used as a layer straight away. */
+  private _onNewLayer = async () => {
+    const name = (
+      await this._dialogEl?.prompt({
+        text: localize("layers.newPrompt"),
+        confirmText: localize("layers.create"),
+      })
+    )?.trim();
+    if (!name) return;
+    try {
+      const label = await this._client.createLabel(name);
+      this._labels = [...this._labels, label];
+      this._setLabelLayers([
+        ...(this._settings.label_layers ?? []),
+        label.label_id,
+      ]);
+    } catch (err) {
+      await this._dialogEl?.alert({
+        text: meshErrorMessage(err, localize("layers.failed")),
+      });
+    }
+  };
+
+  private async _onRenameLayer(def: LayerDef): Promise<void> {
+    const name = (
+      await this._dialogEl?.prompt({
+        text: localize("layers.renamePrompt"),
+        value: def.name ?? "",
+      })
+    )?.trim();
+    if (!name || name === def.name) return;
+    try {
+      const label = await this._client.renameLabel(def.labelId!, name);
+      this._labels = this._labels.map((l) =>
+        l.label_id === label.label_id ? label : l,
+      );
+    } catch (err) {
+      await this._dialogEl?.alert({
+        text: meshErrorMessage(err, localize("layers.failed")),
+      });
+    }
+  }
+
+  /** Stops using a label as a layer. The label itself stays in HA. */
+  private async _onRemoveLabelLayer(def: LayerDef): Promise<void> {
+    const ok = await this._dialogEl?.confirm({
+      text: localize("layers.removeConfirm", { name: def.name ?? "" }),
+      confirmText: localize("layers.remove"),
+      destructive: true,
+    });
+    if (!ok) return;
+    this._setLabelLayers(
+      (this._settings.label_layers ?? []).filter((id) => id !== def.labelId),
+    );
+  }
+
+  private _onDeviceLabelsChange = async (
+    e: CustomEvent<{ deviceId: string; labels: string[] }>,
+  ) => {
+    const { deviceId, labels } = e.detail;
+    const before = this._deviceLabels;
+    this._deviceLabels = new Map(before).set(deviceId, labels);
+    try {
+      await this._client.setDeviceLabels(deviceId, labels);
+    } catch (err) {
+      this._deviceLabels = before;
+      await this._dialogEl?.alert({
+        text: meshErrorMessage(err, localize("layers.failed")),
+      });
+    }
+  };
+
+  private _renderLayersPopover() {
+    const defs = this._layerDefs;
+    const counts = this._layerCounts(defs);
+    const shown = defs.filter(
+      (d) =>
+        this._editing ||
+        (this._layerSelectable(d) && (counts.get(d.id) ?? 0) > 0),
+    );
+    if (!this._editing && shown.length === 0) return nothing;
+    const hidden = new Set(this._settings.hidden_layers ?? []);
+    const unusedLabels = this._labels.filter(
+      (l) => !(this._settings.label_layers ?? []).includes(l.label_id),
+    );
+    return html`<icon-popover
+      icon="mdi:layers-outline"
+      label=${localize("layers.title")}
+      .open=${this._layersPopoverOpen}
+      ?highlight=${shown.some((d) => this._layersOff.has(d.id))}
+      @toggle=${this._onToggleLayersPopover}
+    >
+      <div class="layer-list">
+        ${shown.map(
+          (d) =>
+            html`<div class="layer-row">
+              <button
+                class="menu-item ${this._layersOff.has(d.id) ? "" : "active"}"
+                role="switch"
+                aria-checked=${this._layersOff.has(d.id) ? "false" : "true"}
+                @click=${() => this._onLayerToggle(d.id)}
+              >
+                <ha-icon icon=${d.icon}></ha-icon>
+                <span class="grow">${this._layerName(d)}</span>
+                <span class="count">${counts.get(d.id) ?? 0}</span>
+                <ha-icon
+                  class="trail"
+                  icon=${this._layersOff.has(d.id) ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                ></ha-icon>
+              </button>
+              ${
+                this._editing && d.kind === "label"
+                  ? html`<button
+                      class="layer-action"
+                      title=${localize("layers.rename")}
+                      aria-label=${localize("layers.rename")}
+                      @click=${() => void this._onRenameLayer(d)}
+                    >
+                      <ha-icon icon="mdi:pencil-outline"></ha-icon>
+                    </button>`
+                  : nothing
+              }
+              ${
+                this._editing
+                  ? html`<button
+                      class="layer-action"
+                      title=${localize("layers.remove")}
+                      aria-label=${localize("layers.remove")}
+                      @click=${() =>
+                        d.kind === "label"
+                          ? void this._onRemoveLabelLayer(d)
+                          : this._onLayerHiddenToggle(d.id)}
+                    >
+                      <ha-icon icon="mdi:delete-outline"></ha-icon>
+                    </button>`
+                  : nothing
+              }
+            </div>`,
+        )}
+        ${
+          this._editing
+            ? html`<div class="menu-divider"></div>
+                <button class="menu-item" @click=${this._onNewLayer}>
+                  <ha-icon icon="mdi:plus"></ha-icon>
+                  ${localize("layers.new")}
+                </button>
+                ${
+                  unusedLabels.length > 0
+                    ? html`<div class="popover-row">
+                        <select
+                          aria-label=${localize("layers.useLabel")}
+                          @change=${(e: Event) => {
+                            const select = e.target as HTMLSelectElement;
+                            const id = select.value;
+                            select.value = "";
+                            if (id) {
+                              this._setLabelLayers([
+                                ...(this._settings.label_layers ?? []),
+                                id,
+                              ]);
+                            }
+                          }}
+                        >
+                          <option value="">
+                            ${localize("layers.useLabel")}
+                          </option>
+                          ${unusedLabels.map(
+                            (l) =>
+                              html`<option value=${l.label_id}>
+                                ${l.name}
+                              </option>`,
+                          )}
+                        </select>
+                      </div>`
+                    : nothing
+                }
+                ${
+                  BUILTIN_LAYERS.some((l) => hidden.has(l.id))
+                    ? html`<div class="menu-divider"></div>
+                        <div class="hint layer-heading">
+                          ${localize("layers.removed")}
+                        </div>
+                        ${BUILTIN_LAYERS.filter((l) => hidden.has(l.id)).map(
+                          (l) =>
+                            html`<button
+                              class="menu-item"
+                              @click=${() => this._onLayerHiddenToggle(l.id)}
+                            >
+                              <ha-icon icon=${l.icon}></ha-icon>
+                              <span class="grow"
+                                >${localize(`layers.builtin.${l.id}`)}</span
+                              >
+                              <ha-icon
+                                class="trail"
+                                icon="mdi:restore"
+                              ></ha-icon>
+                            </button>`,
+                        )}`
+                    : nothing
+                }
+                <div class="menu-divider"></div>
+                <div class="hint layer-heading">
+                  ${localize("layers.networks")}
+                </div>
+                ${NETWORK_LAYERS.map(
+                  (n) =>
+                    html`<button
+                      class="menu-item ${hidden.has(n.id) ? "" : "active"}"
+                      role="switch"
+                      aria-checked=${hidden.has(n.id) ? "false" : "true"}
+                      @click=${() => this._onLayerHiddenToggle(n.id)}
+                    >
+                      <ha-icon icon=${n.icon}></ha-icon>
+                      <span class="grow">${localize(`network.${n.id}`)}</span>
+                      <ha-icon
+                        class="trail"
+                        icon=${hidden.has(n.id) ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                      ></ha-icon>
+                    </button>`,
+                )}`
+            : nothing
+        }
+      </div>
+    </icon-popover>`;
+  }
+
   private _onToggleBackgroundPopover = () => {
     this._backgroundPopoverOpen = !this._backgroundPopoverOpen;
     this._meshPopoverOpen = false;
@@ -1888,6 +2339,7 @@ export class FloorplanPlusPanel extends LitElement {
    * menu leaves it drawn; tap the selected layer again to turn it off. */
   private _onToggleMeshPopover = () => {
     this._meshPopoverOpen = !this._meshPopoverOpen;
+    this._layersPopoverOpen = false;
     this._backgroundPopoverOpen = false;
     this._moreOptionsPopoverOpen = false;
   };
@@ -2694,9 +3146,29 @@ export class FloorplanPlusPanel extends LitElement {
 
   // --- canvas ---------------------------------------------------------
 
+  /** Trace a light's lit area: the trace tool, finishing on the pin. */
+  private _onLightAreaDrawClick = () => {
+    const pin = this._selectedPin;
+    if (!pin) return;
+    this._mode = "trace";
+    this._lightAreaPinId = pin.id;
+    this._editingRoomId = null;
+    this._editingWallId = null;
+  };
+
   private _onRoomTraceComplete = (
     e: CustomEvent<{ points: [number, number][] }>,
   ) => {
+    const lightPinId = this._lightAreaPinId;
+    if (lightPinId) {
+      this._lightAreaPinId = null;
+      this._mode = "select";
+      this._patchPin(lightPinId, {
+        light_area: { mode: "shape", points: e.detail.points },
+      });
+      this._selectedPinId = lightPinId;
+      return;
+    }
     const room = newRoom("New Room", e.detail.points, null);
     const rooms = [...this._layout.rooms, room];
     this._updateLayout({
@@ -3275,6 +3747,12 @@ export class FloorplanPlusPanel extends LitElement {
       >
         ${
           this._view === "floor" || this._view === "property"
+            ? this._renderLayersPopover()
+            : nothing
+        }
+        ${
+          (this._view === "floor" || this._view === "property") &&
+          this._selectableNetworks.length > 0
             ? html`<icon-popover
                 icon="mdi:lan"
                 label=${localize("menu.connectivity")}
@@ -3283,38 +3761,17 @@ export class FloorplanPlusPanel extends LitElement {
                 @toggle=${this._onToggleMeshPopover}
               >
                 <div class="layer-list">
-                  <button
-                    class="menu-item ${this._mesh.networkType === "zigbee" ? "active" : ""}"
-                    @click=${() => this._onNetworkTypeSelect("zigbee")}
-                  >
-                    <ha-icon icon="mdi:zigbee"></ha-icon>
-                    ${localize("network.zigbee")}
-                    ${this._mesh.networkType === "zigbee" ? html`<ha-icon class="trail" icon="mdi:check"></ha-icon>` : nothing}
-                  </button>
-                  <button
-                    class="menu-item ${this._mesh.networkType === "wifi" ? "active" : ""}"
-                    @click=${() => this._onNetworkTypeSelect("wifi")}
-                  >
-                    <ha-icon icon="mdi:wifi"></ha-icon>
-                    ${localize("network.wifi")}
-                    ${this._mesh.networkType === "wifi" ? html`<ha-icon class="trail" icon="mdi:check"></ha-icon>` : nothing}
-                  </button>
-                  <button
-                    class="menu-item ${this._mesh.networkType === "matter" ? "active" : ""}"
-                    @click=${() => this._onNetworkTypeSelect("matter")}
-                  >
-                    <ha-icon icon="mdi:router-wireless"></ha-icon>
-                    ${localize("network.matter")}
-                    ${this._mesh.networkType === "matter" ? html`<ha-icon class="trail" icon="mdi:check"></ha-icon>` : nothing}
-                  </button>
-                  <button
-                    class="menu-item ${this._mesh.networkType === "bluetooth" ? "active" : ""}"
-                    @click=${() => this._onNetworkTypeSelect("bluetooth")}
-                  >
-                    <ha-icon icon="mdi:bluetooth"></ha-icon>
-                    ${localize("network.bluetooth")}
-                    ${this._mesh.networkType === "bluetooth" ? html`<ha-icon class="trail" icon="mdi:check"></ha-icon>` : nothing}
-                  </button>
+                  ${this._selectableNetworks.map(
+                    (n) =>
+                      html`<button
+                        class="menu-item ${this._mesh.networkType === n.id ? "active" : ""}"
+                        @click=${() => this._onNetworkTypeSelect(n.id)}
+                      >
+                        <ha-icon icon=${n.icon}></ha-icon>
+                        ${localize(`network.${n.id}`)}
+                        ${this._mesh.networkType === n.id ? html`<ha-icon class="trail" icon="mdi:check"></ha-icon>` : nothing}
+                      </button>`,
+                  )}
                 </div>
                 ${
                   this._mesh.networkType === null
@@ -3551,7 +4008,7 @@ export class FloorplanPlusPanel extends LitElement {
                           .readonly=${!this._editing}
                           .statuses=${this._editing ? null : this._deviceStatuses}
                           .selectedPlacementId=${this._selectedPlacementId}
-                          .pins=${this._propertyLayout.pins}
+                          .pins=${this._pinsOnVisibleLayers(this._propertyLayout.pins)}
                           .selectedPinId=${this._selectedOutdoorPinId}
                           .entityLookup=${this._entityLookup}
                           .meshLinks=${this._propertyMeshLinks}
@@ -3608,6 +4065,9 @@ export class FloorplanPlusPanel extends LitElement {
                           .selectedPinOverride=${this._selectedOutdoorPin?.label_override ?? null}
                           .selectedPinDeviceId=${this._selectedOutdoorPin?.device_id ?? null}
                           .selectedPinOptions=${this._selectedOutdoorPin}
+                          .labelLayers=${this._labelLayerDefs}
+                          .deviceLabels=${this._deviceLabels}
+                          @device-labels-change=${this._onDeviceLabelsChange}
                           @outdoor-pin-options-change=${this._onOutdoorPinOptionsChange}
                           .meshLinks=${this._propertyMeshLinks}
                           .networkLabel=${this._networkLabel}
@@ -3658,7 +4118,7 @@ export class FloorplanPlusPanel extends LitElement {
                           @calibrate-scale-click=${this._onCalibrateScaleClick}
                           .dark=${this._hass?.themes?.darkMode ?? false}
                           .rooms=${this._layout.rooms}
-                          .pins=${this._layout.pins}
+                          .pins=${this._pinsOnVisibleLayers(this._layout.pins)}
                           .walls=${this._layout.walls}
                           .openings=${this._layout.openings}
                           .scale=${this._layout.scale}
@@ -3786,6 +4246,11 @@ export class FloorplanPlusPanel extends LitElement {
                           @pin-set-icon-click=${this._onPinSetIcon}
                           @pin-height-change=${this._onPinHeightChange}
                           @pin-options-change=${this._onPinOptionsChange}
+                          @light-area-draw-click=${this._onLightAreaDrawClick}
+                          .lightAreaTracing=${this._lightAreaPinId !== null}
+                          .labelLayers=${this._labelLayerDefs}
+                          .deviceLabels=${this._deviceLabels}
+                          @device-labels-change=${this._onDeviceLabelsChange}
                           @pin-delete-click=${this._onPinDelete}
                           @wall-material-change=${this._onWallMaterialChange}
                           @wall-thickness-change=${this._onWallThicknessChange}

@@ -3,7 +3,6 @@ import { property, state } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
 import type {
   HomeAssistant,
-  Pin,
   PlaceableEntity,
   PropertyMeshLink,
   PropertyPlacement,
@@ -21,13 +20,17 @@ import {
 import "./row-actions";
 import "./device-card";
 import type { DeviceStatus } from "../canvas/device-state";
+import { builtinLayerFor, type LayerDef } from "../canvas/layers";
+import { pickDisplayEntity } from "../canvas/device-display";
 import {
   actionRow,
   deleteButton,
   fieldRow,
   infoCardStyles,
   networkGroup,
+  pinLayerRows,
   pinOptionRows,
+  type PinOptions,
   renderCard,
 } from "./info-card";
 import { meshLegendStyles, renderMeshLegend } from "./mesh-legend";
@@ -134,10 +137,12 @@ export class PropertyOverlay extends LitElement {
   @property({ attribute: false }) selectedPinOverride: string | null = null;
   @property({ attribute: false }) selectedPinDeviceId: string | null = null;
   /** The selected outdoor device's on/off options. */
-  @property({ attribute: false }) selectedPinOptions: Pick<
-    Pin,
-    "show_label" | "view_only"
-  > | null = null;
+  @property({ attribute: false }) selectedPinOptions: PinOptions | null = null;
+  /** Custom layers (HA labels) and each device's labels, for the selected
+   * device's layer switches. */
+  @property({ attribute: false }) labelLayers: LayerDef[] = [];
+  @property({ attribute: false }) deviceLabels: Map<string, string[]> =
+    new Map();
   @property({ attribute: false }) meshLinks: PropertyMeshLink[] = [];
   @property({ attribute: false }) networkLabel: string | null = null;
   /** Show the weak → strong key along the bottom (a network layer is on). */
@@ -220,12 +225,38 @@ export class PropertyOverlay extends LitElement {
           )}
           ${
             this.selectedPinOptions
-              ? pinOptionRows(this.selectedPinOptions, (patch) =>
-                  this._fire("outdoor-pin-options-change", patch),
+              ? pinOptionRows(
+                  this.selectedPinOptions,
+                  (patch) => this._fire("outdoor-pin-options-change", patch),
+                  this.entities.filter(
+                    (e) =>
+                      this.selectedPinDeviceId !== null &&
+                      e.device_id === this.selectedPinDeviceId,
+                  ),
                 )
               : nothing
           }
         </div>
+        ${
+          this.selectedPinDeviceId
+            ? pinLayerRows({
+                autoLayer: builtinLayerFor(
+                  pickDisplayEntity(this.selectedPinDeviceId, this.entities),
+                ),
+                layer: this.selectedPinOptions?.layer ?? null,
+                onLayerChange: (layer) =>
+                  this._fire("outdoor-pin-options-change", { layer }),
+                labelLayers: this.labelLayers,
+                deviceLabels:
+                  this.deviceLabels.get(this.selectedPinDeviceId) ?? [],
+                onLabelsChange: (labels) =>
+                  this._fire("device-labels-change", {
+                    deviceId: this.selectedPinDeviceId,
+                    labels,
+                  }),
+              })
+            : nothing
+        }
         ${this._renderDeviceNetwork()}`,
       footer: deleteButton(localize("property.removeFromProperty"), () =>
         this._fire("outdoor-pin-delete-click"),

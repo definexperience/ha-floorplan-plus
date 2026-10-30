@@ -307,6 +307,11 @@ def _empty_settings() -> dict[str, Any]:
         # Send panel events to <config>/floorplan_plus_debug.log (see
         # debug.py) — off unless someone is chasing a problem.
         "debug_logging": False,
+        # Standard and network layers the admin removed for everyone, and
+        # the Home Assistant label ids used as extra layers (see the
+        # panel's canvas/layers.ts).
+        "hidden_layers": [],
+        "label_layers": [],
     }
 
 

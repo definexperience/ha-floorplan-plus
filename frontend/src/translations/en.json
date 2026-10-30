@@ -41,7 +41,8 @@
       "alignAgainst": "Align against:",
       "noBackground": "That floor has no background image to align against.",
       "alignDrag": "Drag to move, use +/− to resize, then Apply.",
-      "multiSelected": "{count} devices selected. Drag one to move them together."
+      "multiSelected": "{count} devices selected. Drag one to move them together.",
+      "lightArea": "Click around the area this light lights up. Click the first point to finish."
     },
     "openingType": {
       "door": "door",
@@ -81,9 +82,25 @@
       "delete": "Remove device",
       "removeFromSpot": "Remove from this spot",
       "stackTitle": "{count} devices at this spot",
+      "reading": "Reading on the plan",
+      "readingNone": "None",
       "showLabel": "Show name on the plan",
       "usersCanControl": "Users can switch it",
-      "usersCanControlHint": "Off: users who aren't admins only see its state"
+      "usersCanControlHint": "Off: users who aren't admins only see its state",
+      "lightArea": "Lit area",
+      "lightArea_glow": "Glow around the icon",
+      "lightArea_room": "Whole room",
+      "lightArea_shape": "Drawn shape",
+      "lightAreaRedraw": "Redraw lit area",
+      "zone": "Detection zone",
+      "zoneNeedsScale": "Set the plan's scale first (the ruler tool), so the zone can be drawn in real distances.",
+      "zoneRange": "Range ({unit})",
+      "zoneAngle": "Width (degrees)",
+      "zoneDirection": "Direction (degrees)",
+      "zoneTurnLeft": "Turn left",
+      "zoneTurnRight": "Turn right",
+      "zoneSensor": "Colours with",
+      "zoneSensorAuto": "Automatic"
     },
     "wall": {
       "material": "Wall material",
@@ -400,5 +417,31 @@
     "blue_grey": "Blue grey",
     "black": "Black",
     "white": "White"
+  },
+  "layers": {
+    "title": "Layers",
+    "builtin": {
+      "lights": "Lights",
+      "switches": "Switches",
+      "sensors": "Sensors",
+      "climate": "Climate",
+      "screens": "Screens and media",
+      "cameras": "Cameras",
+      "security": "Security",
+      "other": "Other devices"
+    },
+    "new": "New layer",
+    "newPrompt": "Name of the new layer. It's saved as a Home Assistant label, so you can also use it elsewhere in Home Assistant.",
+    "create": "Create",
+    "rename": "Rename",
+    "renamePrompt": "New name for this layer (and its Home Assistant label)",
+    "remove": "Remove layer",
+    "removeConfirm": "Stop using \"{name}\" as a layer? The Home Assistant label itself and the devices that carry it are kept.",
+    "useLabel": "Use a Home Assistant label as a layer…",
+    "removed": "Removed layers (tap to restore)",
+    "networks": "Network layers in the menu",
+    "failed": "Couldn't save the change to Home Assistant.",
+    "standard": "Standard layer",
+    "automatic": "Automatic ({layer})"
   }
 }

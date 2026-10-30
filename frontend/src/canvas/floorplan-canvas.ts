@@ -31,7 +31,9 @@ import {
   pointToPolylineDistance,
   snapToAxis,
   isMouseWheel,
+  findRoomForPoint,
 } from "./geometry";
+import { wedgePath } from "./detection-zone";
 import {
   findMeshLinkAt,
   findMeshStubAt,
@@ -2074,6 +2076,81 @@ export class FloorplanCanvas extends LitElement {
     }));
   }
 
+  /** Detection zones: a wedge per device that has one turned on, once the
+   * floor has a scale. Grey while clear, the active colour while its
+   * sensor detects someone, not drawn while the device is offline (its
+   * pin is red then). While editing, an outline. */
+  private _renderDetectionZones() {
+    const scale = this.scale;
+    if (!scale) return nothing;
+    const unitsPerMeter =
+      distance(...scale.points[0], ...scale.points[1]) / scale.meters;
+    if (!Number.isFinite(unitsPerMeter) || unitsPerMeter <= 0) return nothing;
+    return this._displayPins.map((pin) => {
+      const zone = pin.detection_zone;
+      if (!zone) return nothing;
+      const live = this._liveDragPin?.id === pin.id ? this._liveDragPin : null;
+      const d = wedgePath(
+        live?.x ?? pin.x,
+        live?.y ?? pin.y,
+        zone.range_m * unitsPerMeter,
+        zone.angle_deg,
+        zone.rotation_deg,
+      );
+      if (!this.statuses) {
+        return svg`<path class="detection-zone editing" d=${d}></path>`;
+      }
+      const status = pin.device_id
+        ? this.statuses.get(pin.device_id)
+        : undefined;
+      if (!status || status.tone === "offline") return nothing;
+      return svg`<path
+        class="detection-zone ${status.detected ? "detected" : ""}"
+        d=${d}
+      ></path>`;
+    });
+  }
+
+  /** The polygon a pin's light area covers, or null when it has none. */
+  private _lightAreaPoints(pin: Pin): [number, number][] | null {
+    const area = pin.light_area;
+    if (!area) return null;
+    if (area.mode === "shape") {
+      return area.points && area.points.length >= 3 ? area.points : null;
+    }
+    const roomId = pin.room_id ?? findRoomForPoint(pin.x, pin.y, this.rooms);
+    const room = this.rooms.find((r) => r.id === roomId);
+    if (!room || room.points.length < 3) return null;
+    return this._effectivePoints("room", room.id, room.points);
+  }
+
+  /** Lit areas of lights that are on (view mode), drawn over the room
+   * fills so the room's own tint doesn't change the light's colour. While
+   * editing, each drawn area shows as a
+   * dashed outline instead. */
+  private _renderLightAreas() {
+    return this._displayPins.map((pin) => {
+      const points = this._lightAreaPoints(pin);
+      if (!points) return nothing;
+      const pointsAttr = points.map(([x, y]) => `${x},${y}`).join(" ");
+      if (!this.statuses) {
+        return pin.light_area?.mode === "shape"
+          ? svg`<polygon class="light-area-outline" points=${pointsAttr}></polygon>`
+          : nothing;
+      }
+      const light = pin.device_id
+        ? this.statuses.get(pin.device_id)?.light
+        : null;
+      if (!light) return nothing;
+      return svg`<polygon
+        class="light-area"
+        points=${pointsAttr}
+        fill=${light.color}
+        fill-opacity=${0.18 + 0.37 * light.level}
+      ></polygon>`;
+    });
+  }
+
   private _renderPinGroup(group: { x: number; y: number; pins: Pin[] }) {
     const r = this._pxToUnits(PIN_RADIUS_PX);
 
@@ -2099,7 +2176,8 @@ export class FloorplanCanvas extends LitElement {
         {
           badge: status?.badge,
           lowBattery: status?.lowBattery,
-          light: status?.light,
+          // A light with a lit area shows that instead of a glow.
+          light: this._lightAreaPoints(pin) ? null : status?.light,
           caption: pin.show_label ? this._pinLabel(pin) : null,
           key: pin.id,
         },
@@ -2552,8 +2630,10 @@ export class FloorplanCanvas extends LitElement {
           @pointerleave=${this._onPointerLeave}
         >
           ${this.rooms.map((room) => this._renderRoom(room))}
+          ${this._renderLightAreas()}
           ${this.walls.map((wall) => this._renderWall(wall))}
           ${this.openings.map((opening) => this._renderOpening(opening))}
+          ${this._renderDetectionZones()}
           ${this.meshLinks.map((link) => this._renderMeshLink(link))}
           ${this.meshStubs.map((stub) => this._renderMeshStubLine(stub))}
           ${this._renderMeshStubMarkers()}
