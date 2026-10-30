@@ -2124,8 +2124,9 @@ export class FloorplanCanvas extends LitElement {
     return this._effectivePoints("room", room.id, room.points);
   }
 
-  /** Lit areas of lights that are on (view mode), drawn under the rooms
-   * so names stay readable. While editing, each drawn area shows as a
+  /** Lit areas of lights that are on (view mode), drawn over the room
+   * fills so the room's own tint doesn't change the light's colour. While
+   * editing, each drawn area shows as a
    * dashed outline instead. */
   private _renderLightAreas() {
     return this._displayPins.map((pin) => {
@@ -2628,8 +2629,8 @@ export class FloorplanCanvas extends LitElement {
           @pointercancel=${this._onPointerUp}
           @pointerleave=${this._onPointerLeave}
         >
-          ${this._renderLightAreas()}
           ${this.rooms.map((room) => this._renderRoom(room))}
+          ${this._renderLightAreas()}
           ${this.walls.map((wall) => this._renderWall(wall))}
           ${this.openings.map((opening) => this._renderOpening(opening))}
           ${this._renderDetectionZones()}
