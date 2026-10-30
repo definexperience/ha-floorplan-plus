@@ -56,7 +56,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     show_header: "Show floor tabs and network layers",
     layers: "Layers people can pick",
     layersHelper:
-      "Standard and network layers in this card's menus. Empty (and no custom layers below): every layer.",
+      "Standard and network layers in this card's menus. Devices on layers left out are hidden in this card. Empty (and no custom layers below): every layer.",
     label_layers: "Custom layers people can pick",
     hidden_layers: "Standard layers that start hidden",
     hidden_label_layers: "Custom layers that start hidden",
@@ -89,7 +89,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     show_header: "Verdiepingstabbladen en netwerklagen tonen",
     layers: "Lagen die mensen kunnen kiezen",
     layersHelper:
-      "Standaard- en netwerklagen in de menu's van deze kaart. Leeg (en geen eigen lagen hieronder): alle lagen.",
+      "Standaard- en netwerklagen in de menu's van deze kaart. Apparaten op lagen die er niet bij staan, zijn in deze kaart verborgen. Leeg (en geen eigen lagen hieronder): alle lagen.",
     label_layers: "Eigen lagen die mensen kunnen kiezen",
     hidden_layers: "Standaardlagen die verborgen starten",
     hidden_label_layers: "Eigen lagen die verborgen starten",
@@ -121,7 +121,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     show_header: "Etagen-Tabs und Netzwerkebenen anzeigen",
     layers: "Ebenen zur Auswahl",
     layersHelper:
-      "Standard- und Netzwerkebenen in den Menüs dieser Karte. Leer (und keine eigenen Ebenen unten): alle Ebenen.",
+      "Standard- und Netzwerkebenen in den Menüs dieser Karte. Geräte auf nicht gewählten Ebenen sind in dieser Karte ausgeblendet. Leer (und keine eigenen Ebenen unten): alle Ebenen.",
     label_layers: "Eigene Ebenen zur Auswahl",
     hidden_layers: "Standardebenen, die ausgeblendet starten",
     hidden_label_layers: "Eigene Ebenen, die ausgeblendet starten",

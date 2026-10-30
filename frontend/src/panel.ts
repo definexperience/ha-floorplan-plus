@@ -2014,8 +2014,13 @@ export class FloorplanPlusPanel extends LitElement {
 
   /** `pins` without those whose every layer is switched off. */
   private _pinsOnVisibleLayers(pins: Pin[]): Pin[] {
-    if (this._layersOff.size === 0) return pins;
     const defs = this._layerDefs;
+    // A card that limits its layers hides the ones it doesn't offer.
+    const off = new Set(this._layersOff);
+    for (const d of defs) {
+      if (!this._layerSelectable(d)) off.add(d.id);
+    }
+    if (off.size === 0) return pins;
     const entities = this._entities;
     return pins.filter((pin) =>
       isOnVisibleLayer(
@@ -2026,7 +2031,7 @@ export class FloorplanPlusPanel extends LitElement {
           defs,
           pin.layer ?? null,
         ),
-        this._layersOff,
+        off,
       ),
     );
   }
