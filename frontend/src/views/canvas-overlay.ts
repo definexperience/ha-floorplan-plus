@@ -4,6 +4,7 @@ import { safeCustomElement } from "../define";
 import type {
   AreaMeta,
   CanvasMode,
+  DetectionZone,
   FloorMeta,
   HomeAssistant,
   Opening,
@@ -28,6 +29,10 @@ import {
   wallThicknessCm,
 } from "../canvas/materials";
 import { pickDisplayEntity, pinDisplayLabel } from "../canvas/device-display";
+import {
+  DEFAULT_DETECTION_ZONE,
+  detectionEntities,
+} from "../canvas/detection-zone";
 import { qualityColor } from "../canvas/mesh-colors";
 import "./row-actions";
 import "./device-card";
@@ -51,6 +56,7 @@ import {
   defaultSmallSubUnit,
   displayToCanvasUnitsAs,
   formatLarge,
+  parseLarge,
   formatSmallAs,
   parseSmallAs,
   smallSubUnitsFor,
@@ -474,6 +480,158 @@ export class CanvasOverlay extends LitElement {
   private _fieldRow = fieldRow;
   private _selectWrap = selectWrap;
 
+  /** The device's detection zone: off, or on with its range, width,
+   * direction and the sensor that colours it. */
+  private _renderDetectionZoneRows(pin: Pin) {
+    const zone = pin.detection_zone ?? null;
+    const set = (patch: Partial<DetectionZone>) =>
+      this._fire("pin-options-change", {
+        detection_zone: { ...(zone ?? DEFAULT_DETECTION_ZONE), ...patch },
+      });
+    const number = (value: string, min: number, max: number): number | null => {
+      const n = Number(value.replace(",", "."));
+      return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : null;
+    };
+    const sensors = detectionEntities(
+      pin.device_id,
+      this.entityLookup.values(),
+    );
+    return html`${this._fieldRow(
+      "mdi:radar",
+      localize("canvas.pin.zone"),
+      html`<input
+        type="checkbox"
+        class="switch"
+        role="switch"
+        aria-label=${localize("canvas.pin.zone")}
+        .checked=${zone !== null}
+        @change=${(e: Event) =>
+          this._fire("pin-options-change", {
+            detection_zone: (e.target as HTMLInputElement).checked
+              ? DEFAULT_DETECTION_ZONE
+              : null,
+          })}
+      />`,
+    )}
+    ${
+      zone === null
+        ? nothing
+        : this.unitsPerMeter === null
+          ? html`<div class="info-row">
+              <span class="grow info-sub"
+                >${localize("canvas.pin.zoneNeedsScale")}</span
+              >
+            </div>`
+          : html`${this._fieldRow(
+              "mdi:arrow-expand-horizontal",
+              localize("canvas.pin.zoneRange", {
+                unit: this.unitSystem === "imperial" ? "ft" : "m",
+              }),
+              html`<input
+                type="text"
+                inputmode="decimal"
+                class="text-field short"
+                .value=${formatLarge(zone.range_m, this.unitSystem)}
+                @change=${(e: Event) => {
+                  const m = parseLarge(
+                    (e.target as HTMLInputElement).value,
+                    this.unitSystem,
+                  );
+                  if (m !== null && m > 0) {
+                    set({ range_m: Math.min(100, Math.max(0.1, m)) });
+                  }
+                }}
+              />`,
+            )}
+            ${this._fieldRow(
+              "mdi:angle-acute",
+              localize("canvas.pin.zoneAngle"),
+              html`<input
+                type="text"
+                inputmode="numeric"
+                class="text-field short"
+                .value=${String(Math.round(zone.angle_deg))}
+                @change=${(e: Event) => {
+                  const n = number(
+                    (e.target as HTMLInputElement).value,
+                    1,
+                    360,
+                  );
+                  if (n !== null) set({ angle_deg: n });
+                }}
+              />`,
+            )}
+            ${this._fieldRow(
+              "mdi:compass-outline",
+              localize("canvas.pin.zoneDirection"),
+              html`<span class="zone-turn">
+                <button
+                  title=${localize("canvas.pin.zoneTurnLeft")}
+                  aria-label=${localize("canvas.pin.zoneTurnLeft")}
+                  @click=${() =>
+                    set({ rotation_deg: (zone.rotation_deg + 345) % 360 })}
+                >
+                  <ha-icon icon="mdi:rotate-left"></ha-icon>
+                </button>
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  class="text-field short"
+                  .value=${String(Math.round(zone.rotation_deg))}
+                  @change=${(e: Event) => {
+                    const n = number(
+                      (e.target as HTMLInputElement).value,
+                      -360,
+                      720,
+                    );
+                    if (n !== null)
+                      set({ rotation_deg: ((n % 360) + 360) % 360 });
+                  }}
+                />
+                <button
+                  title=${localize("canvas.pin.zoneTurnRight")}
+                  aria-label=${localize("canvas.pin.zoneTurnRight")}
+                  @click=${() =>
+                    set({ rotation_deg: (zone.rotation_deg + 15) % 360 })}
+                >
+                  <ha-icon icon="mdi:rotate-right"></ha-icon>
+                </button>
+              </span>`,
+            )}
+            ${
+              sensors.length > 0
+                ? this._fieldRow(
+                    "mdi:motion-sensor",
+                    localize("canvas.pin.zoneSensor"),
+                    this._selectWrap(
+                      html`<select
+                        aria-label=${localize("canvas.pin.zoneSensor")}
+                        @change=${(e: Event) =>
+                          set({
+                            entity_id:
+                              (e.target as HTMLSelectElement).value || null,
+                          })}
+                      >
+                        <option value="" ?selected=${!zone.entity_id}>
+                          ${localize("canvas.pin.zoneSensorAuto")}
+                        </option>
+                        ${sensors.map(
+                          (s) =>
+                            html`<option
+                              value=${s.entity_id}
+                              ?selected=${s.entity_id === zone.entity_id}
+                            >
+                              ${s.name}
+                            </option>`,
+                        )}
+                      </select>`,
+                    ),
+                  )
+                : nothing
+            }`
+    }`;
+  }
+
   /** A light's lit area: the glow around its marker, its whole room, or a
    * shape drawn on the plan. Lights only. */
   private _renderLightAreaRows(pin: Pin) {
@@ -810,6 +968,7 @@ export class CanvasOverlay extends LitElement {
               />`,
             )}
             ${this._renderLightAreaRows(pin)}
+            ${this._renderDetectionZoneRows(pin)}
             ${pinOptionRows(
               pin,
               (patch) => this._fire("pin-options-change", patch),

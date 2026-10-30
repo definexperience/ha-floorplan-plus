@@ -134,6 +134,20 @@ _PIN_SCHEMA = {
             vol.Optional("points"): _POINTS,
         },
     ),
+    # A radar's or camera's coverage wedge, drawn when an admin turns it on.
+    vol.Optional("detection_zone"): vol.Any(
+        None,
+        {
+            vol.Required("range_m"): vol.All(
+                vol.Coerce(float), vol.Range(min=0.1, max=100)
+            ),
+            vol.Required("angle_deg"): vol.All(
+                vol.Coerce(float), vol.Range(min=1, max=360)
+            ),
+            vol.Required("rotation_deg"): vol.Coerce(float),
+            vol.Optional("entity_id"): vol.Any(_TEXT, None),
+        },
+    ),
 }
 
 _WALL_SCHEMA = {

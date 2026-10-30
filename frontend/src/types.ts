@@ -54,6 +54,18 @@ export interface Pin {
   /** A light's lit area, drawn in its colour while it's on, in place of
    * the glow around its marker. Null/missing = the glow. */
   light_area?: LightArea | null;
+  /** A radar's or camera's coverage, drawn as a wedge from its marker
+   * (see canvas/detection-zone.ts). Null/missing = not drawn. */
+  detection_zone?: DetectionZone | null;
+}
+
+export interface DetectionZone {
+  range_m: number;
+  angle_deg: number;
+  /** Which way it faces: 0 = up on the plan, clockwise. */
+  rotation_deg: number;
+  /** The binary sensor that colours it; null = picked automatically. */
+  entity_id: string | null;
 }
 
 /** "room": the light's whole room. "shape": a polygon the admin drew. */

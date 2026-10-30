@@ -279,4 +279,25 @@ export const floorplanCanvasStyles = css`
     vector-effect: non-scaling-stroke;
     pointer-events: none;
   }
+  .detection-zone {
+    fill: var(--state-inactive-color, #9e9e9e);
+    fill-opacity: 0.14;
+    stroke: var(--state-inactive-color, #9e9e9e);
+    stroke-opacity: 0.5;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+  .detection-zone.detected {
+    fill: var(--state-active-color, var(--amber-color, #ffc107));
+    fill-opacity: 0.32;
+    stroke: var(--state-active-color, var(--amber-color, #ffc107));
+    stroke-opacity: 0.8;
+  }
+  .detection-zone.editing {
+    fill: var(--sc-accent);
+    fill-opacity: 0.08;
+    stroke: var(--sc-accent);
+    stroke-dasharray: 6 4;
+  }
 `;

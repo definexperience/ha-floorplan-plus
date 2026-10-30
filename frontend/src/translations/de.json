@@ -91,7 +91,16 @@
       "lightArea_glow": "Schein um das Symbol",
       "lightArea_room": "Ganzer Raum",
       "lightArea_shape": "Gezeichnete Form",
-      "lightAreaRedraw": "Beleuchteten Bereich neu zeichnen"
+      "lightAreaRedraw": "Beleuchteten Bereich neu zeichnen",
+      "zone": "Erfassungsbereich",
+      "zoneNeedsScale": "Lege zuerst den Maßstab des Grundrisses fest (das Lineal), damit der Bereich in echten Abständen gezeichnet werden kann.",
+      "zoneRange": "Reichweite ({unit})",
+      "zoneAngle": "Breite (Grad)",
+      "zoneDirection": "Richtung (Grad)",
+      "zoneTurnLeft": "Nach links drehen",
+      "zoneTurnRight": "Nach rechts drehen",
+      "zoneSensor": "Färbt sich mit",
+      "zoneSensorAuto": "Automatisch"
     },
     "wall": {
       "material": "Wandmaterial",

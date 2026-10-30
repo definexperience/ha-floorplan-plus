@@ -91,7 +91,16 @@
       "lightArea_glow": "Gloed rond het icoon",
       "lightArea_room": "Hele ruimte",
       "lightArea_shape": "Getekende vorm",
-      "lightAreaRedraw": "Verlicht gebied opnieuw tekenen"
+      "lightAreaRedraw": "Verlicht gebied opnieuw tekenen",
+      "zone": "Detectiezone",
+      "zoneNeedsScale": "Stel eerst de schaal van de plattegrond in (de liniaal), zodat de zone op ware afstand getekend kan worden.",
+      "zoneRange": "Bereik ({unit})",
+      "zoneAngle": "Breedte (graden)",
+      "zoneDirection": "Richting (graden)",
+      "zoneTurnLeft": "Naar links draaien",
+      "zoneTurnRight": "Naar rechts draaien",
+      "zoneSensor": "Kleurt mee met",
+      "zoneSensorAuto": "Automatisch"
     },
     "wall": {
       "material": "Muurmateriaal",

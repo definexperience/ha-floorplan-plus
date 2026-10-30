@@ -98,6 +98,7 @@ import {
   type LabelEntry,
   type LayerDef,
 } from "./canvas/layers";
+import { zoneEntityId } from "./canvas/detection-zone";
 import "./views/app-header";
 import "./views/canvas-overlay";
 import "./views/icon-popover";
@@ -413,6 +414,16 @@ export class FloorplanPlusPanel extends LitElement {
           format,
         ),
       );
+    }
+    for (const pin of this._layout.pins) {
+      const status = pin.device_id ? statuses.get(pin.device_id) : undefined;
+      if (!status || !pin.detection_zone) continue;
+      const entityId = zoneEntityId(
+        pin.detection_zone,
+        pin.device_id,
+        this._entities,
+      );
+      if (entityId && states[entityId]?.state === "on") status.detected = true;
     }
     const signature = statusSignature(statuses);
     if (signature !== this._deviceStatusSignature) {

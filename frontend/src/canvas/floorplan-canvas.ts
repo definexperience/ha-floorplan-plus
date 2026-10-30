@@ -33,6 +33,7 @@ import {
   isMouseWheel,
   findRoomForPoint,
 } from "./geometry";
+import { wedgePath } from "./detection-zone";
 import {
   findMeshLinkAt,
   findMeshStubAt,
@@ -2075,6 +2076,41 @@ export class FloorplanCanvas extends LitElement {
     }));
   }
 
+  /** Detection zones: a wedge per device that has one turned on, once the
+   * floor has a scale. Grey while clear, the active colour while its
+   * sensor detects someone, not drawn while the device is offline (its
+   * pin is red then). While editing, an outline. */
+  private _renderDetectionZones() {
+    const scale = this.scale;
+    if (!scale) return nothing;
+    const unitsPerMeter =
+      distance(...scale.points[0], ...scale.points[1]) / scale.meters;
+    if (!Number.isFinite(unitsPerMeter) || unitsPerMeter <= 0) return nothing;
+    return this._displayPins.map((pin) => {
+      const zone = pin.detection_zone;
+      if (!zone) return nothing;
+      const live = this._liveDragPin?.id === pin.id ? this._liveDragPin : null;
+      const d = wedgePath(
+        live?.x ?? pin.x,
+        live?.y ?? pin.y,
+        zone.range_m * unitsPerMeter,
+        zone.angle_deg,
+        zone.rotation_deg,
+      );
+      if (!this.statuses) {
+        return svg`<path class="detection-zone editing" d=${d}></path>`;
+      }
+      const status = pin.device_id
+        ? this.statuses.get(pin.device_id)
+        : undefined;
+      if (!status || status.tone === "offline") return nothing;
+      return svg`<path
+        class="detection-zone ${status.detected ? "detected" : ""}"
+        d=${d}
+      ></path>`;
+    });
+  }
+
   /** The polygon a pin's light area covers, or null when it has none. */
   private _lightAreaPoints(pin: Pin): [number, number][] | null {
     const area = pin.light_area;
@@ -2596,6 +2632,7 @@ export class FloorplanCanvas extends LitElement {
           ${this.rooms.map((room) => this._renderRoom(room))}
           ${this.walls.map((wall) => this._renderWall(wall))}
           ${this.openings.map((opening) => this._renderOpening(opening))}
+          ${this._renderDetectionZones()}
           ${this.meshLinks.map((link) => this._renderMeshLink(link))}
           ${this.meshStubs.map((stub) => this._renderMeshStubLine(stub))}
           ${this._renderMeshStubMarkers()}

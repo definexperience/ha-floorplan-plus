@@ -13,6 +13,9 @@ export interface DeviceStatus {
   /** A light that's on: the glow drawn around its pin, in the light's own
    * colour, stronger the brighter it is. */
   light?: LightGlow | null;
+  /** Whether the sensor behind the device's detection zone sees someone
+   * (see panel.ts's _refreshDeviceStatuses). */
+  detected?: boolean;
 }
 
 export interface LightGlow {
@@ -228,7 +231,8 @@ export function statusSignature(statuses: Map<string, DeviceStatus>): string {
     .map(
       ([id, s]) =>
         `${id}:${s.tone}:${s.badge ?? ""}:${s.lowBattery ? 1 : 0}:` +
-        (s.light ? `${s.light.color}@${s.light.level.toFixed(2)}` : ""),
+        (s.light ? `${s.light.color}@${s.light.level.toFixed(2)}` : "") +
+        (s.detected ? ":d" : ""),
     )
     .join("|");
 }

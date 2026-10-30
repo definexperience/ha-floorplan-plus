@@ -91,7 +91,16 @@
       "lightArea_glow": "Glow around the icon",
       "lightArea_room": "Whole room",
       "lightArea_shape": "Drawn shape",
-      "lightAreaRedraw": "Redraw lit area"
+      "lightAreaRedraw": "Redraw lit area",
+      "zone": "Detection zone",
+      "zoneNeedsScale": "Set the plan's scale first (the ruler tool), so the zone can be drawn in real distances.",
+      "zoneRange": "Range ({unit})",
+      "zoneAngle": "Width (degrees)",
+      "zoneDirection": "Direction (degrees)",
+      "zoneTurnLeft": "Turn left",
+      "zoneTurnRight": "Turn right",
+      "zoneSensor": "Colours with",
+      "zoneSensorAuto": "Automatic"
     },
     "wall": {
       "material": "Wall material",
