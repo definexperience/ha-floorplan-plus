@@ -289,9 +289,9 @@ export const floorplanCanvasStyles = css`
     pointer-events: none;
   }
   .detection-zone.detected {
-    fill: var(--state-active-color, var(--amber-color, #ffc107));
+    fill: var(--success-color, #43a047);
     fill-opacity: 0.32;
-    stroke: var(--state-active-color, var(--amber-color, #ffc107));
+    stroke: var(--success-color, #43a047);
     stroke-opacity: 0.8;
   }
   .detection-zone.editing {
