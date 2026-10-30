@@ -366,6 +366,12 @@ _SETTINGS_SCHEMA = {
     ),
     vol.Optional("auto_save", default=True): bool,
     vol.Optional("debug_logging", default=False): bool,
+    vol.Optional("hidden_layers", default=list): vol.All(
+        [str], vol.Length(max=64)
+    ),
+    vol.Optional("label_layers", default=list): vol.All(
+        [str], vol.Length(max=64)
+    ),
 }
 
 

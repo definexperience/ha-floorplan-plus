@@ -400,5 +400,29 @@
     "blue_grey": "Blauwgrijs",
     "black": "Zwart",
     "white": "Wit"
+  },
+  "layers": {
+    "title": "Lagen",
+    "builtin": {
+      "lights": "Lampen",
+      "switches": "Schakelaars",
+      "sensors": "Sensoren",
+      "climate": "Klimaat",
+      "screens": "Schermen en media",
+      "cameras": "Camera's",
+      "security": "Beveiliging",
+      "other": "Overige apparaten"
+    },
+    "new": "Nieuwe laag",
+    "newPrompt": "Naam van de nieuwe laag. Die wordt opgeslagen als Home Assistant-label, zodat je hem ook elders in Home Assistant kunt gebruiken.",
+    "create": "Aanmaken",
+    "rename": "Hernoemen",
+    "renamePrompt": "Nieuwe naam voor deze laag (en het Home Assistant-label)",
+    "remove": "Laag verwijderen",
+    "removeConfirm": "\"{name}\" niet meer als laag gebruiken? Het Home Assistant-label zelf en de apparaten die het hebben blijven bewaard.",
+    "useLabel": "Een Home Assistant-label als laag gebruiken…",
+    "removed": "Verwijderde lagen (tik om terug te zetten)",
+    "networks": "Netwerklagen in het menu",
+    "failed": "De wijziging kon niet in Home Assistant worden opgeslagen."
   }
 }

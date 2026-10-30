@@ -3,7 +3,6 @@ import { property, state } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
 import type {
   HomeAssistant,
-  Pin,
   PlaceableEntity,
   PropertyMeshLink,
   PropertyPlacement,
@@ -21,12 +20,14 @@ import {
 import "./row-actions";
 import "./device-card";
 import type { DeviceStatus } from "../canvas/device-state";
+import type { LayerDef } from "../canvas/layers";
 import {
   actionRow,
   deleteButton,
   fieldRow,
   infoCardStyles,
   networkGroup,
+  pinLayerRows,
   pinOptionRows,
   type PinOptions,
   renderCard,
@@ -136,6 +137,11 @@ export class PropertyOverlay extends LitElement {
   @property({ attribute: false }) selectedPinDeviceId: string | null = null;
   /** The selected outdoor device's on/off options. */
   @property({ attribute: false }) selectedPinOptions: PinOptions | null = null;
+  /** Custom layers (HA labels) and each device's labels, for the selected
+   * device's layer switches. */
+  @property({ attribute: false }) labelLayers: LayerDef[] = [];
+  @property({ attribute: false }) deviceLabels: Map<string, string[]> =
+    new Map();
   @property({ attribute: false }) meshLinks: PropertyMeshLink[] = [];
   @property({ attribute: false }) networkLabel: string | null = null;
   /** Show the weak → strong key along the bottom (a network layer is on). */
@@ -230,6 +236,19 @@ export class PropertyOverlay extends LitElement {
               : nothing
           }
         </div>
+        ${
+          this.selectedPinDeviceId
+            ? pinLayerRows(
+                this.labelLayers,
+                this.deviceLabels.get(this.selectedPinDeviceId) ?? [],
+                (labels) =>
+                  this._fire("device-labels-change", {
+                    deviceId: this.selectedPinDeviceId,
+                    labels,
+                  }),
+              )
+            : nothing
+        }
         ${this._renderDeviceNetwork()}`,
       footer: deleteButton(localize("property.removeFromProperty"), () =>
         this._fire("outdoor-pin-delete-click"),

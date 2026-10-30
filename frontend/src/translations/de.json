@@ -400,5 +400,29 @@
     "blue_grey": "Blaugrau",
     "black": "Schwarz",
     "white": "Weiß"
+  },
+  "layers": {
+    "title": "Ebenen",
+    "builtin": {
+      "lights": "Lampen",
+      "switches": "Schalter",
+      "sensors": "Sensoren",
+      "climate": "Klima",
+      "screens": "Bildschirme und Medien",
+      "cameras": "Kameras",
+      "security": "Sicherheit",
+      "other": "Andere Geräte"
+    },
+    "new": "Neue Ebene",
+    "newPrompt": "Name der neuen Ebene. Sie wird als Home Assistant-Label gespeichert, sodass du sie auch anderswo in Home Assistant nutzen kannst.",
+    "create": "Erstellen",
+    "rename": "Umbenennen",
+    "renamePrompt": "Neuer Name für diese Ebene (und ihr Home Assistant-Label)",
+    "remove": "Ebene entfernen",
+    "removeConfirm": "\"{name}\" nicht mehr als Ebene verwenden? Das Home Assistant-Label selbst und die Geräte, die es tragen, bleiben erhalten.",
+    "useLabel": "Ein Home Assistant-Label als Ebene verwenden…",
+    "removed": "Entfernte Ebenen (zum Wiederherstellen tippen)",
+    "networks": "Netzwerkebenen im Menü",
+    "failed": "Die Änderung konnte nicht in Home Assistant gespeichert werden."
   }
 }

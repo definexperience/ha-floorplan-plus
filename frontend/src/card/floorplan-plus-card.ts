@@ -23,6 +23,24 @@ type PanelElement = HTMLElement & {
 
 const DEFAULT_HEIGHT = 450;
 
+/** Mirrors canvas/layers.ts's BUILTIN_LAYERS and NETWORK_LAYERS ids,
+ * copied so this always-loaded file stays tiny. */
+const STANDARD_LAYERS = [
+  "lights",
+  "switches",
+  "sensors",
+  "climate",
+  "screens",
+  "cameras",
+  "security",
+  "other",
+];
+const NETWORK_LAYERS = ["zigbee", "wifi", "matter", "bluetooth"];
+
+function layerOptions(ids: string[]) {
+  return ids.map((id) => ({ value: id, label: t(`layer.${id}`) }));
+}
+
 const STRINGS: Record<string, Record<string, string>> = {
   en: {
     name: "Floorplan Plus",
@@ -36,6 +54,24 @@ const STRINGS: Record<string, Record<string, string>> = {
       "Zooms in on the room linked to this area. Empty: the whole floor.",
     height: "Height",
     show_header: "Show floor tabs and network layers",
+    layers: "Layers people can pick",
+    layersHelper:
+      "Standard and network layers in this card's menus. Empty (and no custom layers below): every layer.",
+    label_layers: "Custom layers people can pick",
+    hidden_layers: "Standard layers that start hidden",
+    hidden_label_layers: "Custom layers that start hidden",
+    "layer.lights": "Lights",
+    "layer.switches": "Switches",
+    "layer.sensors": "Sensors",
+    "layer.climate": "Climate",
+    "layer.screens": "Screens and media",
+    "layer.cameras": "Cameras",
+    "layer.security": "Security",
+    "layer.other": "Other devices",
+    "layer.zigbee": "Zigbee network",
+    "layer.wifi": "Wi-Fi network",
+    "layer.matter": "Thread/Matter network",
+    "layer.bluetooth": "Bluetooth",
   },
   nl: {
     name: "Floorplan Plus",
@@ -51,6 +87,24 @@ const STRINGS: Record<string, Record<string, string>> = {
       "Zoomt in op de getekende kamer die aan deze ruimte gekoppeld is. Leeg: de hele verdieping.",
     height: "Hoogte",
     show_header: "Verdiepingstabbladen en netwerklagen tonen",
+    layers: "Lagen die mensen kunnen kiezen",
+    layersHelper:
+      "Standaard- en netwerklagen in de menu's van deze kaart. Leeg (en geen eigen lagen hieronder): alle lagen.",
+    label_layers: "Eigen lagen die mensen kunnen kiezen",
+    hidden_layers: "Standaardlagen die verborgen starten",
+    hidden_label_layers: "Eigen lagen die verborgen starten",
+    "layer.lights": "Lampen",
+    "layer.switches": "Schakelaars",
+    "layer.sensors": "Sensoren",
+    "layer.climate": "Klimaat",
+    "layer.screens": "Schermen en media",
+    "layer.cameras": "Camera's",
+    "layer.security": "Beveiliging",
+    "layer.other": "Overige apparaten",
+    "layer.zigbee": "Zigbee-netwerk",
+    "layer.wifi": "Wifi-netwerk",
+    "layer.matter": "Thread/Matter-netwerk",
+    "layer.bluetooth": "Bluetooth",
   },
   de: {
     name: "Floorplan Plus",
@@ -65,6 +119,24 @@ const STRINGS: Record<string, Record<string, string>> = {
       "Zoomt auf den Raum, der mit diesem Bereich verknüpft ist. Leer: die ganze Etage.",
     height: "Höhe",
     show_header: "Etagen-Tabs und Netzwerkebenen anzeigen",
+    layers: "Ebenen zur Auswahl",
+    layersHelper:
+      "Standard- und Netzwerkebenen in den Menüs dieser Karte. Leer (und keine eigenen Ebenen unten): alle Ebenen.",
+    label_layers: "Eigene Ebenen zur Auswahl",
+    hidden_layers: "Standardebenen, die ausgeblendet starten",
+    hidden_label_layers: "Eigene Ebenen, die ausgeblendet starten",
+    "layer.lights": "Lampen",
+    "layer.switches": "Schalter",
+    "layer.sensors": "Sensoren",
+    "layer.climate": "Klima",
+    "layer.screens": "Bildschirme und Medien",
+    "layer.cameras": "Kameras",
+    "layer.security": "Sicherheit",
+    "layer.other": "Andere Geräte",
+    "layer.zigbee": "Zigbee-Netzwerk",
+    "layer.wifi": "WLAN-Netzwerk",
+    "layer.matter": "Thread/Matter-Netzwerk",
+    "layer.bluetooth": "Bluetooth",
   },
 };
 
@@ -142,10 +214,32 @@ class FloorplanPlusCard extends HTMLElement {
           },
         },
         { name: "show_header", selector: { boolean: {} } },
+        {
+          name: "layers",
+          selector: {
+            select: {
+              multiple: true,
+              options: layerOptions([...STANDARD_LAYERS, ...NETWORK_LAYERS]),
+            },
+          },
+        },
+        { name: "label_layers", selector: { label: { multiple: true } } },
+        {
+          name: "hidden_layers",
+          selector: {
+            select: { multiple: true, options: layerOptions(STANDARD_LAYERS) },
+          },
+        },
+        {
+          name: "hidden_label_layers",
+          selector: { label: { multiple: true } },
+        },
       ],
       computeLabel: (schema: { name: string }) => t(schema.name),
       computeHelper: (schema: { name: string }) =>
-        schema.name === "floor" || schema.name === "area"
+        schema.name === "floor" ||
+        schema.name === "area" ||
+        schema.name === "layers"
           ? t(`${schema.name}Helper`)
           : undefined,
     };
@@ -201,6 +295,15 @@ class FloorplanPlusCard extends HTMLElement {
         if (config.floor) options.floor = config.floor;
         if (config.area) options.area = config.area;
         if (config.show_header === false) options.show_header = false;
+        for (const key of [
+          "layers",
+          "label_layers",
+          "hidden_layers",
+          "hidden_label_layers",
+        ] as const) {
+          const value = config[key];
+          if (Array.isArray(value) && value.length > 0) options[key] = value;
+        }
         panel.cardOptions = options;
         if (this._hass) panel.hass = this._hass;
         body.replaceChildren(panel);

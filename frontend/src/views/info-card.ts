@@ -1,6 +1,7 @@
 import { css, html, nothing } from "lit";
 import { qualityColor } from "../canvas/mesh-colors";
 import { localize } from "../i18n";
+import type { LayerDef } from "../canvas/layers";
 import type { PlaceableEntity, Pin } from "../types";
 
 /** HA map-panel style info card shared by the floor and Property overlays:
@@ -412,6 +413,38 @@ export function pinOptionRows(
           onChange({ view_only: !(e.target as HTMLInputElement).checked })}
       />
     </div>`;
+}
+
+/** The custom layers (HA labels) a placed device is on, one switch per
+ * layer. `onChange` gets the device's whole new label list, keeping any
+ * labels that aren't layers. */
+export function pinLayerRows(
+  labelLayers: LayerDef[],
+  deviceLabels: string[],
+  onChange: (labels: string[]) => void,
+) {
+  if (labelLayers.length === 0) return nothing;
+  return html`<div class="info-group">
+    <div class="info-group-title">${localize("layers.title")}</div>
+    ${labelLayers.map((layer) =>
+      fieldRow(
+        layer.icon,
+        layer.name ?? "",
+        html`<input
+          type="checkbox"
+          class="switch"
+          role="switch"
+          aria-label=${layer.name ?? ""}
+          .checked=${deviceLabels.includes(layer.labelId!)}
+          @change=${(e: Event) => {
+            const on = (e.target as HTMLInputElement).checked;
+            const rest = deviceLabels.filter((l) => l !== layer.labelId);
+            onChange(on ? [...rest, layer.labelId!] : rest);
+          }}
+        />`,
+      ),
+    )}
+  </div>`;
 }
 
 export function selectWrap(select: unknown) {

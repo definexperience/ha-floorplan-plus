@@ -96,6 +96,50 @@ export const panelStyles = css`
     flex-direction: column;
     min-width: 220px;
   }
+  /* Layers menu: a row per layer, with edit-mode actions beside it. */
+  .layer-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .layer-row .menu-item {
+    flex: 1;
+    min-width: 0;
+  }
+  .layer-list .grow {
+    flex: 1;
+    min-width: 0;
+  }
+  .layer-list .count {
+    font-size: var(--sc-fs-small);
+    color: var(--sc-fg-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .layer-action {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .layer-action ha-icon {
+    --mdc-icon-size: 20px;
+    color: var(--sc-fg-secondary);
+  }
+  .layer-action:hover {
+    background: var(--sc-hover);
+  }
+  .layer-heading {
+    padding: 4px var(--ha-space-4, 16px);
+  }
+  .layer-list .popover-row {
+    padding: 4px var(--ha-space-4, 16px);
+  }
+  .layer-list .popover-row select {
+    width: 100%;
+  }
   .hidden-file-input {
     display: none;
   }

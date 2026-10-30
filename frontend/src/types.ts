@@ -102,6 +102,11 @@ export interface Settings {
   auto_save: boolean;
   /** Send panel events to the backend's debug log file (see debug.py). */
   debug_logging: boolean;
+  /** Standard layers (canvas/layers.ts's BUILTIN_LAYERS) and network
+   * layers (NetworkType) the admin removed for everyone. */
+  hidden_layers: string[];
+  /** Home Assistant label ids used as extra layers, in menu order. */
+  label_layers: string[];
 }
 
 /** What the backend reports for the version handshake (see debug.py). */
@@ -573,4 +578,13 @@ export interface CardOptions {
   area?: string;
   /** Floor tabs and the network layers menu. On unless false. */
   show_header?: boolean;
+  /** Standard and network layers people can pick in this card. Together
+   * with label_layers; both empty or missing = every layer. */
+  layers?: string[];
+  /** HA label ids of custom layers people can pick in this card. */
+  label_layers?: string[];
+  /** Standard layers that start switched off in this card. */
+  hidden_layers?: string[];
+  /** Custom layers (HA label ids) that start switched off in this card. */
+  hidden_label_layers?: string[];
 }

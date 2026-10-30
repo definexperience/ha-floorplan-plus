@@ -32,12 +32,14 @@ import { qualityColor } from "../canvas/mesh-colors";
 import "./row-actions";
 import "./device-card";
 import type { DeviceStatus } from "../canvas/device-state";
+import type { LayerDef } from "../canvas/layers";
 import {
   actionRow,
   deleteButton,
   fieldRow,
   infoCardStyles,
   networkGroup,
+  pinLayerRows,
   pinOptionRows,
   renderCard,
   selectWrap,
@@ -113,6 +115,11 @@ export class CanvasOverlay extends LitElement {
   @property({ type: Number }) unitsPerMeter: number | null = null;
   @property({ attribute: false }) pinStack: Pin[] | null = null;
   @property({ attribute: false }) entityLookup: Map<string, PlaceableEntity> =
+    new Map();
+  /** Custom layers (HA labels) and each device's labels, for the selected
+   * device's layer switches. */
+  @property({ attribute: false }) labelLayers: LayerDef[] = [];
+  @property({ attribute: false }) deviceLabels: Map<string, string[]> =
     new Map();
   @property({ attribute: false }) selectedOpening: Opening | null = null;
   /** Show the weak → strong key along the bottom (a network layer is on). */
@@ -759,6 +766,19 @@ export class CanvasOverlay extends LitElement {
               ),
             )}
           </div>
+          ${
+            pin.device_id
+              ? pinLayerRows(
+                  this.labelLayers,
+                  this.deviceLabels.get(pin.device_id) ?? [],
+                  (labels) =>
+                    this._fire("device-labels-change", {
+                      deviceId: pin.device_id,
+                      labels,
+                    }),
+                )
+              : nothing
+          }
           ${this._renderDeviceNetwork(pin)}`,
         footer: this._deleteButton(
           localize("canvas.pin.delete"),

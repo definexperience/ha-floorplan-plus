@@ -11,6 +11,8 @@ interface Request {
   confirmText?: string;
   dismissText?: string;
   destructive?: boolean;
+  /** A prompt's starting text. */
+  value?: string;
   resolve: (value: boolean | string | null) => void;
 }
 
@@ -107,6 +109,7 @@ export class ScDialog extends LitElement {
     text: string;
     title?: string;
     confirmText?: string;
+    value?: string;
   }): Promise<string | null> {
     return this._open({ kind: "prompt", ...opts }) as Promise<string | null>;
   }
@@ -117,7 +120,7 @@ export class ScDialog extends LitElement {
     // A second request while one is open dismisses the first.
     this._onCancel();
     return new Promise((resolve) => {
-      this._value = "";
+      this._value = req.value ?? "";
       this._req = { ...req, resolve };
       void this.updateComplete.then(() => {
         if (!this._dialog.open) this._dialog.showModal();
