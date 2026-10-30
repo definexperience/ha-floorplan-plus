@@ -81,6 +81,8 @@
       "delete": "Remove device",
       "removeFromSpot": "Remove from this spot",
       "stackTitle": "{count} devices at this spot",
+      "reading": "Reading on the plan",
+      "readingNone": "None",
       "showLabel": "Show name on the plan",
       "usersCanControl": "Users can switch it",
       "usersCanControlHint": "Off: users who aren't admins only see its state"

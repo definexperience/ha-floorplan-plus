@@ -81,6 +81,8 @@
       "delete": "Gerät entfernen",
       "removeFromSpot": "Von dieser Stelle entfernen",
       "stackTitle": "{count} Geräte an dieser Stelle",
+      "reading": "Wert auf dem Grundriss",
+      "readingNone": "Keiner",
       "showLabel": "Namen im Plan anzeigen",
       "usersCanControl": "Benutzer dürfen schalten",
       "usersCanControlHint": "Aus: Benutzer ohne Adminrechte sehen nur den Status"

@@ -8,6 +8,7 @@ import type {
   ContentBounds,
   FloorLayout,
   FloorMeta,
+  HassEntityState,
   HomeAssistant,
   NetworkType,
   Opening,
@@ -353,8 +354,27 @@ export class FloorplanPlusPanel extends LitElement {
   private _refreshDeviceStatuses(): void {
     const states = this._hass?.states ?? {};
     const statuses = new Map<string, DeviceStatus>();
+    const badgeEntity = new Map<string, string>();
+    for (const pin of [...this._layout.pins, ...this._propertyLayout.pins]) {
+      if (pin.device_id && pin.badge_entity_id) {
+        badgeEntity.set(pin.device_id, pin.badge_entity_id);
+      }
+    }
+    const hass = this._hass;
+    const format = hass?.formatEntityState
+      ? (st: HassEntityState) => hass.formatEntityState!(st)
+      : undefined;
     for (const id of this._placedDeviceIdsEverywhere) {
-      statuses.set(id, deviceStatus(id, this._entities, states));
+      statuses.set(
+        id,
+        deviceStatus(
+          id,
+          this._entities,
+          states,
+          badgeEntity.get(id) ?? null,
+          format,
+        ),
+      );
     }
     const signature = statusSignature(statuses);
     if (signature !== this._deviceStatusSignature) {

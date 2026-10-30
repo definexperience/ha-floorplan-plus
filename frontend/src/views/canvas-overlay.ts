@@ -751,8 +751,12 @@ export class CanvasOverlay extends LitElement {
                   })}
               />`,
             )}
-            ${pinOptionRows(pin, (patch) =>
-              this._fire("pin-options-change", patch),
+            ${pinOptionRows(
+              pin,
+              (patch) => this._fire("pin-options-change", patch),
+              [...this.entityLookup.values()].filter(
+                (e) => pin.device_id !== null && e.device_id === pin.device_id,
+              ),
             )}
           </div>
           ${this._renderDeviceNetwork(pin)}`,

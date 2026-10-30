@@ -81,6 +81,8 @@
       "delete": "Apparaat verwijderen",
       "removeFromSpot": "Van deze plek verwijderen",
       "stackTitle": "{count} apparaten op deze plek",
+      "reading": "Waarde op de plattegrond",
+      "readingNone": "Geen",
       "showLabel": "Naam op de plattegrond tonen",
       "usersCanControl": "Gebruikers mogen schakelen",
       "usersCanControlHint": "Uit: gebruikers die geen beheerder zijn zien alleen de status"

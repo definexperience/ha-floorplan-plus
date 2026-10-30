@@ -122,6 +122,9 @@ _PIN_SCHEMA = {
     vol.Optional("show_label"): bool,
     # Non-admin users see the device's states but get no controls for it.
     vol.Optional("view_only"): bool,
+    # One of the device's own entities to show beside its marker; none
+    # unless an admin picked one.
+    vol.Optional("badge_entity_id"): vol.Any(_TEXT, None),
 }
 
 _WALL_SCHEMA = {

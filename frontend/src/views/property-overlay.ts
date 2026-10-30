@@ -28,6 +28,7 @@ import {
   infoCardStyles,
   networkGroup,
   pinOptionRows,
+  type PinOptions,
   renderCard,
 } from "./info-card";
 import { meshLegendStyles, renderMeshLegend } from "./mesh-legend";
@@ -134,10 +135,7 @@ export class PropertyOverlay extends LitElement {
   @property({ attribute: false }) selectedPinOverride: string | null = null;
   @property({ attribute: false }) selectedPinDeviceId: string | null = null;
   /** The selected outdoor device's on/off options. */
-  @property({ attribute: false }) selectedPinOptions: Pick<
-    Pin,
-    "show_label" | "view_only"
-  > | null = null;
+  @property({ attribute: false }) selectedPinOptions: PinOptions | null = null;
   @property({ attribute: false }) meshLinks: PropertyMeshLink[] = [];
   @property({ attribute: false }) networkLabel: string | null = null;
   /** Show the weak → strong key along the bottom (a network layer is on). */
@@ -220,8 +218,14 @@ export class PropertyOverlay extends LitElement {
           )}
           ${
             this.selectedPinOptions
-              ? pinOptionRows(this.selectedPinOptions, (patch) =>
-                  this._fire("outdoor-pin-options-change", patch),
+              ? pinOptionRows(
+                  this.selectedPinOptions,
+                  (patch) => this._fire("outdoor-pin-options-change", patch),
+                  this.entities.filter(
+                    (e) =>
+                      this.selectedPinDeviceId !== null &&
+                      e.device_id === this.selectedPinDeviceId,
+                  ),
                 )
               : nothing
           }

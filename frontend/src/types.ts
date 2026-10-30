@@ -48,6 +48,9 @@ export interface Pin {
   /** Users who aren't admins see this device's states but can't switch it
    * from the plan. Admins always can. Off when missing. */
   view_only?: boolean;
+  /** One of the device's own entities whose state is shown next to its
+   * marker. Only an admin's explicit pick: null/missing shows nothing. */
+  badge_entity_id?: string | null;
 }
 
 export interface Wall {

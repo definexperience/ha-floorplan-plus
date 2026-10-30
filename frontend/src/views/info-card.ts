@@ -1,7 +1,7 @@
 import { css, html, nothing } from "lit";
 import { qualityColor } from "../canvas/mesh-colors";
 import { localize } from "../i18n";
-import type { Pin } from "../types";
+import type { PlaceableEntity, Pin } from "../types";
 
 /** HA map-panel style info card shared by the floor and Property overlays:
  * a floating card with a close button, a title and subtitle, inner rounded
@@ -336,11 +336,52 @@ export function fieldRow(icon: string, label: string, control: unknown) {
 /** A placed device's on/off options, shared by the floor and Property
  * cards: its name on the plan, and whether users who aren't admins may
  * switch it. */
+export type PinOptions = Pick<
+  Pin,
+  "show_label" | "view_only" | "badge_entity_id"
+>;
+
 export function pinOptionRows(
-  pin: Pick<Pin, "show_label" | "view_only">,
-  onChange: (patch: Partial<Pick<Pin, "show_label" | "view_only">>) => void,
+  pin: PinOptions,
+  onChange: (patch: Partial<PinOptions>) => void,
+  /** The device's own entities, offered as its reading on the plan. */
+  deviceEntities: PlaceableEntity[] = [],
 ) {
-  return html`${fieldRow(
+  const readings = [...deviceEntities].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  return html`${
+      readings.length > 0
+        ? fieldRow(
+            "mdi:numeric",
+            localize("canvas.pin.reading"),
+            selectWrap(
+              html`<select
+                aria-label=${localize("canvas.pin.reading")}
+                @change=${(e: Event) =>
+                  onChange({
+                    badge_entity_id:
+                      (e.target as HTMLSelectElement).value || null,
+                  })}
+              >
+                <option value="" ?selected=${!pin.badge_entity_id}>
+                  ${localize("canvas.pin.readingNone")}
+                </option>
+                ${readings.map(
+                  (e) =>
+                    html`<option
+                      value=${e.entity_id}
+                      ?selected=${e.entity_id === pin.badge_entity_id}
+                    >
+                      ${e.name}
+                    </option>`,
+                )}
+              </select>`,
+            ),
+          )
+        : nothing
+    }
+    ${fieldRow(
       "mdi:label-outline",
       localize("canvas.pin.showLabel"),
       html`<input
