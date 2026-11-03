@@ -20,6 +20,7 @@ import type {
   VersionInfo,
   BluetoothAdvertisementEvent,
 } from "./types";
+import { entityIdOfKey } from "./canvas/device-display";
 import { DEFAULT_WALL_MATERIAL, wallMaterial } from "./canvas/materials";
 import type { LabelEntry } from "./canvas/layers";
 
@@ -326,15 +327,19 @@ function uuidV4(): string {
   });
 }
 
+/** A new pin for `key` (see canvas/device-display.ts's pinKey): a whole
+ * device, or `entity:<entity_id>` for one entity on its own. */
 export function emptyPin(
-  deviceId: string | null,
+  key: string | null,
   x: number,
   y: number,
   roomId: string | null,
 ): Pin {
+  const singleEntityId = entityIdOfKey(key);
   return {
     id: newId("pin"),
-    device_id: deviceId,
+    device_id: singleEntityId ? null : key,
+    ...(singleEntityId ? { single_entity_id: singleEntityId } : {}),
     x,
     y,
     room_id: roomId,

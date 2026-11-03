@@ -206,7 +206,16 @@ def _export_device(
     icon uses, rather than a stored choice.
     """
     device_id = pin.get("device_id")
-    entity = registry_snapshot.pick_display_entity(device_id, placeable_entities)
+    single_entity_id = pin.get("single_entity_id")
+    if single_entity_id:
+        # A pin for one entity on its own (a relay channel, a helper).
+        entity = next(
+            (e for e in placeable_entities if e["entity_id"] == single_entity_id),
+            None,
+        )
+        device_id = entity["device_id"] if entity else None
+    else:
+        entity = registry_snapshot.pick_display_entity(device_id, placeable_entities)
     return {
         "device_id": device_id,
         "entity_id": entity["entity_id"] if entity else None,

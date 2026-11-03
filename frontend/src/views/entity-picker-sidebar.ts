@@ -3,7 +3,11 @@ import { property, state } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
 import { PROPERTY_LOCATION_ID } from "../types";
 import type { AreaMeta, FloorMeta, PlaceableEntity, Room } from "../types";
-import { pickDisplayEntity } from "../canvas/device-display";
+import {
+  entityIconName,
+  entityKey,
+  pickDisplayEntity,
+} from "../canvas/device-display";
 import { localize } from "../i18n";
 import { selectStyles, sharedStyles } from "../styles";
 import { entityPickerSidebarStyles } from "./entity-picker-sidebar-styles";
@@ -31,6 +35,23 @@ interface Suggestion {
   devices: DeviceGroup[];
 }
 
+/** The entities of a device worth a pin of their own (a relay board's
+ * channels): its main ones, or every one when it has nothing else. */
+function ownPinCandidates(entities: PlaceableEntity[]): PlaceableEntity[] {
+  const main = entities.filter((e) => !e.entity_category);
+  return main.length > 0 ? main : entities;
+}
+
+/** An entity's name inside its device's list: "Relay board Kitchen" is
+ * just "Kitchen" there. */
+function shortName(e: PlaceableEntity): string {
+  const device = e.device_name ?? "";
+  if (device && e.name.startsWith(device) && e.name !== device) {
+    return e.name.slice(device.length).trim() || e.name;
+  }
+  return e.name;
+}
+
 @safeCustomElement("entity-picker-sidebar")
 export class EntityPickerSidebar extends LitElement {
   static override styles = [
@@ -41,6 +62,8 @@ export class EntityPickerSidebar extends LitElement {
 
   @state() private _menuOpen = false;
   @property({ attribute: false }) entities: PlaceableEntity[] = [];
+  /** Pin keys placed on the plan shown (see canvas/device-display.ts's
+   * pinKey): device_ids, and `entity:<id>` for single-entity pins. */
   @property({ attribute: false }) placedDeviceIds: Set<string> = new Set();
   @property({ attribute: false }) armedEntityId: string | null = null;
   @property({ attribute: false }) floors: FloorMeta[] = [];
@@ -64,6 +87,9 @@ export class EntityPickerSidebar extends LitElement {
   @state() private _floorFilter: string | "all" | null = null;
   @state() private _areaFilter: string | null = null;
   @state() private _placedFilter: "all" | "unplaced" | "placed" = "all";
+  /** Device rows opened to show their entities, by device_id. */
+  @state() private _expanded: Set<string> = new Set();
+  @state() private _otherCollapsed = false;
 
   // --- resizable width (per-browser, not shared — see #22) --------------
 
@@ -205,7 +231,9 @@ export class EntityPickerSidebar extends LitElement {
   private get _devices(): DeviceGroup[] {
     const groups = new Map<string, PlaceableEntity[]>();
     for (const e of this.entities) {
-      const key = e.device_id ?? e.entity_id;
+      // Entities with no device are listed apart (see _otherEntities).
+      if (!e.device_id) continue;
+      const key = e.device_id;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(e);
     }
@@ -254,28 +282,102 @@ export class EntityPickerSidebar extends LitElement {
     return primary.placed_floor_name ?? primary.placed_floor_id;
   }
 
-  private get _filtered(): DeviceGroup[] {
-    const q = this._search.trim().toLowerCase();
+  /** Whether something in `areaId` passes the floor and area filters.
+   * Something in no area at all only shows while no area is picked:
+   * a helper often has none, and would otherwise never show. */
+  private _passesWhere(areaId: string | null, allowNoArea: boolean): boolean {
     const floorId = this._effectiveFloorFilter;
-    const areaId = this._areaFilter;
+    if (this._areaFilter) return areaId === this._areaFilter;
+    if (!floorId) return true;
+    if (areaId === null) return allowNoArea;
+    const area = this.areas.find((a) => a.area_id === areaId);
+    return !!area && this._areaIsOnFloor(area, floorId);
+  }
+
+  private _passesPlaced(key: string): boolean {
+    if (this._placedFilter === "all") return true;
+    return this.placedDeviceIds.has(key) === (this._placedFilter === "placed");
+  }
+
+  private get _query(): string {
+    return this._search.trim().toLowerCase();
+  }
+
+  private _entityMatches(e: PlaceableEntity, q: string): boolean {
+    return (
+      e.name.toLowerCase().includes(q) || e.entity_id.toLowerCase().includes(q)
+    );
+  }
+
+  private get _filtered(): DeviceGroup[] {
+    const q = this._query;
     return this._devices.filter((d) => {
-      if (areaId) {
-        if (d.areaId !== areaId) return false;
-      } else if (floorId) {
-        const area = this.areas.find((a) => a.area_id === d.areaId);
-        if (!area || !this._areaIsOnFloor(area, floorId)) return false;
-      }
-      if (this._placedFilter !== "all") {
-        const placed = this.placedDeviceIds.has(d.deviceId);
-        if (placed !== (this._placedFilter === "placed")) return false;
+      if (!this._passesWhere(d.areaId, false)) return false;
+      // A device also shows while one of its entities placed on its own
+      // matches the placed filter, so that entity can be found.
+      if (
+        !this._passesPlaced(d.deviceId) &&
+        !ownPinCandidates(d.entities).some((e) =>
+          this._passesPlaced(entityKey(e.entity_id)),
+        )
+      ) {
+        return false;
       }
       if (!q) return true;
       return (
         d.deviceName.toLowerCase().includes(q) ||
         (d.areaName ?? "").toLowerCase().includes(q) ||
-        d.entities.some((e) => e.entity_id.toLowerCase().includes(q))
+        d.entities.some((e) => this._entityMatches(e, q))
       );
     });
+  }
+
+  /** Entities with no physical device (helpers, templates, groups,
+   * YAML-only entities), each placed on a pin of its own. */
+  private get _otherEntities(): PlaceableEntity[] {
+    const q = this._query;
+    return this.entities
+      .filter((e) => !e.device_id)
+      .filter(
+        (e) =>
+          this._passesWhere(e.area_id, true) &&
+          this._passesPlaced(entityKey(e.entity_id)) &&
+          (!q ||
+            this._entityMatches(e, q) ||
+            (e.area_name ?? "").toLowerCase().includes(q)),
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Non-null (the floor's name) when this entity is on a pin of its own
+   * on a different floor than the one open. */
+  private _entityBlockedFloorName(e: PlaceableEntity): string | null {
+    if (
+      !e.entity_placed_floor_id ||
+      e.entity_placed_floor_id === this.currentFloorId
+    )
+      return null;
+    return e.entity_placed_floor_name ?? e.entity_placed_floor_id;
+  }
+
+  private _toggleExpanded(event: Event, deviceId: string): void {
+    event.stopPropagation();
+    const next = new Set(this._expanded);
+    if (next.has(deviceId)) next.delete(deviceId);
+    else next.add(deviceId);
+    this._expanded = next;
+  }
+
+  /** Open when the admin opened it, or while a search matches one of its
+   * entities by name rather than the device itself. */
+  private _isExpanded(device: DeviceGroup): boolean {
+    if (this._expanded.has(device.deviceId)) return true;
+    const q = this._query;
+    return (
+      !!q &&
+      !device.deviceName.toLowerCase().includes(q) &&
+      device.entities.some((e) => this._entityMatches(e, q))
+    );
   }
 
   /** Per linked room, its area's devices that are on no plan yet. A
@@ -371,6 +473,16 @@ export class EntityPickerSidebar extends LitElement {
   }
 
   /** A row button: act on that device's pin without arming the row. */
+  private _arm(key: string): void {
+    this.dispatchEvent(
+      new CustomEvent("entity-armed", {
+        detail: { entityId: key },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
   private _emitForDevice(event: Event, name: string, deviceId: string): void {
     event.stopPropagation();
     this.dispatchEvent(
@@ -384,6 +496,7 @@ export class EntityPickerSidebar extends LitElement {
 
   override render() {
     const filtered = this._filtered;
+    const others = this._otherEntities;
     return html`
       <div
         class="resize-handle"
@@ -535,19 +648,148 @@ export class EntityPickerSidebar extends LitElement {
       <div class="list">
         ${this._renderSuggestions()}
         ${
-          filtered.length === 0
+          filtered.length === 0 && others.length === 0
             ? html`<div class="empty">${localize("picker.noMatches")}</div>`
-            : filtered.map((device) => this._renderRow(device))
+            : filtered.map((device) => this._renderDevice(device))
+        }
+        ${
+          others.length > 0
+            ? html`<button
+                  class="suggest-divider other-head"
+                  aria-expanded=${this._otherCollapsed ? "false" : "true"}
+                  @click=${() => (this._otherCollapsed = !this._otherCollapsed)}
+                >
+                  <span
+                    >${localize("picker.otherEntities", {
+                      count: others.length,
+                    })}</span
+                  >
+                  <ha-icon
+                    icon=${
+                      this._otherCollapsed
+                        ? "mdi:chevron-down"
+                        : "mdi:chevron-up"
+                    }
+                  ></ha-icon>
+                </button>
+                ${
+                  this._otherCollapsed
+                    ? nothing
+                    : others.map((e) => this._renderEntityRow(e, false))
+                }`
+            : nothing
         }
       </div>
     `;
   }
 
-  /** One device row. `actions` are its buttons when it isn't placed. */
-  private _renderRow(device: DeviceGroup, actions?: unknown) {
+  /** A device row and, when opened, its entities below it. */
+  private _renderDevice(device: DeviceGroup) {
+    const candidates = ownPinCandidates(device.entities);
+    // A device with one entity is that entity: nothing to split.
+    const splittable = candidates.length > 1;
+    const expanded = splittable && this._isExpanded(device);
+    const q = this._query;
+    const shown =
+      q && !device.deviceName.toLowerCase().includes(q)
+        ? candidates.filter((e) => this._entityMatches(e, q))
+        : candidates;
+    return html`${this._renderRow(
+      device,
+      undefined,
+      splittable
+        ? html`<button
+            class="expand"
+            title=${localize(
+              expanded ? "picker.hideEntities" : "picker.showEntities",
+            )}
+            aria-label=${localize(
+              expanded ? "picker.hideEntities" : "picker.showEntities",
+            )}
+            aria-expanded=${expanded ? "true" : "false"}
+            @click=${(e: Event) => this._toggleExpanded(e, device.deviceId)}
+          >
+            <ha-icon
+              icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
+            ></ha-icon>
+          </button>`
+        : nothing,
+    )}
+    ${expanded ? shown.map((e) => this._renderEntityRow(e, true)) : nothing}`;
+  }
+
+  /** One entity on a pin of its own: a device's channel (`sub`, indented
+   * under its device) or an entity with no device. */
+  private _renderEntityRow(e: PlaceableEntity, sub: boolean) {
+    const key = entityKey(e.entity_id);
+    const placed = this.placedDeviceIds.has(key);
+    const blockedFloorName = this._entityBlockedFloorName(e);
+    const armed = this.armedEntityId === key;
+    const name = sub ? shortName(e) : e.name;
+    const subtitle = sub
+      ? e.entity_id
+      : [e.area_name, e.integration_name ?? e.entity_id]
+          .filter((part): part is string => !!part)
+          .join(" - ");
+    return html`
+      <div
+        class="item entity ${sub ? "sub" : ""} ${armed ? "armed" : ""} ${
+          placed ? "placed" : ""
+        } ${blockedFloorName ? "blocked" : ""}"
+        title=${
+          blockedFloorName
+            ? localize("picker.alreadyPlaced", { floor: blockedFloorName })
+            : `${e.name} · ${e.entity_id}`
+        }
+        @click=${() => {
+          if (!blockedFloorName) this._arm(key);
+        }}
+      >
+        <span class="avatar"
+          ><ha-icon icon=${entityIconName(e)}></ha-icon
+        ></span>
+        <span class="text">
+          <span class="name">${name}</span>
+          <span class="meta"
+            >${
+              blockedFloorName
+                ? localize("picker.placedOn", { floor: blockedFloorName })
+                : subtitle
+            }</span
+          >
+          ${placed ? html`<span class="meta">${localize("picker.placed")}</span>` : nothing}
+        </span>
+        ${placed ? this._placedActions(key) : nothing}
+      </div>
+    `;
+  }
+
+  /** Locate and remove buttons for a placed row. */
+  private _placedActions(key: string) {
+    return html`<span class="row-actions">
+      <button
+        title=${localize("picker.locate")}
+        aria-label=${localize("picker.locate")}
+        @click=${(e: Event) => this._emitForDevice(e, "pin-locate", key)}
+      >
+        <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
+      </button>
+      <button
+        title=${localize("picker.remove")}
+        aria-label=${localize("picker.remove")}
+        @click=${(e: Event) => this._emitForDevice(e, "pin-remove", key)}
+      >
+        <ha-icon icon="mdi:delete-outline"></ha-icon>
+      </button>
+    </span>`;
+  }
+
+  /** One device row. `actions` are its buttons when it isn't placed;
+   * `expand` opens its entities. */
+  private _renderRow(device: DeviceGroup, actions?: unknown, expand?: unknown) {
     const placed = this.placedDeviceIds.has(device.deviceId);
     const blockedFloorName = this._blockedFloorName(device);
-    const armed = this.armedEntityId === device.primaryEntityId;
+    const armed = this.armedEntityId === device.deviceId;
     const subtitle = [device.areaName, device.integrationName]
       .filter((part): part is string => !!part)
       .join(" - ");
@@ -566,14 +808,7 @@ export class EntityPickerSidebar extends LitElement {
                 .join(" · ")
         }
         @click=${() => {
-          if (blockedFloorName) return;
-          this.dispatchEvent(
-            new CustomEvent("entity-armed", {
-              detail: { entityId: device.primaryEntityId },
-              bubbles: true,
-              composed: true,
-            }),
-          );
+          if (!blockedFloorName) this._arm(device.deviceId);
         }}
       >
         <span class="avatar">
@@ -608,28 +843,8 @@ export class EntityPickerSidebar extends LitElement {
           }
           ${placed ? html`<span class="meta">${localize("picker.placed")}</span>` : nothing}
         </span>
-        ${
-          placed
-            ? html`<span class="row-actions">
-                <button
-                  title=${localize("picker.locate")}
-                  aria-label=${localize("picker.locate")}
-                  @click=${(e: Event) =>
-                    this._emitForDevice(e, "pin-locate", device.deviceId)}
-                >
-                  <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
-                </button>
-                <button
-                  title=${localize("picker.remove")}
-                  aria-label=${localize("picker.remove")}
-                  @click=${(e: Event) =>
-                    this._emitForDevice(e, "pin-remove", device.deviceId)}
-                >
-                  <ha-icon icon="mdi:delete-outline"></ha-icon>
-                </button>
-              </span>`
-            : (actions ?? nothing)
-        }
+        ${placed ? this._placedActions(device.deviceId) : (actions ?? nothing)}
+        ${expand ?? nothing}
       </div>
     `;
   }

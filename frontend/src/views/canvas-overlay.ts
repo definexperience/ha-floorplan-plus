@@ -28,7 +28,12 @@ import {
   materialLabel,
   wallThicknessCm,
 } from "../canvas/materials";
-import { pickDisplayEntity, pinDisplayLabel } from "../canvas/device-display";
+import {
+  belongsToKey,
+  pickDisplayEntity,
+  pinDisplayLabel,
+  pinKey,
+} from "../canvas/device-display";
 import {
   DEFAULT_DETECTION_ZONE,
   detectionEntities,
@@ -492,10 +497,7 @@ export class CanvasOverlay extends LitElement {
       const n = Number(value.replace(",", "."));
       return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : null;
     };
-    const sensors = detectionEntities(
-      pin.device_id,
-      this.entityLookup.values(),
-    );
+    const sensors = detectionEntities(pinKey(pin), this.entityLookup.values());
     return html`${this._fieldRow(
       "mdi:radar",
       localize("canvas.pin.zone"),
@@ -636,7 +638,7 @@ export class CanvasOverlay extends LitElement {
    * shape drawn on the plan. Lights only. */
   private _renderLightAreaRows(pin: Pin) {
     if (
-      pickDisplayEntity(pin.device_id, this.entityLookup.values())?.domain !==
+      pickDisplayEntity(pinKey(pin), this.entityLookup.values())?.domain !==
       "light"
     ) {
       return nothing;
@@ -939,7 +941,7 @@ export class CanvasOverlay extends LitElement {
               html`<input
                 type="text"
                 class="text-field"
-                placeholder=${pinDisplayLabel(pin.device_id, this.entityLookup.values())}
+                placeholder=${pinDisplayLabel(pinKey(pin), this.entityLookup.values())}
                 .value=${pin.label_override ?? ""}
                 @change=${(e: Event) =>
                   this._fire("pin-label-change", {
@@ -972,25 +974,26 @@ export class CanvasOverlay extends LitElement {
             ${pinOptionRows(
               pin,
               (patch) => this._fire("pin-options-change", patch),
-              [...this.entityLookup.values()].filter(
-                (e) => pin.device_id !== null && e.device_id === pin.device_id,
+              [...this.entityLookup.values()].filter((e) =>
+                belongsToKey(pinKey(pin), e),
               ),
             )}
           </div>
           ${
-            pin.device_id
+            pinKey(pin)
               ? pinLayerRows({
                   autoLayer: builtinLayerFor(
-                    pickDisplayEntity(
-                      pin.device_id,
-                      this.entityLookup.values(),
-                    ),
+                    pickDisplayEntity(pinKey(pin), this.entityLookup.values()),
                   ),
                   layer: pin.layer ?? null,
                   onLayerChange: (layer) =>
                     this._fire("pin-options-change", { layer }),
-                  labelLayers: this.labelLayers,
-                  deviceLabels: this.deviceLabels.get(pin.device_id) ?? [],
+                  // HA labels belong to a device; an entity pin has only
+                  // the standard layer.
+                  labelLayers: pin.device_id ? this.labelLayers : [],
+                  deviceLabels: pin.device_id
+                    ? (this.deviceLabels.get(pin.device_id) ?? [])
+                    : [],
                   onLabelsChange: (labels) =>
                     this._fire("device-labels-change", {
                       deviceId: pin.device_id,
@@ -1195,7 +1198,7 @@ export class CanvasOverlay extends LitElement {
 
   private _pinLabel(pin: Pin): string {
     if (pin.label_override) return pin.label_override;
-    return pinDisplayLabel(pin.device_id, this.entityLookup.values());
+    return pinDisplayLabel(pinKey(pin), this.entityLookup.values());
   }
 
   private _renderPinStack() {
@@ -1237,11 +1240,11 @@ export class CanvasOverlay extends LitElement {
   private _renderDeviceCard(pin: Pin) {
     return html`<device-card
       .hass=${this.hass}
-      .deviceId=${pin.device_id}
+      .deviceId=${pinKey(pin)}
       .label=${this._pinLabel(pin)}
       .subtitle=${this.selectedPinWhere}
       .entities=${[...this.entityLookup.values()]}
-      .status=${pin.device_id ? (this.statuses?.get(pin.device_id) ?? null) : null}
+      .status=${this.statuses?.get(pinKey(pin) ?? "") ?? null}
       .viewOnly=${pin.view_only ?? false}
       @device-card-close=${this._clearSelection}
     ></device-card>`;

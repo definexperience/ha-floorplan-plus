@@ -1,5 +1,5 @@
 import type { HassEntityState, PlaceableEntity } from "../types";
-import { pickDisplayEntity } from "./device-display";
+import { belongsToKey, pickDisplayEntity } from "./device-display";
 
 /** How a placed device looks in view mode, from its live Home Assistant
  * states: the pin's colour (tone), an optional short reading next to it
@@ -160,9 +160,7 @@ export function deviceStatus(
   badgeEntityId: string | null = null,
   format: StateFormatter = plainFormat,
 ): DeviceStatus {
-  const own = [...entities].filter(
-    (e) => deviceId !== null && e.device_id === deviceId,
-  );
+  const own = [...entities].filter((e) => belongsToKey(deviceId, e));
   const rep = pickDisplayEntity(deviceId, own);
   if (!rep) return { tone: "neutral", badge: null, lowBattery: false };
 

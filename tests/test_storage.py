@@ -79,6 +79,24 @@ class DeviceInOnePlaceTest(unittest.TestCase):
         run(storage.async_save_floor_layout(self.hass, "up", layout))
         self.assertIn("orphan", [p["id"] for p in self.hass.stored[KEY]["floors"]["down"]["pins"]])
 
+    def test_an_entity_pin_moves_on_its_own_and_leaves_its_device_alone(self) -> None:
+        # One relay channel placed on "down", next to the relay board's own
+        # device pin: moving the channel upstairs keeps the board in place.
+        channel = {"id": "pin-ch1", "device_id": None, "single_entity_id": "light.ch1", "x": 0, "y": 0}
+        self.hass.stored[KEY]["floors"]["down"]["pins"].append(channel)
+        layout = {**storage._empty_floor(), "pins": [{**channel, "id": "pin-ch1b"}]}
+        run(storage.async_save_floor_layout(self.hass, "up", layout))
+        down = self.hass.stored[KEY]["floors"]["down"]["pins"]
+        self.assertEqual([p["id"] for p in down], ["pin-c"])
+
+    def test_pin_key(self) -> None:
+        self.assertEqual(storage.pin_key({"device_id": "d1"}), "d1")
+        self.assertEqual(
+            storage.pin_key({"device_id": None, "single_entity_id": "switch.x"}),
+            "entity:switch.x",
+        )
+        self.assertIsNone(storage.pin_key({"device_id": None}))
+
     def test_placing_an_outdoor_device_removes_it_from_floors(self) -> None:
         layout = {**storage._empty_property(), "pins": [pin("a")]}
         run(storage.async_save_property_layout(self.hass, layout))

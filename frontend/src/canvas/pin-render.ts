@@ -2,7 +2,13 @@ import { css, nothing, svg } from "lit";
 import type { ReactiveControllerHost } from "lit";
 import type { PlaceableEntity, Pin } from "../types";
 import type { LightGlow } from "./device-state";
-import { pickDisplayEntity, pinIntegrationDomain } from "./device-display";
+import {
+  entityIconName,
+  isEntityKey,
+  pickDisplayEntity,
+  pinIntegrationDomain,
+  pinKey,
+} from "./device-display";
 import { fetchIconPathByName } from "./icon-cache";
 import { GENERIC_DEVICE_ICON_PATH, LIGHT_ICON_PATH } from "./pin-icons";
 
@@ -128,10 +134,18 @@ export class PinIconResolver {
       if (overridePath) return { kind: "path", d: overridePath };
     }
     const all = [...entities];
-    if (pickDisplayEntity(pin.device_id, all)?.domain === "light") {
+    const key = pinKey(pin);
+    const rep = pickDisplayEntity(key, all);
+    if (rep?.domain === "light") {
       return { kind: "path", d: LIGHT_ICON_PATH };
     }
-    const integrationDomain = pinIntegrationDomain(pin.device_id, all);
+    // An entity on a pin of its own looks like what it is (a switch, a
+    // counter), never like its relay board's integration logo.
+    if (isEntityKey(key)) {
+      const path = rep ? this._iconForOverride(entityIconName(rep)) : null;
+      return { kind: "path", d: path ?? GENERIC_DEVICE_ICON_PATH };
+    }
+    const integrationDomain = pinIntegrationDomain(key, all);
     if (integrationDomain && !this._failedBrandIcons.has(integrationDomain)) {
       return {
         kind: "image",

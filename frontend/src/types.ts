@@ -35,6 +35,11 @@ export interface Pin {
    * integration, orphaned registry entry) — never guessed at (see
    * registry_snapshot.py's async_migrate_pin_device_ids). */
   device_id: string | null;
+  /** Set instead of device_id when the pin places one entity on its own:
+   * one channel of a relay board, or an entity with no device (a helper,
+   * a template). Its name, icon and state are that entity's only. See
+   * canvas/device-display.ts's pinKey. */
+  single_entity_id?: string | null;
   x: number;
   y: number;
   room_id: string | null;
@@ -301,6 +306,8 @@ export interface PlaceableEntity {
   name: string;
   domain: string;
   device_class: string | null;
+  /** The entity's own icon (as set in HA, or its integration's), if any. */
+  icon?: string | null;
   area_id: string | null;
   area_name: string | null;
   device_id: string | null;
@@ -321,6 +328,9 @@ export interface PlaceableEntity {
    * just not on any other floor. */
   placed_floor_id: string | null;
   placed_floor_name: string | null;
+  /** Where this entity is placed on a pin of its own, if it is. */
+  entity_placed_floor_id?: string | null;
+  entity_placed_floor_name?: string | null;
 }
 
 export interface ExportSnapshot {

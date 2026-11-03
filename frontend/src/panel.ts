@@ -31,7 +31,7 @@ import type {
   Wall,
 } from "./types";
 import { PROPERTY_LOCATION_ID } from "./types";
-import { pinDisplayLabel } from "./canvas/device-display";
+import { belongsToKey, pinDisplayLabel, pinKey } from "./canvas/device-display";
 import {
   deviceStatus,
   statusSignature,
@@ -185,6 +185,8 @@ export class FloorplanPlusPanel extends LitElement {
   /** Drop-zone highlight while dragging a file over the canvas — see
    * _onCanvasDragOver/_onCanvasDrop. */
   @state() private _dragOverCanvas = false;
+  /** The picker row armed for placing: a pin key (see
+   * canvas/device-display.ts's pinKey), a device_id or `entity:<id>`. */
   @state() private _armedEntityId: string | null = null;
   @state() private _armedOpeningType: OpeningType | null = null;
   @state() private _selectedRoomId: string | null = null;
@@ -347,8 +349,9 @@ export class FloorplanPlusPanel extends LitElement {
       ? this._layout.rooms.find((r) => r.id === pin.room_id)
       : undefined;
     if (room) return room.name;
+    const key = pinKey(pin);
     const entity = this._entities.find(
-      (e) => e.device_id === pin.device_id && e.area_name,
+      (e) => belongsToKey(key, e) && e.area_name,
     );
     return entity?.area_name ?? null;
   }
@@ -381,11 +384,13 @@ export class FloorplanPlusPanel extends LitElement {
     return floors[0]?.floor_id ?? null;
   }
 
-  /** Every device placed on the floor shown and on the Property tab. */
+  /** Every device and single entity placed on the floor shown and on the
+   * Property tab, by pin key (see canvas/device-display.ts's pinKey). */
   private get _placedDeviceIdsEverywhere(): string[] {
     const ids = new Set<string>();
     for (const pin of [...this._layout.pins, ...this._propertyLayout.pins]) {
-      if (pin.device_id) ids.add(pin.device_id);
+      const key = pinKey(pin);
+      if (key) ids.add(key);
     }
     return [...ids];
   }
@@ -395,8 +400,9 @@ export class FloorplanPlusPanel extends LitElement {
     const statuses = new Map<string, DeviceStatus>();
     const badgeEntity = new Map<string, string>();
     for (const pin of [...this._layout.pins, ...this._propertyLayout.pins]) {
-      if (pin.device_id && pin.badge_entity_id) {
-        badgeEntity.set(pin.device_id, pin.badge_entity_id);
+      const key = pinKey(pin);
+      if (key && pin.badge_entity_id) {
+        badgeEntity.set(key, pin.badge_entity_id);
       }
     }
     const hass = this._hass;
@@ -416,13 +422,10 @@ export class FloorplanPlusPanel extends LitElement {
       );
     }
     for (const pin of this._layout.pins) {
-      const status = pin.device_id ? statuses.get(pin.device_id) : undefined;
+      const key = pinKey(pin);
+      const status = key ? statuses.get(key) : undefined;
       if (!status || !pin.detection_zone) continue;
-      const entityId = zoneEntityId(
-        pin.detection_zone,
-        pin.device_id,
-        this._entities,
-      );
+      const entityId = zoneEntityId(pin.detection_zone, key, this._entities);
       if (entityId && states[entityId]?.state === "on") status.detected = true;
     }
     const signature = statusSignature(statuses);
@@ -436,16 +439,15 @@ export class FloorplanPlusPanel extends LitElement {
    * changed, and re-renders an open device card when its states change. */
   private _refreshLiveState(): void {
     this._refreshDeviceStatuses();
-    const deviceId =
-      this._view === "property"
-        ? this._selectedOutdoorPin?.device_id
-        : this._selectedPin?.device_id;
+    const selected =
+      this._view === "property" ? this._selectedOutdoorPin : this._selectedPin;
+    const deviceId = selected ? pinKey(selected) : null;
     if (!deviceId) {
       this._selectedDeviceStates = [];
       return;
     }
     const states = this._entities
-      .filter((e) => e.device_id === deviceId)
+      .filter((e) => belongsToKey(deviceId, e))
       .map((e) => this._hass?.states[e.entity_id]);
     if (
       states.length !== this._selectedDeviceStates.length ||
@@ -497,7 +499,7 @@ export class FloorplanPlusPanel extends LitElement {
         ? this._propertyLayout.pins
         : this._layout.pins
       )
-        .map((p) => p.device_id)
+        .map((p) => pinKey(p))
         .filter((id): id is string => id !== null),
     );
   }
@@ -1411,13 +1413,7 @@ export class FloorplanPlusPanel extends LitElement {
 
   private _onOutdoorPinPlace = (e: CustomEvent<{ x: number; y: number }>) => {
     if (!this._armedEntityId) return;
-    const entity = this._entityLookup.get(this._armedEntityId);
-    const pin = emptyPin(
-      entity?.device_id ?? null,
-      e.detail.x,
-      e.detail.y,
-      null,
-    );
+    const pin = emptyPin(this._armedEntityId, e.detail.x, e.detail.y, null);
     this._updatePropertyLayout({ pins: [...this._propertyLayout.pins, pin] });
     this._armedEntityId = null;
     this._selectedOutdoorPinId = pin.id;
@@ -1704,7 +1700,7 @@ export class FloorplanPlusPanel extends LitElement {
 
   private _placementKey(): string {
     return [...this._layout.pins, ...this._propertyLayout.pins]
-      .map((p) => p.device_id ?? "")
+      .map((p) => pinKey(p) ?? "")
       .sort()
       .join(",");
   }
@@ -2025,7 +2021,7 @@ export class FloorplanPlusPanel extends LitElement {
     return pins.filter((pin) =>
       isOnVisibleLayer(
         deviceLayerIds(
-          pin.device_id,
+          pinKey(pin),
           entities,
           this._deviceLabels,
           defs,
@@ -2044,7 +2040,7 @@ export class FloorplanPlusPanel extends LitElement {
     const counts = new Map<string, number>();
     for (const pin of pins) {
       for (const id of deviceLayerIds(
-        pin.device_id,
+        pinKey(pin),
         this._entities,
         this._deviceLabels,
         defs,
@@ -3070,7 +3066,7 @@ export class FloorplanPlusPanel extends LitElement {
   private _pickerPin(deviceId: string): Pin | null {
     const pins =
       this._view === "property" ? this._propertyLayout.pins : this._layout.pins;
-    return pins.find((p) => p.device_id === deviceId) ?? null;
+    return pins.find((p) => pinKey(p) === deviceId) ?? null;
   }
 
   /** Places suggested devices straight into their room, spread around
@@ -3317,13 +3313,7 @@ export class FloorplanPlusPanel extends LitElement {
   private _onPinPlace = (e: CustomEvent<{ x: number; y: number }>) => {
     if (!this._armedEntityId) return;
     const roomId = findRoomForPoint(e.detail.x, e.detail.y, this._layout.rooms);
-    const entity = this._entityLookup.get(this._armedEntityId);
-    const pin = emptyPin(
-      entity?.device_id ?? null,
-      e.detail.x,
-      e.detail.y,
-      roomId,
-    );
+    const pin = emptyPin(this._armedEntityId, e.detail.x, e.detail.y, roomId);
     // The canvas already snaps onto an existing pin's exact coordinates
     // when co-locating (see floorplan-canvas.ts) — an exact-coordinate
     // match here means the new pin landed deliberately on top of others.
@@ -3549,7 +3539,7 @@ export class FloorplanPlusPanel extends LitElement {
 
   private _pinLabel(pin: Pin): string {
     if (pin.label_override) return pin.label_override;
-    return pinDisplayLabel(pin.device_id, this._entityLookup.values());
+    return pinDisplayLabel(pinKey(pin), this._entityLookup.values());
   }
 
   private _onScaleLineComplete = async (
@@ -4057,13 +4047,13 @@ export class FloorplanPlusPanel extends LitElement {
                           .selectedPinDefaultLabel=${
                             this._selectedOutdoorPin
                               ? pinDisplayLabel(
-                                  this._selectedOutdoorPin.device_id,
+                                  pinKey(this._selectedOutdoorPin),
                                   this._entityLookup.values(),
                                 )
                               : null
                           }
                           .selectedPinOverride=${this._selectedOutdoorPin?.label_override ?? null}
-                          .selectedPinDeviceId=${this._selectedOutdoorPin?.device_id ?? null}
+                          .selectedPinDeviceId=${this._selectedOutdoorPin ? pinKey(this._selectedOutdoorPin) : null}
                           .selectedPinOptions=${this._selectedOutdoorPin}
                           .labelLayers=${this._labelLayerDefs}
                           .deviceLabels=${this._deviceLabels}

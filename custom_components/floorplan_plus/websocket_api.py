@@ -110,6 +110,11 @@ _PIN_SCHEMA = {
     # longer resolves to any device (deleted integration, orphaned
     # registry entry) legitimately has none — never guessed at.
     vol.Optional("device_id"): vol.Any(_TEXT, None),
+    # Set instead of device_id when the pin places one entity on its own:
+    # one channel of a relay board, or an entity with no device at all (a
+    # helper, a template). Named apart from the legacy `entity_id` key so
+    # the startup migration never turns it into a device pin.
+    vol.Optional("single_entity_id"): vol.Any(_TEXT, None),
     vol.Required("x"): vol.Coerce(float),
     vol.Required("y"): vol.Coerce(float),
     vol.Optional("room_id"): vol.Any(_TEXT, None),

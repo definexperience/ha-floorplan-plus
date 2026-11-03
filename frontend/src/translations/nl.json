@@ -210,7 +210,7 @@
     "licence": "Licentie"
   },
   "picker": {
-    "search": "Apparaten zoeken…",
+    "search": "Apparaten en entiteiten zoeken…",
     "clearSearch": "Zoekopdracht wissen",
     "more": "Meer",
     "allFloors": "Alle verdiepingen",
@@ -231,7 +231,10 @@
     "placeAll": "Alles plaatsen",
     "placeAllHint": "Plaats deze allemaal in {room}",
     "placeInRoom": "Plaatsen in {room}",
-    "allDevices": "Alle apparaten"
+    "allDevices": "Alle apparaten",
+    "otherEntities": "Overige entiteiten · {count}",
+    "showEntities": "Toon de entiteiten, om er één los te plaatsen",
+    "hideEntities": "Verberg de entiteiten"
   },
   "iconPicker": {
     "title": "Kies een pictogram",

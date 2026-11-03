@@ -59,6 +59,22 @@ _PLACEABLE_DOMAINS = frozenset(
     }
 )
 
+# Helper-style domains that only make sense as a pin of their own, for an
+# entity with no device (a toggle helper, a counter, a script). Never
+# offered for a device's own entities.
+_DEVICELESS_DOMAINS = _PLACEABLE_DOMAINS | frozenset(
+    {
+        "input_boolean",
+        "input_number",
+        "input_select",
+        "counter",
+        "timer",
+        "scene",
+        "script",
+        "person",
+    }
+)
+
 # Mirrors frontend/src/canvas/device-display.ts's DOMAIN_PRIORITY exactly —
 # keep both in sync if this list changes. See pick_display_entity below for
 # why this exists at all (a device's icon/name has to come from *some*
@@ -228,14 +244,15 @@ async def async_migrate_pin_device_ids(hass: HomeAssistant) -> None:
 
 
 async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, Any]]:
-    """Snapshot every entity that represents a real physical device, joined
-    with its device/area for display.
+    """Snapshot every placeable entity, joined with its device/area for
+    display.
 
-    Placement is meant to answer "where does this physical thing sit in the
-    house" — so this deliberately excludes entities with no device at all
-    (automations, scripts, scenes, zones, persons, most helpers) and devices
-    that are themselves non-physical (`entry_type == service`, e.g. an
-    integration's hub/bridge container entity).
+    Most pins place a whole physical device, so a device's entities are
+    listed together. An entity can also get a pin of its own (one channel
+    of a relay board, see storage.py's pin_key), and entities with no
+    physical device are listed too — helpers, templates, groups, YAML-only
+    entities and those of a non-physical `entry_type == service` device —
+    so they can be placed one by one. Automations and zones never are.
 
     Diagnostic/config entities (firmware update, restart button,
     signal-strength sensor) are NOT excluded by `entity_category` here —
@@ -273,15 +290,30 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
         {f.floor_id for f in floor_registry.async_list_floors()},
     )
     device_id_to_floor_id: dict[str, str] = {}
+    # Entities placed on a pin of their own (see storage.py's pin_key).
+    entity_id_to_floor_id: dict[str, str] = {}
+
+    def _note(pin: dict[str, Any], floor_id: str) -> None:
+        if pin.get("single_entity_id"):
+            entity_id_to_floor_id[pin["single_entity_id"]] = floor_id
+        elif pin.get("device_id"):
+            device_id_to_floor_id[pin["device_id"]] = floor_id
+
     for floor_id, layout in all_layouts.items():
         for pin in layout.get("pins", []):
-            if pin.get("device_id"):
-                device_id_to_floor_id[pin["device_id"]] = floor_id
+            _note(pin, floor_id)
     # Outdoor devices placed on the Property tab — reported under a
     # sentinel "floor" so the picker shows where they are, same as a floor.
     for pin in (await async_get_property_layout(hass)).get("pins", []):
-        if pin.get("device_id"):
-            device_id_to_floor_id[pin["device_id"]] = PROPERTY_LOCATION_ID
+        _note(pin, PROPERTY_LOCATION_ID)
+
+    def _floor_name(floor_id: str | None) -> str | None:
+        if floor_id is None:
+            return None
+        if floor_id == PROPERTY_LOCATION_ID:
+            return "Property"
+        floor = floor_registry.async_get_floor(floor_id)
+        return floor.name if floor else floor_id
 
     # The device's OWN integration — not `entry.platform` on whichever
     # entity happens to be picked as representative. A helper integration
@@ -315,7 +347,11 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
     # assistant.io is the same public, unauthenticated CDN the HA frontend
     # itself uses for every integration logo — generic, no house-specific
     # credentials involved.
-    platforms = {d for d in device_integration_domains.values() if d}
+    # ...plus each entity's own platform (template, mqtt, group, ...), which
+    # names the picker row of an entity with no device.
+    platforms = {d for d in device_integration_domains.values() if d} | {
+        entry.platform for entry in entity_registry.entities.values()
+    }
     integration_names: dict[str, str] = {}
     for domain in platforms:
         try:
@@ -328,16 +364,21 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
     for entry in entity_registry.entities.values():
         if entry.disabled_by is not None:
             continue
-        if entry.device_id is None:
-            continue
-        if entry.domain not in _PLACEABLE_DOMAINS:
+
+        device = (
+            device_registry.async_get(entry.device_id) if entry.device_id else None
+        )
+        if device is not None and device.entry_type is not None:
+            # A service "device" (an integration's hub/bridge container)
+            # isn't a physical thing — but its entities can still be
+            # placed one by one, like any entity with no device.
+            device = None
+        if entry.domain not in (
+            _PLACEABLE_DOMAINS if device is not None else _DEVICELESS_DOMAINS
+        ):
             continue
 
-        device = device_registry.async_get(entry.device_id)
-        if device is None or device.entry_type is not None:
-            continue
-
-        area_id = entry.area_id or device.area_id
+        area_id = entry.area_id or (device.area_id if device else None)
         area = area_registry.async_get_area(area_id) if area_id else None
 
         state = hass.states.get(entry.entity_id)
@@ -345,9 +386,12 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
             entry.name or entry.original_name or entry.entity_id
         )
 
-        placed_floor_id = device_id_to_floor_id.get(entry.device_id)
-        placed_floor = floor_registry.async_get_floor(placed_floor_id) if placed_floor_id else None
-        integration_domain = device_integration_domains.get(entry.device_id)
+        device_id = device.id if device else None
+        placed_floor_id = device_id_to_floor_id.get(device_id) if device_id else None
+        entity_placed_floor_id = entity_id_to_floor_id.get(entry.entity_id)
+        integration_domain = (
+            device_integration_domains.get(device_id) if device_id else entry.platform
+        )
 
         entities.append(
             {
@@ -355,23 +399,50 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
                 "name": name,
                 "domain": entry.domain,
                 "device_class": entry.device_class or entry.original_device_class,
+                "icon": entry.icon
+                or entry.original_icon
+                or (state.attributes.get("icon") if state is not None else None),
                 "area_id": area_id,
                 "area_name": area.name if area else None,
-                "device_id": entry.device_id,
-                "device_name": device.name_by_user or device.name,
+                "device_id": device_id,
+                "device_name": (device.name_by_user or device.name) if device else None,
                 "entity_category": entry.entity_category,
                 "integration_domain": integration_domain,
                 "integration_name": integration_names.get(integration_domain)
                 if integration_domain
                 else None,
                 "placed_floor_id": placed_floor_id,
-                "placed_floor_name": (
-                    "Property"
-                    if placed_floor_id == PROPERTY_LOCATION_ID
-                    else placed_floor.name
-                    if placed_floor
-                    else placed_floor_id
-                ),
+                "placed_floor_name": _floor_name(placed_floor_id),
+                "entity_placed_floor_id": entity_placed_floor_id,
+                "entity_placed_floor_name": _floor_name(entity_placed_floor_id),
+            }
+        )
+
+    # Entities HA only knows from their state (YAML-defined, no unique_id
+    # — so no registry entry, no device and no area): placeable one by one.
+    registered = set(entity_registry.entities)
+    for state in hass.states.async_all():
+        if state.entity_id in registered or state.domain not in _DEVICELESS_DOMAINS:
+            continue
+        floor_id = entity_id_to_floor_id.get(state.entity_id)
+        entities.append(
+            {
+                "entity_id": state.entity_id,
+                "name": state.name,
+                "domain": state.domain,
+                "device_class": state.attributes.get("device_class"),
+                "icon": state.attributes.get("icon"),
+                "area_id": None,
+                "area_name": None,
+                "device_id": None,
+                "device_name": None,
+                "entity_category": None,
+                "integration_domain": None,
+                "integration_name": None,
+                "placed_floor_id": None,
+                "placed_floor_name": None,
+                "entity_placed_floor_id": floor_id,
+                "entity_placed_floor_name": _floor_name(floor_id),
             }
         )
 

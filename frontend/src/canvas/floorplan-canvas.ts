@@ -44,7 +44,7 @@ import {
   findWallAt,
 } from "./pin-tool";
 import { addTracePoint, startTrace, type PendingTrace } from "./polygon-tool";
-import { pinDisplayLabel } from "./device-display";
+import { pinDisplayLabel, pinKey } from "./device-display";
 import {
   PinIconResolver,
   pinStyles,
@@ -1734,7 +1734,7 @@ export class FloorplanCanvas extends LitElement {
 
   private _pinLabel(pin: Pin): string {
     if (pin.label_override) return pin.label_override;
-    return pinDisplayLabel(pin.device_id, this.entityLookup.values());
+    return pinDisplayLabel(pinKey(pin), this.entityLookup.values());
   }
 
   /** A room label being dragged right now (#33) — committed on release. */
@@ -2100,9 +2100,7 @@ export class FloorplanCanvas extends LitElement {
       if (!this.statuses) {
         return svg`<path class="detection-zone editing" d=${d}></path>`;
       }
-      const status = pin.device_id
-        ? this.statuses.get(pin.device_id)
-        : undefined;
+      const status = this.statuses.get(pinKey(pin) ?? "");
       if (!status || status.tone === "offline") return nothing;
       return svg`<path
         class="detection-zone ${status.detected ? "detected" : ""}"
@@ -2138,9 +2136,7 @@ export class FloorplanCanvas extends LitElement {
           ? svg`<polygon class="light-area-outline" points=${pointsAttr}></polygon>`
           : nothing;
       }
-      const light = pin.device_id
-        ? this.statuses.get(pin.device_id)?.light
-        : null;
+      const light = this.statuses.get(pinKey(pin) ?? "")?.light;
       if (!light) return nothing;
       return svg`<polygon
         class="light-area"
@@ -2161,10 +2157,7 @@ export class FloorplanCanvas extends LitElement {
       const y = live?.y ?? pin.y;
       const selected =
         pin.id === this.selectedPinId || this.multiPinIds.includes(pin.id);
-      const status =
-        pin.device_id && this.statuses
-          ? this.statuses.get(pin.device_id)
-          : undefined;
+      const status = this.statuses?.get(pinKey(pin) ?? "");
       return this._renderPinMarker(
         x,
         y,
@@ -2190,9 +2183,7 @@ export class FloorplanCanvas extends LitElement {
     const label = `${group.pins.length} devices: ${group.pins.map((p) => this._pinLabel(p)).join(", ")}`;
     const groupStatuses = this.statuses
       ? group.pins
-          .map((p) =>
-            p.device_id ? this.statuses!.get(p.device_id) : undefined,
-          )
+          .map((p) => this.statuses!.get(pinKey(p) ?? ""))
           .filter((s): s is DeviceStatus => !!s)
       : [];
     return this._renderPinMarker(

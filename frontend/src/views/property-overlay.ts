@@ -21,7 +21,11 @@ import "./row-actions";
 import "./device-card";
 import type { DeviceStatus } from "../canvas/device-state";
 import { builtinLayerFor, type LayerDef } from "../canvas/layers";
-import { pickDisplayEntity } from "../canvas/device-display";
+import {
+  belongsToKey,
+  isEntityKey,
+  pickDisplayEntity,
+} from "../canvas/device-display";
 import {
   actionRow,
   deleteButton,
@@ -228,10 +232,8 @@ export class PropertyOverlay extends LitElement {
               ? pinOptionRows(
                   this.selectedPinOptions,
                   (patch) => this._fire("outdoor-pin-options-change", patch),
-                  this.entities.filter(
-                    (e) =>
-                      this.selectedPinDeviceId !== null &&
-                      e.device_id === this.selectedPinDeviceId,
+                  this.entities.filter((e) =>
+                    belongsToKey(this.selectedPinDeviceId, e),
                   ),
                 )
               : nothing
@@ -246,7 +248,11 @@ export class PropertyOverlay extends LitElement {
                 layer: this.selectedPinOptions?.layer ?? null,
                 onLayerChange: (layer) =>
                   this._fire("outdoor-pin-options-change", { layer }),
-                labelLayers: this.labelLayers,
+                // HA labels belong to a device; an entity pin has only
+                // the standard layer.
+                labelLayers: isEntityKey(this.selectedPinDeviceId)
+                  ? []
+                  : this.labelLayers,
                 deviceLabels:
                   this.deviceLabels.get(this.selectedPinDeviceId) ?? [],
                 onLabelsChange: (labels) =>

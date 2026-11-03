@@ -1,4 +1,43 @@
-import type { PlaceableEntity } from "../types";
+import type { PlaceableEntity, Pin } from "../types";
+
+/** A pin places either a whole device or one entity on its own (one
+ * channel of a relay board, or an entity with no device). Its "key" says
+ * which: the device_id itself, unchanged from before entity pins existed,
+ * or `entity:<entity_id>`. Everything that looks a pin up (statuses,
+ * "already placed", the picker) goes by this key. */
+const ENTITY_KEY_PREFIX = "entity:";
+
+export function entityKey(entityId: string): string {
+  return ENTITY_KEY_PREFIX + entityId;
+}
+
+export function isEntityKey(key: string | null): boolean {
+  return !!key && key.startsWith(ENTITY_KEY_PREFIX);
+}
+
+/** The entity_id inside an `entity:` key, else null. */
+export function entityIdOfKey(key: string | null): string | null {
+  return key && isEntityKey(key) ? key.slice(ENTITY_KEY_PREFIX.length) : null;
+}
+
+export function pinKey(
+  pin: Pick<Pin, "device_id" | "single_entity_id">,
+): string | null {
+  if (pin.single_entity_id) return entityKey(pin.single_entity_id);
+  return pin.device_id;
+}
+
+/** Whether `entity` is part of what the pin with this key places. */
+export function belongsToKey(
+  key: string | null,
+  entity: PlaceableEntity,
+): boolean {
+  if (!key) return false;
+  const entityId = entityIdOfKey(key);
+  return entityId !== null
+    ? entity.entity_id === entityId
+    : entity.device_id === key;
+}
 
 /** Mirrors registry_snapshot.py's _DOMAIN_PRIORITY exactly — keep both in
  * sync if this list changes. Sensor deliberately last: a helper integration
@@ -42,7 +81,7 @@ export function pickDisplayEntity(
   entities: Iterable<PlaceableEntity>,
 ): PlaceableEntity | null {
   if (!deviceId) return null;
-  const candidates = [...entities].filter((e) => e.device_id === deviceId);
+  const candidates = [...entities].filter((e) => belongsToKey(deviceId, e));
   if (candidates.length === 0) return null;
 
   const categoryRank = (e: PlaceableEntity): number =>
@@ -69,7 +108,11 @@ export function pinDisplayLabel(
   deviceId: string | null,
   entities: Iterable<PlaceableEntity>,
 ): string {
-  return pickDisplayEntity(deviceId, entities)?.device_name ?? "Unknown device";
+  const rep = pickDisplayEntity(deviceId, entities);
+  // An entity on a pin of its own goes by its own name ("Kitchen light"),
+  // not its relay board's.
+  if (isEntityKey(deviceId)) return rep?.name ?? "Unknown entity";
+  return rep?.device_name ?? "Unknown device";
 }
 
 /** Which integration set up this device (e.g. "unifi", "esphome", "hue") —
@@ -83,4 +126,46 @@ export function pinIntegrationDomain(
   entities: Iterable<PlaceableEntity>,
 ): string | null {
   return pickDisplayEntity(deviceId, entities)?.integration_domain ?? null;
+}
+
+/** HA's default icon per domain, for an entity pin whose entity has no
+ * icon of its own — a relay channel's switch should look like a switch,
+ * not like its relay board's integration logo. */
+const DOMAIN_ICONS: Record<string, string> = {
+  light: "mdi:lightbulb",
+  switch: "mdi:toggle-switch-variant",
+  sensor: "mdi:eye",
+  binary_sensor: "mdi:radiobox-blank",
+  climate: "mdi:thermostat",
+  lock: "mdi:lock",
+  cover: "mdi:window-shutter",
+  camera: "mdi:video",
+  media_player: "mdi:cast",
+  fan: "mdi:fan",
+  humidifier: "mdi:air-humidifier",
+  vacuum: "mdi:robot-vacuum",
+  alarm_control_panel: "mdi:shield",
+  water_heater: "mdi:thermometer",
+  device_tracker: "mdi:account",
+  valve: "mdi:valve",
+  siren: "mdi:bullhorn",
+  assist_satellite: "mdi:account-voice",
+  input_boolean: "mdi:toggle-switch-outline",
+  input_number: "mdi:ray-vertex",
+  input_select: "mdi:format-list-bulleted",
+  counter: "mdi:counter",
+  timer: "mdi:timer-outline",
+  scene: "mdi:palette",
+  script: "mdi:script-text",
+  person: "mdi:account",
+};
+
+/** The mdi icon name for an entity drawn on a pin of its own: its own
+ * icon, else its domain's. */
+export function entityIconName(entity: PlaceableEntity): string {
+  return (
+    entity.icon ||
+    DOMAIN_ICONS[entity.domain] ||
+    "mdi:checkbox-blank-circle-outline"
+  );
 }

@@ -267,6 +267,52 @@ export const entityPickerSidebarStyles = css`
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+  /* A device's own entities, opened under it to place one on its own. */
+  .item.sub {
+    min-height: 48px;
+    padding-left: calc(var(--ha-space-3, 12px) + 24px);
+    background: color-mix(in srgb, var(--sc-fg) 3%, transparent);
+  }
+  .item.sub .avatar {
+    width: 28px;
+    height: 28px;
+  }
+  .item.sub .avatar ha-icon {
+    --mdc-icon-size: 16px;
+  }
+  .item .expand {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--sc-fg-secondary);
+  }
+  .item .expand:hover {
+    background: var(--sc-hover);
+    color: var(--sc-fg);
+  }
+  .item .expand ha-icon {
+    --mdc-icon-size: 20px;
+  }
+  .other-head {
+    border: none;
+    border-top: 1px solid var(--sc-divider);
+    border-radius: 0;
+    background: none;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
+  .other-head ha-icon {
+    --mdc-icon-size: 18px;
+  }
   .empty {
     padding: var(--ha-space-4, 16px);
     color: var(--sc-fg-secondary);
