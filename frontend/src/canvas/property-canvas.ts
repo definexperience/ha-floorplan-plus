@@ -19,7 +19,7 @@ import {
   pointToSegmentDistance,
   isMouseWheel,
 } from "./geometry";
-import { pinDisplayLabel } from "./device-display";
+import { pinDisplayLabel, pinKey } from "./device-display";
 import { qualityColor } from "./mesh-colors";
 import { PinIconResolver, pinStyles } from "./pin-render";
 import { toneColor, type DeviceStatus } from "./device-state";
@@ -980,13 +980,10 @@ export class PropertyCanvas extends LitElement {
   }
 
   private _renderPin(pin: Pin) {
-    const status =
-      pin.device_id && this.statuses
-        ? this.statuses.get(pin.device_id)
-        : undefined;
+    const status = this.statuses?.get(pinKey(pin) ?? "");
     const label =
       pin.label_override ??
-      pinDisplayLabel(pin.device_id, this.entityLookup.values());
+      pinDisplayLabel(pinKey(pin), this.entityLookup.values());
     return this._pinIcons.renderMarker(
       pin.x,
       pin.y,

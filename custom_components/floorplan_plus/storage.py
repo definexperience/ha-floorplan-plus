@@ -399,36 +399,46 @@ async def async_save_floor_layout(
     """
     async with _lock(hass):
         data = await _async_load_all(hass)
-        moved_device_ids = {
-            pin["device_id"] for pin in layout.get("pins", []) if pin.get("device_id")
-        }
+        moved_keys = _pin_keys(layout.get("pins", []))
 
         for other_floor_id, other_layout in data["floors"].items():
             if other_floor_id == floor_id:
                 continue
             other_layout["pins"] = _without_devices(
-                other_layout.get("pins", []), moved_device_ids
+                other_layout.get("pins", []), moved_keys
             )
         # ...and from the Property tab's outdoor pins.
         if data.get("property"):
             data["property"]["pins"] = _without_devices(
-                data["property"].get("pins", []), moved_device_ids
+                data["property"].get("pins", []), moved_keys
             )
 
         data["floors"][floor_id] = layout
         await _store(hass).async_save(data)
 
 
+def pin_key(pin: dict[str, Any]) -> str | None:
+    """What a pin places: a single entity (`single_entity_id`, e.g. one
+    channel of a relay board, or a helper with no device) or a whole
+    device (`device_id`). Each lives in one place only. None for an
+    orphaned pin with nothing to match it on."""
+    if pin.get("single_entity_id"):
+        return f"entity:{pin['single_entity_id']}"
+    if pin.get("device_id"):
+        return pin["device_id"]
+    return None
+
+
+def _pin_keys(pins: list[dict[str, Any]]) -> set[str]:
+    return {key for key in map(pin_key, pins) if key}
+
+
 def _without_devices(
-    pins: list[dict[str, Any]], device_ids: set[str]
+    pins: list[dict[str, Any]], keys: set[str]
 ) -> list[dict[str, Any]]:
-    """`pins` minus any placing one of `device_ids` — pins with no
-    device_id are kept, since there's nothing to safely match them on."""
-    return [
-        pin
-        for pin in pins
-        if not pin.get("device_id") or pin["device_id"] not in device_ids
-    ]
+    """`pins` minus any placing one of `keys` (see pin_key) — pins with
+    nothing to match on are kept."""
+    return [pin for pin in pins if (key := pin_key(pin)) is None or key not in keys]
 
 
 async def async_save_all_layouts_raw(
@@ -476,12 +486,10 @@ async def async_save_property_layout(
     here are stripped from every floor — a device lives in one place."""
     async with _lock(hass):
         data = await _async_load_all(hass)
-        outdoor_device_ids = {
-            pin["device_id"] for pin in layout.get("pins", []) if pin.get("device_id")
-        }
+        outdoor_keys = _pin_keys(layout.get("pins", []))
         for floor_layout in data["floors"].values():
             floor_layout["pins"] = _without_devices(
-                floor_layout.get("pins", []), outdoor_device_ids
+                floor_layout.get("pins", []), outdoor_keys
             )
         data["property"] = layout
         await _store(hass).async_save(data)

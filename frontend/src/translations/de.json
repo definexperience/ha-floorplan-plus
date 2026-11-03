@@ -210,7 +210,7 @@
     "licence": "Lizenz"
   },
   "picker": {
-    "search": "Geräte suchen…",
+    "search": "Geräte und Entitäten suchen…",
     "clearSearch": "Suche löschen",
     "more": "Mehr",
     "allFloors": "Alle Etagen",
@@ -231,7 +231,10 @@
     "placeAll": "Alle platzieren",
     "placeAllHint": "Alle in {room} platzieren",
     "placeInRoom": "In {room} platzieren",
-    "allDevices": "Alle Geräte"
+    "allDevices": "Alle Geräte",
+    "otherEntities": "Weitere Entitäten · {count}",
+    "showEntities": "Entitäten zeigen, um eine einzeln zu platzieren",
+    "hideEntities": "Entitäten ausblenden"
   },
   "iconPicker": {
     "title": "Symbol auswählen",

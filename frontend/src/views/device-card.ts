@@ -2,7 +2,11 @@ import { LitElement, css, html, nothing } from "lit";
 import { property } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
 import type { HassEntityState, HomeAssistant, PlaceableEntity } from "../types";
-import { pickDisplayEntity } from "../canvas/device-display";
+import {
+  belongsToKey,
+  isEntityKey,
+  pickDisplayEntity,
+} from "../canvas/device-display";
 import type { DeviceStatus } from "../canvas/device-state";
 import { localize } from "../i18n";
 import { sharedStyles, switchStyles } from "../styles";
@@ -99,6 +103,8 @@ export class DeviceCard extends LitElement {
   ];
 
   @property({ attribute: false }) hass?: HomeAssistant;
+  /** The pin's key (see canvas/device-display.ts's pinKey): a device_id,
+   * or `entity:<entity_id>` for an entity on a pin of its own. */
   @property({ attribute: false }) deviceId: string | null = null;
   @property({ attribute: false }) label = "";
   @property({ attribute: false }) subtitle: string | null = null;
@@ -125,7 +131,7 @@ export class DeviceCard extends LitElement {
   }
 
   private _openDevicePage() {
-    if (!this.deviceId) return;
+    if (!this.deviceId || isEntityKey(this.deviceId)) return;
     history.pushState(null, "", `/config/devices/device/${this.deviceId}`);
     window.dispatchEvent(
       new CustomEvent("location-changed", { detail: { replace: false } }),
@@ -255,7 +261,7 @@ export class DeviceCard extends LitElement {
 
   override render() {
     const own = this.entities
-      .filter((e) => e.device_id === this.deviceId)
+      .filter((e) => belongsToKey(this.deviceId, e))
       .filter((e) => e.entity_category !== "config");
     const rows = [...own]
       .sort((a, b) => rowRank(a) - rowRank(b))
@@ -305,7 +311,7 @@ export class DeviceCard extends LitElement {
                 <ha-icon icon="mdi:eye-outline"></ha-icon>
                 ${localize("deviceCard.viewOnly")}
               </span>`
-            : isAdmin && this.deviceId
+            : isAdmin && this.deviceId && !isEntityKey(this.deviceId)
               ? html`<button class="primary" @click=${this._openDevicePage}>
                   <ha-icon icon="mdi:open-in-app"></ha-icon>
                   ${localize("deviceCard.openDevice")}

@@ -1,4 +1,5 @@
 import type { DetectionZone, PlaceableEntity } from "../types";
+import { belongsToKey } from "./device-display";
 
 /** A presence radar's or camera's coverage on the plan: a wedge from the
  * device's marker, `range_m` long and `angle_deg` wide, facing
@@ -28,7 +29,7 @@ export function detectionEntities(
     );
   };
   return [...entities]
-    .filter((e) => e.device_id === deviceId && e.domain === "binary_sensor")
+    .filter((e) => belongsToKey(deviceId, e) && e.domain === "binary_sensor")
     .sort((a, b) => rank(a) - rank(b));
 }
 

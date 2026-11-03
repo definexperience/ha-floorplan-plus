@@ -210,7 +210,7 @@
     "licence": "Licence"
   },
   "picker": {
-    "search": "Search devices…",
+    "search": "Search devices and entities…",
     "clearSearch": "Clear search",
     "more": "More",
     "allFloors": "All floors",
@@ -231,7 +231,10 @@
     "placeAll": "Place all",
     "placeAllHint": "Place all of these in {room}",
     "placeInRoom": "Place in {room}",
-    "allDevices": "All devices"
+    "allDevices": "All devices",
+    "otherEntities": "Other entities · {count}",
+    "showEntities": "Show its entities, to place one on its own",
+    "hideEntities": "Hide its entities"
   },
   "iconPicker": {
     "title": "Choose an icon",
