@@ -35,6 +35,12 @@ import {
 } from "./geometry";
 import { wedgePath } from "./detection-zone";
 import {
+  FADE_STOPS,
+  fadeGradientId,
+  fadeRadius,
+  lightAreaOpacity,
+} from "./light-area";
+import {
   normalizeAngle,
   reangleViewBox,
   toImage,
@@ -2211,11 +2217,46 @@ export class FloorplanCanvas extends LitElement {
       }
       const light = this.statuses.get(pinKey(pin) ?? "")?.light;
       if (!light) return nothing;
+      if (pin.light_area?.fill === "fade") {
+        // Brightest at the marker, fading out across the area. The
+        // polygon itself is what's filled, so the fade stays inside it.
+        const live =
+          this._liveDragPin?.id === pin.id ? this._liveDragPin : null;
+        const cx = live?.x ?? pin.x;
+        const cy = live?.y ?? pin.y;
+        const r = fadeRadius(cx, cy, points);
+        if (r > 0) {
+          const id = fadeGradientId(pin.id);
+          const opacity = lightAreaOpacity(light.level, true);
+          return svg`<defs>
+              <radialGradient
+                id=${id}
+                gradientUnits="userSpaceOnUse"
+                cx=${cx}
+                cy=${cy}
+                r=${r}
+              >
+                ${FADE_STOPS.map(
+                  ([offset, share]) => svg`<stop
+                    offset=${offset}
+                    stop-color=${light.color}
+                    stop-opacity=${opacity * share}
+                  ></stop>`,
+                )}
+              </radialGradient>
+            </defs>
+            <polygon
+              class="light-area"
+              points=${pointsAttr}
+              fill="url(#${id})"
+            ></polygon>`;
+        }
+      }
       return svg`<polygon
         class="light-area"
         points=${pointsAttr}
         fill=${light.color}
-        fill-opacity=${0.18 + 0.37 * light.level}
+        fill-opacity=${lightAreaOpacity(light.level, false)}
       ></polygon>`;
     });
   }
