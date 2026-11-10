@@ -988,15 +988,12 @@ export class CanvasOverlay extends LitElement {
                   layer: pin.layer ?? null,
                   onLayerChange: (layer) =>
                     this._fire("pin-options-change", { layer }),
-                  // HA labels belong to a device; an entity pin has only
-                  // the standard layer.
-                  labelLayers: pin.device_id ? this.labelLayers : [],
-                  deviceLabels: pin.device_id
-                    ? (this.deviceLabels.get(pin.device_id) ?? [])
-                    : [],
+                  // An entity pin's custom layers are its entity's labels.
+                  labelLayers: this.labelLayers,
+                  deviceLabels: this.deviceLabels.get(pinKey(pin)!) ?? [],
                   onLabelsChange: (labels) =>
                     this._fire("device-labels-change", {
-                      deviceId: pin.device_id,
+                      deviceId: pinKey(pin),
                       labels,
                     }),
                 })
