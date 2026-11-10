@@ -20,7 +20,7 @@ import type {
   VersionInfo,
   BluetoothAdvertisementEvent,
 } from "./types";
-import { entityIdOfKey } from "./canvas/device-display";
+import { entityIdOfKey, entityKey } from "./canvas/device-display";
 import { DEFAULT_WALL_MATERIAL, wallMaterial } from "./canvas/materials";
 import type { LabelEntry } from "./canvas/layers";
 
@@ -137,12 +137,24 @@ export class HaClient {
     });
   }
 
-  /** device_id -> the HA label ids it carries. */
+  /** Pin key -> the HA label ids it carries: a device_id for a device,
+   * `entity:<entity_id>` for an entity placed on its own. */
   async listDeviceLabels(): Promise<Map<string, string[]>> {
-    const devices = await this.hass.connection.sendMessagePromise<
-      { id: string; labels?: string[] }[]
-    >({ type: "config/device_registry/list" });
-    return new Map(devices.map((d) => [d.id, d.labels ?? []]));
+    const [devices, entities] = await Promise.all([
+      this.hass.connection.sendMessagePromise<
+        { id: string; labels?: string[] }[]
+      >({ type: "config/device_registry/list" }),
+      this.hass.connection.sendMessagePromise<
+        { entity_id: string; labels?: string[] }[]
+      >({ type: "config/entity_registry/list" }),
+    ]);
+    return new Map([
+      ...devices.map((d): [string, string[]] => [d.id, d.labels ?? []]),
+      ...entities.map((e): [string, string[]] => [
+        entityKey(e.entity_id),
+        e.labels ?? [],
+      ]),
+    ]);
   }
 
   /** Admin only, like every HA registry change. */
@@ -161,12 +173,15 @@ export class HaClient {
     });
   }
 
-  async setDeviceLabels(deviceId: string, labels: string[]): Promise<void> {
-    await this.hass.connection.sendMessagePromise({
-      type: "config/device_registry/update",
-      device_id: deviceId,
-      labels,
-    });
+  /** Set the labels of a pin's device, or of its entity for an entity
+   * pin (see listDeviceLabels). */
+  async setDeviceLabels(key: string, labels: string[]): Promise<void> {
+    const entityId = entityIdOfKey(key);
+    await this.hass.connection.sendMessagePromise(
+      entityId
+        ? { type: "config/entity_registry/update", entity_id: entityId, labels }
+        : { type: "config/device_registry/update", device_id: key, labels },
+    );
   }
 
   async getVersionInfo(): Promise<VersionInfo> {

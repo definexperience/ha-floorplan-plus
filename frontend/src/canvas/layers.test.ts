@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlaceableEntity } from "../types";
+import { entityKey } from "./device-display";
 import {
   builtinLayerFor,
   deviceLayerIds,
@@ -84,6 +85,21 @@ describe("layers", () => {
     expect(
       deviceLayerIds("d1", entities, deviceLabels, defs, "not-a-layer"),
     ).toEqual(["lights", labelLayerId("garden"), labelLayerId("kids")]);
+  });
+
+  it("puts an entity pin on the label layers its own entity carries", () => {
+    const entities = [
+      entity("switch.relay_1", "board"),
+      entity("light.relay_2", "board"),
+    ];
+    const defs = layerDefs([], ["garden", "kids"], labels);
+    const pinLabels = new Map([
+      ["board", ["kids"]],
+      [entityKey("light.relay_2"), ["garden"]],
+    ]);
+    expect(
+      deviceLayerIds(entityKey("light.relay_2"), entities, pinLabels, defs),
+    ).toEqual(["lights", labelLayerId("garden")]);
   });
 
   it("shows a device while any of its layers is on", () => {
