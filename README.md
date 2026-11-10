@@ -136,7 +136,7 @@ Found a bug, or have an idea? Please [open an issue](https://github.com/definexp
 
 ## Credits
 
-Floorplan Plus is built on [Spatial Context](https://github.com/Greminn/ha-spatial-context) by Simon Buchanan ([Greminn](https://github.com/Greminn)). The floor plan editor, the Connectivity Map, the Property tab, the map data and most of what you see come from there. If the original is useful to you, you can [support its author](https://buymeacoffee.com/greminn). The original brand pack is kept in [`brand/spatial-context/`](brand/spatial-context/).
+Floorplan Plus is built on [Spatial Context](https://github.com/Greminn/ha-spatial-context) by Simon Buchanan ([Greminn](https://github.com/Greminn)). The floor plan editor, the Connectivity Map, the Property tab, the map data and most of what you see come from there. If the original is useful to you, you can [support its author](https://buymeacoffee.com/greminn).
 
 ## Development and licence
 

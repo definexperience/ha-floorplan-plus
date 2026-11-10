@@ -7,6 +7,10 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 ### Fixed
 - **Custom layers for entities placed on their own**. An entity placed as its own pin, such as one relay channel, now gets a switch for each custom layer in its options, like a device. It's saved as a label on that entity in Home Assistant, so the pin no longer stays on its standard layer only.
 
+### Changed
+- The panel header and the browser tab now show the Floorplan Plus mark (the house with the plus badge) instead of the Spatial Context mark, so the two projects are easy to tell apart.
+- The copy of the Spatial Context brand pack in `brand/spatial-context/` is removed. The README still credits the original project.
+
 ## 1.3.0
 
 ### Added

@@ -20,9 +20,13 @@ custom_components/floorplan_plus/brand/   what Home Assistant and HACS show
 source/   SVG masters: floorplan-plus-icon(-dark).svg, floorplan-plus-logo(-dark).svg
           (wordmark converted to outlines from Roboto Medium, Apache-2.0)
 extras/   favicon.ico and favicon PNGs (32, 48, 180, 192, 512), logo on a white background
-spatial-context/   the original Spatial Context brand pack by Greminn, kept for credit
 ```
 
 The PNGs are rendered from the SVG masters at the sizes above, with a transparent background.
+
+Panel header and browser tab (`custom_components/floorplan_plus/www/`):
+`floorplan-plus-mark.svg` is the mark in one colour, drawn with `currentColor` and used as a mask in the panel's own
+brand colour; `floorplan-plus-favicon.svg` is the full-colour icon, switching to the dark colours with the system theme,
+and `floorplan-plus-favicon.png` is `extras/favicon-48.png`.
 
 Sidebar icon (panel registration): `mdi:floor-plan`.
