@@ -166,6 +166,7 @@ export const floorplanCanvasStyles = css`
     fill: white;
     stroke: var(--sc-danger);
     stroke-width: 2;
+    vector-effect: non-scaling-stroke;
     cursor: ew-resize;
   }
   .opening-jamb-case {
@@ -196,6 +197,7 @@ export const floorplanCanvasStyles = css`
     fill: white;
     stroke: var(--sc-accent);
     stroke-width: 2;
+    vector-effect: non-scaling-stroke;
     cursor: pointer;
   }
   .vertex-handle.selected {
@@ -218,6 +220,7 @@ export const floorplanCanvasStyles = css`
     fill: white;
     stroke: var(--sc-accent);
     stroke-width: 2;
+    vector-effect: non-scaling-stroke;
     opacity: 0.6;
     pointer-events: none;
   }
@@ -259,6 +262,7 @@ export const floorplanCanvasStyles = css`
   .vertex-delete-x {
     stroke: white;
     stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
     pointer-events: none;
   }
   .midpoint-handle {

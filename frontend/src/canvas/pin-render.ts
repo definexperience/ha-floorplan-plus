@@ -32,6 +32,10 @@ export const pinStyles = css`
     fill: var(--sc-accent);
     stroke: white;
     stroke-width: 2;
+    /* The dot is sized in screen pixels (r tracks the zoom), but a plain
+     * stroke-width is in plan units and would thicken as you zoom in,
+     * swallowing the icon. Keep the border a steady 2px. */
+    vector-effect: non-scaling-stroke;
     pointer-events: none;
   }
   .pin-dot.selected {
@@ -50,6 +54,7 @@ export const pinStyles = css`
     fill: var(--sc-panel-bg, #fff);
     stroke: var(--sc-divider, #e0e0e0);
     stroke-width: 1;
+    vector-effect: non-scaling-stroke;
   }
   .pin-badge text {
     fill: var(--sc-fg, #212121);
@@ -62,6 +67,7 @@ export const pinStyles = css`
     fill: var(--error-color, #db4437);
     stroke: white;
     stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
   }
   .pin-caption {
     fill: var(--sc-fg, #212121);
