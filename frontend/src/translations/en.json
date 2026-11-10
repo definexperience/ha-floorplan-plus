@@ -288,7 +288,10 @@
     "debugReport": "Download debug report",
     "debugReportHint": "Versions, settings, layout counts and the recent debug log — safe to attach to a GitHub issue",
     "resetFloor": "Reset floor",
-    "resetProperty": "Reset property"
+    "resetProperty": "Reset property",
+    "viewAngle": "View angle",
+    "turnLeft": "Turn left 90°",
+    "turnRight": "Turn right 90°"
   },
   "network": {
     "zigbee": "Zigbee mesh",

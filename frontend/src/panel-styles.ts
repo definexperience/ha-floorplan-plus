@@ -156,6 +156,51 @@ export const panelStyles = css`
     font: inherit;
     font-size: var(--sc-fs-body);
   }
+  .angle-turn {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .angle-turn button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--sc-fg);
+    cursor: pointer;
+  }
+  .angle-turn button:hover {
+    background: var(--sc-hover, rgba(127, 127, 127, 0.12));
+  }
+  .angle-turn ha-icon {
+    --mdc-icon-size: 18px;
+  }
+  .angle-field {
+    width: 56px;
+    height: var(--sc-h-field);
+    padding: 0 8px;
+    box-sizing: border-box;
+    border: 1px solid var(--sc-divider);
+    border-radius: var(--sc-r-control);
+    background: var(--sc-panel-bg);
+    color: var(--sc-fg);
+    font: inherit;
+    font-size: var(--sc-fs-body);
+    text-align: end;
+  }
+  .angle-field:focus {
+    outline: none;
+    border-color: var(--sc-accent);
+  }
+  .angle-unit {
+    margin-inline-end: 2px;
+    color: var(--sc-fg-secondary);
+  }
   .popover-row select:focus {
     outline: none;
     border-color: var(--sc-accent);

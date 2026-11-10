@@ -288,7 +288,10 @@
     "debugReport": "Debugrapport downloaden",
     "debugReportHint": "Versies, instellingen, aantallen en het recente debuglogboek, veilig om aan een GitHub-issue toe te voegen",
     "resetFloor": "Verdieping leegmaken",
-    "resetProperty": "Perceel leegmaken"
+    "resetProperty": "Perceel leegmaken",
+    "viewAngle": "Kijkhoek",
+    "turnLeft": "90° naar links draaien",
+    "turnRight": "90° naar rechts draaien"
   },
   "network": {
     "zigbee": "Zigbee-mesh",

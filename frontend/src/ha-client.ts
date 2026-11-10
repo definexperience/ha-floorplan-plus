@@ -58,6 +58,12 @@ export class HaClient {
       background_scale: layout.background_scale,
       building_id: layout.building_id,
       view_box: layout.view_box,
+      // Only when known: a backend from before view angles (until HA
+      // restarts onto the new one) doesn't return it and would refuse
+      // the extra key.
+      ...(layout.view_angle !== undefined
+        ? { view_angle: layout.view_angle }
+        : {}),
       rooms: layout.rooms,
       pins: layout.pins,
       walls: layout.walls,
@@ -462,6 +468,7 @@ export function emptyFloorLayout(): FloorLayout {
     background_scale: 1,
     building_id: null,
     view_box: null,
+    view_angle: 0,
     rooms: [],
     pins: [],
     walls: [],

@@ -198,6 +198,11 @@ export interface FloorLayout {
    * preference to the same-building/fit-fresh fallback above. Null on a
    * floor whose view was never explicitly saved. */
   view_box: ViewBox | null;
+  /** Degrees clockwise the plan is turned on screen, -180..180 — in the
+   * panel (view and edit) and in every card that doesn't set its own
+   * display_angle. Absent from a backend from before view angles (until
+   * HA is restarted onto the new one) — treat as 0. */
+  view_angle?: number;
   rooms: Room[];
   pins: Pin[];
   walls: Wall[];
@@ -623,4 +628,7 @@ export interface CardOptions {
   hidden_layers?: string[];
   /** Custom layers (HA label ids) that start switched off in this card. */
   hidden_label_layers?: string[];
+  /** Degrees clockwise to turn the plan in this card, replacing each
+   * floor's own view_angle. Missing = use the floor's. */
+  display_angle?: number;
 }

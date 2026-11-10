@@ -53,6 +53,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     areaHelper:
       "Zooms in on the room linked to this area. Empty: the whole floor.",
     height: "Height",
+    display_angle: "Display angle",
+    display_angleHelper:
+      "Turns the floor plan clockwise by this many degrees in this card. Empty: the angle set for each floor in Floorplan Plus.",
     show_header: "Show floor tabs and network layers",
     layers: "Layers people can pick",
     layersHelper:
@@ -86,6 +89,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     areaHelper:
       "Zoomt in op de getekende kamer die aan deze ruimte gekoppeld is. Leeg: de hele verdieping.",
     height: "Hoogte",
+    display_angle: "Weergavehoek",
+    display_angleHelper:
+      "Draait de plattegrond in deze kaart zoveel graden met de klok mee. Leeg: de hoek die per verdieping in Floorplan Plus is ingesteld.",
     show_header: "Verdiepingstabbladen en netwerklagen tonen",
     layers: "Lagen die mensen kunnen kiezen",
     layersHelper:
@@ -118,6 +124,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     areaHelper:
       "Zoomt auf den Raum, der mit diesem Bereich verknüpft ist. Leer: die ganze Etage.",
     height: "Höhe",
+    display_angle: "Anzeigewinkel",
+    display_angleHelper:
+      "Dreht den Grundriss in dieser Karte um so viele Grad im Uhrzeigersinn. Leer: der Winkel, der für jede Etage in Floorplan Plus eingestellt ist.",
     show_header: "Etagen-Tabs und Netzwerkebenen anzeigen",
     layers: "Ebenen zur Auswahl",
     layersHelper:
@@ -213,6 +222,18 @@ class FloorplanPlusCard extends HTMLElement {
             },
           },
         },
+        {
+          name: "display_angle",
+          selector: {
+            number: {
+              min: -180,
+              max: 180,
+              step: 1,
+              mode: "box",
+              unit_of_measurement: "°",
+            },
+          },
+        },
         { name: "show_header", selector: { boolean: {} } },
         {
           name: "layers",
@@ -239,7 +260,8 @@ class FloorplanPlusCard extends HTMLElement {
       computeHelper: (schema: { name: string }) =>
         schema.name === "floor" ||
         schema.name === "area" ||
-        schema.name === "layers"
+        schema.name === "layers" ||
+        schema.name === "display_angle"
           ? t(`${schema.name}Helper`)
           : undefined,
     };
@@ -295,6 +317,14 @@ class FloorplanPlusCard extends HTMLElement {
         if (config.floor) options.floor = config.floor;
         if (config.area) options.area = config.area;
         if (config.show_header === false) options.show_header = false;
+        // Empty in the editor = no key, or null/"" from a hand-edited YAML.
+        const angle =
+          config.display_angle === undefined ||
+          config.display_angle === null ||
+          (config.display_angle as unknown) === ""
+            ? NaN
+            : Number(config.display_angle);
+        if (Number.isFinite(angle)) options.display_angle = angle;
         for (const key of [
           "layers",
           "label_layers",
