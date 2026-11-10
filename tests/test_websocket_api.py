@@ -181,6 +181,22 @@ class SaveLimitsTest(unittest.TestCase):
         self.assertTrue(saved["pins"][0]["show_label"])
         self.assertTrue(saved["pins"][0]["view_only"])
 
+    def test_a_light_area_keeps_its_fill(self) -> None:
+        for fill in ("solid", "fade"):
+            pin = {"id": "p1", "device_id": "abc", "x": 1, "y": 2, "light_area": {"mode": "room", "fill": fill}}
+            saved = self.api.ws_save_layout.schema(self._layout(pins=[pin]))
+            self.assertEqual(saved["pins"][0]["light_area"]["fill"], fill)
+
+    def test_a_light_area_without_a_fill_is_accepted(self) -> None:
+        pin = {"id": "p1", "device_id": "abc", "x": 1, "y": 2, "light_area": {"mode": "room"}}
+        saved = self.api.ws_save_layout.schema(self._layout(pins=[pin]))
+        self.assertNotIn("fill", saved["pins"][0]["light_area"])
+
+    def test_an_unknown_light_fill_is_refused(self) -> None:
+        pin = {"id": "p1", "device_id": "abc", "x": 1, "y": 2, "light_area": {"mode": "room", "fill": "sparkle"}}
+        with self.assertRaises(vol.Invalid):
+            self._validate(self._layout(pins=[pin]))
+
     def test_view_angle_is_optional(self) -> None:
         saved = self.api.ws_save_layout.schema(self._layout())
         self.assertNotIn("view_angle", saved)

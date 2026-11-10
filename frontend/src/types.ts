@@ -80,7 +80,12 @@ export interface DetectionZone {
 export interface LightArea {
   mode: "room" | "shape";
   points?: [number, number][];
+  /** "solid" fills the whole area evenly; "fade" is brightest at the
+   * light's marker and fades out towards the area's edge. Missing = solid. */
+  fill?: LightAreaFill;
 }
+
+export type LightAreaFill = "solid" | "fade";
 
 export interface Wall {
   id: string;

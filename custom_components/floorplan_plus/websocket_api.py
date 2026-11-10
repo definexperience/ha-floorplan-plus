@@ -138,6 +138,9 @@ _PIN_SCHEMA = {
         {
             vol.Required("mode"): vol.In(["room", "shape"]),
             vol.Optional("points"): _POINTS,
+            # "solid" fills the area evenly; "fade" is brightest at the
+            # marker and fades out towards the edge. Missing = solid.
+            vol.Optional("fill"): vol.In(["solid", "fade"]),
         },
     ),
     # A radar's or camera's coverage wedge, drawn when an admin turns it on.

@@ -3203,8 +3203,15 @@ export class FloorplanPlusPanel extends LitElement {
     if (lightPinId) {
       this._lightAreaPinId = null;
       this._mode = "select";
+      // Keep the fill choice (solid/fade) the light already had.
+      const fill = this._layout.pins.find((p) => p.id === lightPinId)
+        ?.light_area?.fill;
       this._patchPin(lightPinId, {
-        light_area: { mode: "shape", points: e.detail.points },
+        light_area: {
+          mode: "shape",
+          points: e.detail.points,
+          ...(fill ? { fill } : {}),
+        },
       });
       this._selectedPinId = lightPinId;
       return;

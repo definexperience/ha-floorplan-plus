@@ -9,6 +9,7 @@ import type {
   HomeAssistant,
   Opening,
   PlaceableEntity,
+  LightAreaFill,
   Pin,
   ResolvedMeshLink,
   ResolvedMeshStub,
@@ -643,7 +644,9 @@ export class CanvasOverlay extends LitElement {
     ) {
       return nothing;
     }
-    const mode = pin.light_area?.mode ?? "glow";
+    const area = pin.light_area;
+    const mode = area?.mode ?? "glow";
+    const fill = area?.fill ?? "solid";
     return html`${this._fieldRow(
       "mdi:lightbulb-on-outline",
       localize("canvas.pin.lightArea"),
@@ -656,7 +659,13 @@ export class CanvasOverlay extends LitElement {
               this._fire("light-area-draw-click");
             } else {
               this._fire("pin-options-change", {
-                light_area: value === "room" ? { mode: "room" } : null,
+                light_area:
+                  value === "room"
+                    ? {
+                        mode: "room",
+                        ...(area?.fill ? { fill: area.fill } : {}),
+                      }
+                    : null,
               });
             }
           }}
@@ -670,6 +679,33 @@ export class CanvasOverlay extends LitElement {
         </select>`,
       ),
     )}
+    ${
+      area
+        ? this._fieldRow(
+            "mdi:gradient-horizontal",
+            localize("canvas.pin.lightAreaFill"),
+            this._selectWrap(
+              html`<select
+                aria-label=${localize("canvas.pin.lightAreaFill")}
+                @change=${(e: Event) => {
+                  const value = (e.target as HTMLSelectElement)
+                    .value as LightAreaFill;
+                  this._fire("pin-options-change", {
+                    light_area: { ...area, fill: value },
+                  });
+                }}
+              >
+                ${(["solid", "fade"] as const).map(
+                  (f) =>
+                    html`<option value=${f} ?selected=${f === fill}>
+                      ${localize(`canvas.pin.lightAreaFill_${f}`)}
+                    </option>`,
+                )}
+              </select>`,
+            ),
+          )
+        : nothing
+    }
     ${
       mode === "shape"
         ? this._actionRow(
