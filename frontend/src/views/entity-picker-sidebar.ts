@@ -11,6 +11,7 @@ import {
 import { localize } from "../i18n";
 import { selectStyles, sharedStyles } from "../styles";
 import { entityPickerSidebarStyles } from "./entity-picker-sidebar-styles";
+import { otherFloorNames } from "./placed-floors";
 
 /** Fallback row icon when a device's integration has no brand logo on
  * brands.home-assistant.io (see the `<img>`/`@error` pair below) — one
@@ -266,20 +267,21 @@ export class EntityPickerSidebar extends LitElement {
     return devices;
   }
 
-  /** Non-null (the floor name/id it's on) when this device's primary
-   * entity is already placed on a *different* floor than the one currently
-   * open — that device can't be placed here too until it's removed from
-   * where it already is (an entity only physically exists in one place). */
-  private _blockedFloorName(device: DeviceGroup): string | null {
+  /** The other floors (names) this device is already placed on, besides
+   * the one open. A device may sit on several floors at once (a staircase
+   * light on both floors it spans), so this only informs, never blocks. */
+  private _otherFloorNames(device: DeviceGroup): string[] {
     const primary = device.entities.find(
       (e) => e.entity_id === device.primaryEntityId,
     );
-    if (
-      !primary?.placed_floor_id ||
-      primary.placed_floor_id === this.currentFloorId
-    )
-      return null;
-    return primary.placed_floor_name ?? primary.placed_floor_id;
+    if (!primary) return [];
+    return otherFloorNames(
+      primary.placed_floor_ids,
+      primary.placed_floor_names,
+      primary.placed_floor_id,
+      primary.placed_floor_name,
+      this.currentFloorId,
+    );
   }
 
   /** Whether something in `areaId` passes the floor and area filters.
@@ -349,15 +351,16 @@ export class EntityPickerSidebar extends LitElement {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  /** Non-null (the floor's name) when this entity is on a pin of its own
-   * on a different floor than the one open. */
-  private _entityBlockedFloorName(e: PlaceableEntity): string | null {
-    if (
-      !e.entity_placed_floor_id ||
-      e.entity_placed_floor_id === this.currentFloorId
-    )
-      return null;
-    return e.entity_placed_floor_name ?? e.entity_placed_floor_id;
+  /** The other floors (names) this entity is on a pin of its own, besides
+   * the one open. */
+  private _entityOtherFloorNames(e: PlaceableEntity): string[] {
+    return otherFloorNames(
+      e.entity_placed_floor_ids,
+      e.entity_placed_floor_names,
+      e.entity_placed_floor_id ?? null,
+      e.entity_placed_floor_name ?? null,
+      this.currentFloorId,
+    );
   }
 
   private _toggleExpanded(event: Event, deviceId: string): void {
@@ -389,7 +392,7 @@ export class EntityPickerSidebar extends LitElement {
       (d) =>
         d.areaId !== null &&
         !this.placedDeviceIds.has(d.deviceId) &&
-        !this._blockedFloorName(d),
+        this._otherFloorNames(d).length === 0,
     );
     const seen = new Set<string>();
     const suggestions: Suggestion[] = [];
@@ -723,7 +726,7 @@ export class EntityPickerSidebar extends LitElement {
   private _renderEntityRow(e: PlaceableEntity, sub: boolean) {
     const key = entityKey(e.entity_id);
     const placed = this.placedDeviceIds.has(key);
-    const blockedFloorName = this._entityBlockedFloorName(e);
+    const otherFloors = this._entityOtherFloorNames(e);
     const armed = this.armedEntityId === key;
     const name = sub ? shortName(e) : e.name;
     const subtitle = sub
@@ -735,33 +738,31 @@ export class EntityPickerSidebar extends LitElement {
       <div
         class="item entity ${sub ? "sub" : ""} ${armed ? "armed" : ""} ${
           placed ? "placed" : ""
-        } ${blockedFloorName ? "blocked" : ""}"
-        title=${
-          blockedFloorName
-            ? localize("picker.alreadyPlaced", { floor: blockedFloorName })
-            : `${e.name} · ${e.entity_id}`
-        }
-        @click=${() => {
-          if (!blockedFloorName) this._arm(key);
-        }}
+        }"
+        title=${`${e.name} · ${e.entity_id}`}
+        @click=${() => this._arm(key)}
       >
         <span class="avatar"
           ><ha-icon icon=${entityIconName(e)}></ha-icon
         ></span>
         <span class="text">
           <span class="name">${name}</span>
-          <span class="meta"
-            >${
-              blockedFloorName
-                ? localize("picker.placedOn", { floor: blockedFloorName })
-                : subtitle
-            }</span
-          >
+          <span class="meta">${subtitle}</span>
+          ${this._alsoOn(otherFloors)}
           ${placed ? html`<span class="meta">${localize("picker.placed")}</span>` : nothing}
         </span>
         ${placed ? this._placedActions(key) : nothing}
       </div>
     `;
+  }
+
+  /** "Also on Ground floor, First floor" under a row placed elsewhere. */
+  private _alsoOn(floors: string[]) {
+    return floors.length
+      ? html`<span class="meta also-on"
+          >${localize("picker.alsoOn", { floor: floors.join(", ") })}</span
+        >`
+      : nothing;
   }
 
   /** Locate and remove buttons for a placed row. */
@@ -788,28 +789,18 @@ export class EntityPickerSidebar extends LitElement {
    * `expand` opens its entities. */
   private _renderRow(device: DeviceGroup, actions?: unknown, expand?: unknown) {
     const placed = this.placedDeviceIds.has(device.deviceId);
-    const blockedFloorName = this._blockedFloorName(device);
+    const otherFloors = this._otherFloorNames(device);
     const armed = this.armedEntityId === device.deviceId;
     const subtitle = [device.areaName, device.integrationName]
       .filter((part): part is string => !!part)
       .join(" - ");
     return html`
       <div
-        class="item ${armed ? "armed" : ""} ${placed ? "placed" : ""} ${
-          blockedFloorName ? "blocked" : ""
-        }"
-        title=${
-          blockedFloorName
-            ? localize("picker.alreadyPlaced", {
-                floor: blockedFloorName,
-              })
-            : [device.deviceName, subtitle]
-                .filter((part): part is string => !!part)
-                .join(" · ")
-        }
-        @click=${() => {
-          if (!blockedFloorName) this._arm(device.deviceId);
-        }}
+        class="item ${armed ? "armed" : ""} ${placed ? "placed" : ""}"
+        title=${[device.deviceName, subtitle]
+          .filter((part): part is string => !!part)
+          .join(" · ")}
+        @click=${() => this._arm(device.deviceId)}
       >
         <span class="avatar">
           ${
@@ -832,15 +823,8 @@ export class EntityPickerSidebar extends LitElement {
         </span>
         <span class="text">
           <span class="name">${device.deviceName}</span>
-          ${
-            blockedFloorName
-              ? html`<span class="meta"
-                  >${localize("picker.placedOn", { floor: blockedFloorName })}</span
-                >`
-              : subtitle
-                ? html`<span class="meta">${subtitle}</span>`
-                : nothing
-          }
+          ${subtitle ? html`<span class="meta">${subtitle}</span>` : nothing}
+          ${this._alsoOn(otherFloors)}
           ${placed ? html`<span class="meta">${localize("picker.placed")}</span>` : nothing}
         </span>
         ${placed ? this._placedActions(device.deviceId) : (actions ?? nothing)}

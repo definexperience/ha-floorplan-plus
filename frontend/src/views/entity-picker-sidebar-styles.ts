@@ -180,13 +180,6 @@ export const entityPickerSidebarStyles = css`
   .item .row-actions ha-icon {
     --mdc-icon-size: 18px;
   }
-  .item.blocked {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-  .item.blocked:hover {
-    background: transparent;
-  }
   .item .avatar {
     display: flex;
     align-items: center;

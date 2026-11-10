@@ -272,32 +272,31 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
     area_registry = ar.async_get(hass)
     floor_registry = fr.async_get(hass)
 
-    # Which floor (if any) each *device* is currently placed on, across
-    # every floor's saved layout — a device only physically exists in one
-    # place, so the picker needs this to stop a device already placed on
-    # Bottom Floor (via any of its entities) from also being placeable on
-    # Top Floor via a *different* entity. Keyed on device_id, not
-    # entity_id — a pin's identity is the device it represents, not
-    # whichever entity was chosen to display it (see
-    # async_migrate_pin_device_ids). (storage.py's save path already
-    # enforces the same one-place invariant by silently stripping a moved
-    # device's old pin; this is the read-side half that lets the frontend
-    # warn *before* that happens instead of only after.)
-    # Layouts of floors since deleted in HA don't count — their devices
-    # are placeable again (#37).
+    # Every floor each *device* is currently placed on (via any of its
+    # entities), across every floor's saved layout. A
+    # device may sit on several floors at once (a staircase light on both
+    # floors it spans), so the picker shows where else it already is.
+    # Keyed on device_id, not entity_id — a pin's identity is the device it
+    # represents, not whichever entity was chosen to display it (see
+    # async_migrate_pin_device_ids).
+    # Layouts of floors since deleted in HA don't count (#37).
     all_layouts = live_layouts(
         await async_get_all_layouts(hass),
         {f.floor_id for f in floor_registry.async_list_floors()},
     )
-    device_id_to_floor_id: dict[str, str] = {}
+    device_id_to_floor_ids: dict[str, list[str]] = {}
     # Entities placed on a pin of their own (see storage.py's pin_key).
-    entity_id_to_floor_id: dict[str, str] = {}
+    entity_id_to_floor_ids: dict[str, list[str]] = {}
 
     def _note(pin: dict[str, Any], floor_id: str) -> None:
         if pin.get("single_entity_id"):
-            entity_id_to_floor_id[pin["single_entity_id"]] = floor_id
+            floors = entity_id_to_floor_ids.setdefault(pin["single_entity_id"], [])
         elif pin.get("device_id"):
-            device_id_to_floor_id[pin["device_id"]] = floor_id
+            floors = device_id_to_floor_ids.setdefault(pin["device_id"], [])
+        else:
+            return
+        if floor_id not in floors:
+            floors.append(floor_id)
 
     for floor_id, layout in all_layouts.items():
         for pin in layout.get("pins", []):
@@ -314,6 +313,17 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
             return "Property"
         floor = floor_registry.async_get_floor(floor_id)
         return floor.name if floor else floor_id
+
+    def _placed(prefix: str, floor_ids: list[str]) -> dict[str, Any]:
+        """The picker's "where is this placed" fields: every floor, plus
+        the first one on its own for older frontends."""
+        first = floor_ids[0] if floor_ids else None
+        return {
+            f"{prefix}_id": first,
+            f"{prefix}_name": _floor_name(first),
+            f"{prefix}_ids": list(floor_ids),
+            f"{prefix}_names": [_floor_name(f) for f in floor_ids],
+        }
 
     # The device's OWN integration — not `entry.platform` on whichever
     # entity happens to be picked as representative. A helper integration
@@ -387,8 +397,10 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
         )
 
         device_id = device.id if device else None
-        placed_floor_id = device_id_to_floor_id.get(device_id) if device_id else None
-        entity_placed_floor_id = entity_id_to_floor_id.get(entry.entity_id)
+        placed_floor_ids = (
+            device_id_to_floor_ids.get(device_id, []) if device_id else []
+        )
+        entity_placed_floor_ids = entity_id_to_floor_ids.get(entry.entity_id, [])
         integration_domain = (
             device_integration_domains.get(device_id) if device_id else entry.platform
         )
@@ -411,10 +423,8 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
                 "integration_name": integration_names.get(integration_domain)
                 if integration_domain
                 else None,
-                "placed_floor_id": placed_floor_id,
-                "placed_floor_name": _floor_name(placed_floor_id),
-                "entity_placed_floor_id": entity_placed_floor_id,
-                "entity_placed_floor_name": _floor_name(entity_placed_floor_id),
+                **_placed("placed_floor", placed_floor_ids),
+                **_placed("entity_placed_floor", entity_placed_floor_ids),
             }
         )
 
@@ -424,7 +434,6 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
     for state in hass.states.async_all():
         if state.entity_id in registered or state.domain not in _DEVICELESS_DOMAINS:
             continue
-        floor_id = entity_id_to_floor_id.get(state.entity_id)
         entities.append(
             {
                 "entity_id": state.entity_id,
@@ -439,10 +448,11 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
                 "entity_category": None,
                 "integration_domain": None,
                 "integration_name": None,
-                "placed_floor_id": None,
-                "placed_floor_name": None,
-                "entity_placed_floor_id": floor_id,
-                "entity_placed_floor_name": _floor_name(floor_id),
+                **_placed("placed_floor", []),
+                **_placed(
+                    "entity_placed_floor",
+                    entity_id_to_floor_ids.get(state.entity_id, []),
+                ),
             }
         )
 
