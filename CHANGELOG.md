@@ -5,6 +5,7 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 ## Unreleased
 
 ### Added
+- **Place a device on more than one floor**. A device or entity that's already placed on another floor can now be placed on this one too, such as a staircase light that belongs on both floors it spans. The picker shows where else it's placed ("Also on First floor") instead of greying the row out. Placing it here no longer removes it from the other floor, and the same goes for devices placed outdoors on the Property tab.
 - **Turn the floor plan**. Each floor has a **View angle** (degrees clockwise), set while editing in the **Background** menu, with buttons to turn a quarter at a time. The plan is drawn at that angle in the sidebar, both when viewing and editing, and in dashboard cards. Room names, device markers and labels stay upright, and tapping, dragging, drawing, panning and zooming all follow the turned plan.
 - The dashboard card has a **Display angle** option that turns the plan in that card only, replacing the floors' own angles. Empty uses each floor's angle.
 

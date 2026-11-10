@@ -24,9 +24,9 @@ export interface Room {
 
 export interface Pin {
   id: string;
-  /** The pin's whole identity — a device only physically exists in one
-   * place, so this is what "already placed" checks and mesh-link
-   * resolution key off. There is deliberately no entity_id here: a human
+  /** The pin's whole identity — this is what "already placed" checks and
+   * mesh-link resolution key off. The same device may have pins on several
+   * floors (and several on one floor). There is deliberately no entity_id here: a human
    * placing a device should never need to know or choose which of its HA
    * entities represents it — canvas/device-display.ts derives an icon and
    * a display name from this purely automatically (entities are AI-agent
@@ -291,8 +291,8 @@ export interface PropertyLayout {
   /** Saved pan/zoom, restored whenever the Property tab is opened. */
   view_box: ViewBox | null;
   placements: PropertyPlacement[];
-  /** Outdoor devices (garden lights, say), positioned on the site photo —
-   * a device lives in one place only, across floors and here. `room_id`
+  /** Outdoor devices (garden lights, say), positioned on the site photo.
+   * A device here may also be placed on a floor. `room_id`
    * and `height_m` are unused outdoors. */
   pins: Pin[];
   /** Null/absent = no map; absent on layouts saved before it existed. */
@@ -324,18 +324,20 @@ export interface PlaceableEntity {
    * CDN the HA frontend itself uses for every integration logo. */
   integration_domain: string | null;
   integration_name: string | null;
-  /** Which floor (if any) this entity is *currently* placed on, house-wide
-   * — an entity only physically exists in one place, so the picker uses
-   * this to block placing an already-placed device onto a *different*
-   * floor (see entity-picker-sidebar.ts). Null means not placed anywhere
-   * yet; compare against the currently-open floor_id, since a device
-   * already placed on *this* floor should stay placeable (re-armable) here,
-   * just not on any other floor. */
+  /** The first floor (if any) this entity's device is placed on. Null
+   * means not placed anywhere yet. A device may be on several floors at
+   * once; see placed_floor_ids for all of them. */
   placed_floor_id: string | null;
   placed_floor_name: string | null;
+  /** Every floor this entity's device is placed on (the Property tab
+   * counts as one), so the picker can say where else it already is. */
+  placed_floor_ids?: string[];
+  placed_floor_names?: (string | null)[];
   /** Where this entity is placed on a pin of its own, if it is. */
   entity_placed_floor_id?: string | null;
   entity_placed_floor_name?: string | null;
+  entity_placed_floor_ids?: string[];
+  entity_placed_floor_names?: (string | null)[];
 }
 
 export interface ExportSnapshot {
