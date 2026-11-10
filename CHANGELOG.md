@@ -10,7 +10,7 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 - The dashboard card has a **Display angle** option that turns the plan in that card only, replacing the floors' own angles. Empty uses each floor's angle.
 
 ### Fixed
-- The white border around device markers no longer thickens as you zoom in. It stays a thin 2px line at any zoom, so it no longer covers the device's icon. The same goes for the reading badge and the low-battery dot beside a marker.
+- The white border around device markers no longer thickens as you zoom in. It stays a thin 2px line at any zoom, so it no longer covers the device's icon. The same goes for the reading badge and the low-battery dot beside a marker, and for the handles you drag while drawing or editing rooms, walls, doors and windows, and outdoor placements on the Property tab.
 
 ## 1.3.1
 
