@@ -11,6 +11,7 @@ also needs an admin (see ws_get_zigbee_mesh).
 from __future__ import annotations
 
 import logging
+import math
 
 import voluptuous as vol
 
@@ -198,6 +199,20 @@ _MAP_BACKGROUND_SCHEMA = vol.Any(
     None,
 )
 
+def normalize_angle(value: float) -> float:
+    """An angle in degrees folded into -180..180 (180 stays 180)."""
+    if not math.isfinite(value):
+        raise vol.Invalid("angle must be a finite number")
+    folded = math.fmod(value, 360.0)
+    if folded > 180:
+        folded -= 360
+    elif folded <= -180:
+        folded += 360
+    return folded
+
+
+_VIEW_ANGLE = vol.All(vol.Coerce(float), normalize_angle)
+
 _VIEW_BOX_SCHEMA = vol.Any(
     {
         vol.Required("x"): vol.Coerce(float),
@@ -252,6 +267,9 @@ _PLACEMENT_SCHEMA = {
         vol.Required("background_scale"): vol.Coerce(float),
         vol.Required("building_id"): vol.Any(_TEXT, None),
         vol.Required("view_box"): _VIEW_BOX_SCHEMA,
+        # Optional so an older panel bundle's save (which never sends it)
+        # still validates; the stored angle is kept then.
+        vol.Optional("view_angle"): _VIEW_ANGLE,
         vol.Required("rooms"): _items(_ROOM_SCHEMA),
         vol.Required("pins"): _items(_PIN_SCHEMA),
         vol.Required("walls"): _items(_WALL_SCHEMA),
@@ -267,6 +285,11 @@ async def ws_save_layout(
 ) -> None:
     """Full replace-save a single floor's layout."""
     wall_ids = {wall["id"] for wall in msg["walls"]}
+    if "view_angle" in msg:
+        view_angle = msg["view_angle"]
+    else:
+        stored = await async_get_floor_layout(hass, msg["floor_id"])
+        view_angle = stored.get("view_angle", 0.0)
     layout = {
         "background_image_id": msg["background_image_id"],
         "background_opacity": msg["background_opacity"],
@@ -275,6 +298,7 @@ async def ws_save_layout(
         "background_scale": msg["background_scale"],
         "building_id": msg["building_id"],
         "view_box": msg["view_box"],
+        "view_angle": view_angle,
         "rooms": msg["rooms"],
         "pins": msg["pins"],
         "walls": msg["walls"],

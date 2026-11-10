@@ -99,6 +99,7 @@ import {
   type LayerDef,
 } from "./canvas/layers";
 import { zoneEntityId } from "./canvas/detection-zone";
+import { normalizeAngle, toView } from "./canvas/view-rotation";
 import "./views/app-header";
 import "./views/canvas-overlay";
 import "./views/icon-popover";
@@ -603,6 +604,38 @@ export class FloorplanPlusPanel extends LitElement {
       null
     );
   }
+
+  /** The angle the floor plan is drawn at: a card's own display_angle
+   * when it sets one, otherwise the floor's saved view_angle. */
+  private get _canvasAngle(): number {
+    const cardAngle = this.embedded
+      ? this.cardOptions.display_angle
+      : undefined;
+    if (typeof cardAngle === "number" && Number.isFinite(cardAngle)) {
+      return normalizeAngle(cardAngle);
+    }
+    return normalizeAngle(this._layout.view_angle ?? 0);
+  }
+
+  private _setViewAngle(deg: number): void {
+    const view_angle = normalizeAngle(Math.round(deg * 10) / 10);
+    if (view_angle === normalizeAngle(this._layout.view_angle ?? 0)) return;
+    this._updateLayout({ view_angle });
+  }
+
+  private _onViewAngleChange = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const n = Number(input.value.replace(",", ".").replace("°", "").trim());
+    if (input.value.trim() === "" || !Number.isFinite(n)) {
+      input.value = String(normalizeAngle(this._layout.view_angle ?? 0));
+      return;
+    }
+    this._setViewAngle(n);
+    input.value = String(normalizeAngle(this._layout.view_angle ?? 0));
+  };
+
+  private _onViewAngleTurn = (delta: number) =>
+    this._setViewAngle((this._layout.view_angle ?? 0) + delta);
 
   /** Which layout's background fields the header's "Background" popover
    * currently targets — the floor being viewed, or the whole-property
@@ -2685,10 +2718,9 @@ export class FloorplanPlusPanel extends LitElement {
    * around it. */
   private _onAlignScaleClick = (e: CustomEvent<{ factor: number }>) => {
     const { factor } = e.detail;
-    const vb = this._canvas?.getViewBox();
-    if (vb) {
-      const cx = vb.x + vb.w / 2;
-      const cy = vb.y + vb.h / 2;
+    const center = this._canvas?.getViewCenter();
+    if (center) {
+      const { x: cx, y: cy } = center;
       this._alignOffsetX = factor * this._alignOffsetX + (1 - factor) * cx;
       this._alignOffsetY = factor * this._alignOffsetY + (1 - factor) * cy;
     }
@@ -2739,12 +2771,24 @@ export class FloorplanPlusPanel extends LitElement {
       // space — transform it the same way as everything else rather than
       // dropping it, so a view saved before this alignment still points
       // at the same physical spot afterward.
+      // (A saved view sits in the floor's turned view space: scaling is
+      // the same there, the shift turns with the floor's angle.)
       view_box: src.view_box
         ? (() => {
-            const [x, y] = tp([src.view_box!.x, src.view_box!.y]);
-            return { x, y, w: src.view_box!.w * s, h: src.view_box!.h * s };
+            const [dx, dy] = toView(
+              ox,
+              oy,
+              normalizeAngle(src.view_angle ?? 0),
+            );
+            return {
+              x: src.view_box!.x * s + dx,
+              y: src.view_box!.y * s + dy,
+              w: src.view_box!.w * s,
+              h: src.view_box!.h * s,
+            };
           })()
         : null,
+      ...(src.view_angle !== undefined ? { view_angle: src.view_angle } : {}),
       rooms: src.rooms.map((r) => ({ ...r, points: r.points.map(tp) })),
       walls: src.walls.map((w) => ({ ...w, points: w.points.map(tp) })),
       pins: src.pins.map((p) => {
@@ -3687,6 +3731,37 @@ export class FloorplanPlusPanel extends LitElement {
               </label>`
             : nothing
         }
+        ${
+          this._view === "property"
+            ? nothing
+            : html`<div class="popover-row">
+                <label for="view-angle">${localize("menu.viewAngle")}</label>
+                <span class="angle-turn">
+                  <button
+                    title=${localize("menu.turnLeft")}
+                    aria-label=${localize("menu.turnLeft")}
+                    @click=${() => this._onViewAngleTurn(-90)}
+                  >
+                    <ha-icon icon="mdi:rotate-left"></ha-icon>
+                  </button>
+                  <input
+                    id="view-angle"
+                    class="angle-field"
+                    type="text"
+                    inputmode="decimal"
+                    .value=${String(normalizeAngle(this._layout.view_angle ?? 0))}
+                    @change=${this._onViewAngleChange}
+                  /><span class="angle-unit">°</span>
+                  <button
+                    title=${localize("menu.turnRight")}
+                    aria-label=${localize("menu.turnRight")}
+                    @click=${() => this._onViewAngleTurn(90)}
+                  >
+                    <ha-icon icon="mdi:rotate-right"></ha-icon>
+                  </button>
+                </span>
+              </div>`
+        }
       </icon-popover>
     `;
   }
@@ -4128,6 +4203,7 @@ export class FloorplanPlusPanel extends LitElement {
                             this.embedded ? null : this._layout.view_box
                           }
                           .homePoints=${this._cardRoom?.points ?? null}
+                          .viewAngle=${this._canvasAngle}
                           .sameBuildingAsPrevious=${this._sameBuildingAsPreviousFloor}
                           .mode=${this._editing ? this._mode : "select"}
                           .readonly=${!this._editing}

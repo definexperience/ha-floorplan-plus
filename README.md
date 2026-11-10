@@ -66,6 +66,10 @@ This repository used to be called `ha-spatial-context`. GitHub forwards the old 
 
 Changes save automatically. Editing works the same as in Spatial Context, so its [user guide](https://greminn.github.io/ha-spatial-context/) applies: [your first floor plan](https://greminn.github.io/ha-spatial-context/guide/first-floor-plan), [placing devices](https://greminn.github.io/ha-spatial-context/guide/placing-devices), the [Connectivity Map](https://greminn.github.io/ha-spatial-context/guide/connectivity-map) and the [Property tab](https://greminn.github.io/ha-spatial-context/guide/property-tab).
 
+### Turning the plan
+
+If your plan is drawn at an angle, or you'd like the front door at the bottom of the screen, turn it. While editing, open the **Background** menu and enter a **View angle** in degrees clockwise, or use the arrows next to it to turn a quarter at a time. Each floor has its own angle. The plan turns everywhere, in the sidebar while viewing and editing, and in every dashboard card that doesn't set its own angle. Room names, device markers and labels stay upright.
+
 ### Suggested devices per room
 
 Link a room to a Home Assistant area: select the room and pick it under **Area**. When you **Place Device**, the devices in that area that aren't on the plan yet are listed first under *Suggested for* that room. Place one, or choose **Place all** to drop them all inside the room at once. Select a room first to see only its suggestions.
@@ -114,7 +118,10 @@ floor: ground_floor   # optional: the floor to open on
 area: kitchen         # optional: zoom in on the room linked to this area
 height: 450           # optional: card height in pixels
 show_header: true     # optional: floor tabs and network layers
+display_angle: 90     # optional: turn the plan this many degrees clockwise in this card
 ```
+
+Leave **Display angle** empty to use each floor's own view angle.
 
 The card registers itself, so there is no dashboard resource to add. It appears in the card picker after the integration is set up and Home Assistant has been restarted; see [Updating](#updating) if it doesn't.
 

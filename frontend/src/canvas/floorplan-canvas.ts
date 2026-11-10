@@ -35,6 +35,14 @@ import {
 } from "./geometry";
 import { wedgePath } from "./detection-zone";
 import {
+  normalizeAngle,
+  reangleViewBox,
+  toImage,
+  toView,
+  viewBounds,
+  viewRectInImage,
+} from "./view-rotation";
+import {
   findMeshLinkAt,
   findMeshStubAt,
   findOpeningAt,
@@ -173,6 +181,11 @@ export class FloorplanCanvas extends LitElement {
   /** A room outline that "fit" and the home button frame instead of the
    * whole floor — set by a dashboard card that shows one room. */
   @property({ attribute: false }) homePoints: [number, number][] | null = null;
+  /** Degrees clockwise the plan is drawn turned (the floor's view_angle,
+   * or a card's display_angle). The viewBox lives in this turned space —
+   * see view-rotation.ts. Room names, device icons and labels stay
+   * upright. */
+  @property({ type: Number }) viewAngle = 0;
   @property({ attribute: false }) mode: CanvasMode = "select";
   /** View mode: devices, rooms and network links can be tapped, but
    * nothing can be moved or changed. Pan and zoom still work. */
@@ -293,6 +306,16 @@ export class FloorplanCanvas extends LitElement {
   }
 
   override willUpdate(changed: Map<string, unknown>): void {
+    // A new angle turns the plan around whatever is in the middle of the
+    // view, at the same zoom, in this same render — no frame drawn at the
+    // new angle with the old view. A floor switch that also brings a saved
+    // view replaces this right after (see updated()).
+    if (changed.has("viewAngle") && this.hasUpdated) {
+      const from = normalizeAngle((changed.get("viewAngle") as number) ?? 0);
+      if (from !== this._angle) {
+        this._viewBox = reangleViewBox(this._viewBox, from, this._angle);
+      }
+    }
     if (changed.has("editingRoomId") || changed.has("editingWallId")) {
       const target = this._editingTarget;
       const points = target ? this._rawPointsFor(target) : null;
@@ -340,6 +363,11 @@ export class FloorplanCanvas extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._resizeObserver?.disconnect();
+  }
+
+  /** The angle actually drawn — viewAngle folded into -180..180. */
+  private get _angle(): number {
+    return normalizeAngle(this.viewAngle);
   }
 
   override updated(changed: Map<string, unknown>): void {
@@ -419,13 +447,9 @@ export class FloorplanCanvas extends LitElement {
     for (const room of this.rooms) points.push(...room.points);
     for (const wall of this.walls) points.push(...wall.points);
     for (const pin of this.pins) points.push([pin.x, pin.y]);
-    if (points.length === 0) return null;
-    const xs = points.map(([x]) => x);
-    const ys = points.map(([, y]) => y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
+    const bounds = viewBounds(points, this._angle);
+    if (!bounds) return null;
+    const { minX, maxX, minY, maxY } = bounds;
     const pad = Math.max(maxX - minX, maxY - minY) * 0.08 || 40;
     return {
       x: minX - pad,
@@ -440,12 +464,31 @@ export class FloorplanCanvas extends LitElement {
       this._viewBox = this._frame(this.homePoints);
       return;
     }
-    this._viewBox = this._contentBounds() ?? {
-      x: 0,
-      y: 0,
-      w: BASE_WIDTH,
-      h: this._naturalHeight,
-    };
+    this._viewBox = this._contentBounds() ?? this._imageRectBounds();
+  }
+
+  /** The background image's own rectangle (0, 0, BASE_WIDTH, natural
+   * height), framed in view space. */
+  private _imageRectBounds(): ViewBox {
+    const b = viewBounds(
+      [
+        [0, 0],
+        [BASE_WIDTH, 0],
+        [BASE_WIDTH, this._naturalHeight],
+        [0, this._naturalHeight],
+      ],
+      this._angle,
+    )!;
+    return { x: b.minX, y: b.minY, w: b.maxX - b.minX, h: b.maxY - b.minY };
+  }
+
+  /** The point in the middle of the view, in stored (image) coordinates
+   * — for zooming something stored around what's on screen (Align
+   * Floors' +/-). */
+  getViewCenter(): { x: number; y: number } {
+    const vb = this._viewBox;
+    const [x, y] = toImage(vb.x + vb.w / 2, vb.y + vb.h / 2, this._angle);
+    return { x, y };
   }
 
   /** The live pan/zoom right now — read by panel.ts at Save time so the
@@ -465,12 +508,9 @@ export class FloorplanCanvas extends LitElement {
 
   /** A view box framing these points, with some room around them. */
   private _frame(points: [number, number][]): ViewBox {
-    const xs = points.map(([x]) => x);
-    const ys = points.map(([, y]) => y);
-    const minX = Math.min(...xs);
-    const minY = Math.min(...ys);
-    const w = Math.max(...xs) - minX;
-    const h = Math.max(...ys) - minY;
+    const { minX, minY, maxX, maxY } = viewBounds(points, this._angle)!;
+    const w = maxX - minX;
+    const h = maxY - minY;
     const pad = Math.max(w, h) * 0.15 || 40;
     const targetW = clamp(w + pad * 2, MIN_VIEWBOX_WIDTH, MAX_VIEWBOX_WIDTH);
     const targetH = (h + pad * 2) * (targetW / (w + pad * 2));
@@ -543,7 +583,18 @@ export class FloorplanCanvas extends LitElement {
     return px / this._svgTransform().scale;
   }
 
+  /** Screen -> stored (image) coordinates, through the view's rotation. */
   private _clientToImage(
+    clientX: number,
+    clientY: number,
+  ): { x: number; y: number } {
+    const v = this._clientToView(clientX, clientY);
+    const [x, y] = toImage(v.x, v.y, this._angle);
+    return { x, y };
+  }
+
+  /** Screen -> the viewBox's own (turned) space — for pan/zoom maths. */
+  private _clientToView(
     clientX: number,
     clientY: number,
   ): { x: number; y: number } {
@@ -893,7 +944,7 @@ export class FloorplanCanvas extends LitElement {
         kind: "pinch",
         startDistance: distance(a.x, a.y, b.x, b.y),
         startViewBox: { ...this._viewBox },
-        midImage: this._clientToImage(midClient.x, midClient.y),
+        midImage: this._clientToView(midClient.x, midClient.y),
       };
       return;
     }
@@ -993,14 +1044,13 @@ export class FloorplanCanvas extends LitElement {
     } else if (this._gesture?.kind === "alignDrag") {
       const scale = this._svgTransform().scale || 1;
       const last = this._lastClient ?? { x: e.clientX, y: e.clientY };
-      this.dispatchEvent(
-        new CustomEvent("align-drag", {
-          detail: {
-            dx: (e.clientX - last.x) / scale,
-            dy: (e.clientY - last.y) / scale,
-          },
-        }),
+      // A screen-space move, turned back into stored coordinates.
+      const [dx, dy] = toImage(
+        (e.clientX - last.x) / scale,
+        (e.clientY - last.y) / scale,
+        this._angle,
       );
+      this.dispatchEvent(new CustomEvent("align-drag", { detail: { dx, dy } }));
     } else if (this._gesture?.kind === "vertex" && this._liveEditPoints) {
       const closed = this._editingTarget?.kind === "room";
       const [sx, sy] = this._snappedVertexPoint(
@@ -1022,11 +1072,14 @@ export class FloorplanCanvas extends LitElement {
         dy: image.y - this._gesture.startY,
       };
     } else if (this._gesture?.kind === "marquee") {
+      // The box is drawn and tested in view space, so it stays a
+      // screen-straight rectangle on a turned plan.
+      const [x1, y1] = toView(image.x, image.y, this._angle);
       this._marquee = {
         x0: this._gesture.startX,
         y0: this._gesture.startY,
-        x1: image.x,
-        y1: image.y,
+        x1,
+        y1,
       };
     } else if (this._gesture?.kind === "roomMove") {
       let dx = image.x - this._gesture.startX;
@@ -1129,12 +1182,12 @@ export class FloorplanCanvas extends LitElement {
       this._downShift &&
       this._lastImage
     ) {
-      return {
-        kind: "marquee",
-        startX: this._lastImage.x,
-        startY: this._lastImage.y,
-        additive: true,
-      };
+      const [startX, startY] = toView(
+        this._lastImage.x,
+        this._lastImage.y,
+        this._angle,
+      );
+      return { kind: "marquee", startX, startY, additive: true };
     }
     // Dragging any pin of a multi-selection (without Shift) carries the lot.
     if (
@@ -1264,9 +1317,10 @@ export class FloorplanCanvas extends LitElement {
         new CustomEvent("pins-select-box", {
           detail: {
             pinIds: this.pins
-              .filter(
-                (p) => p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY,
-              )
+              .filter((p) => {
+                const [x, y] = toView(p.x, p.y, this._angle);
+                return x >= minX && x <= maxX && y >= minY && y <= maxY;
+              })
               .map((p) => p.id),
             additive: this._gesture.additive,
           },
@@ -1700,7 +1754,7 @@ export class FloorplanCanvas extends LitElement {
     e.preventDefault();
     if (e.ctrlKey || isMouseWheel(e)) {
       const factor = e.deltaY < 0 ? 0.9 : 1.1;
-      this._zoomBy(factor, this._clientToImage(e.clientX, e.clientY));
+      this._zoomBy(factor, this._clientToView(e.clientX, e.clientY));
       return;
     }
     const pxToUnit = this._viewBox.w / this.getBoundingClientRect().width;
@@ -1711,6 +1765,7 @@ export class FloorplanCanvas extends LitElement {
     };
   };
 
+  /** `aroundImage` is in view space (see _clientToView). */
   private _zoomBy(factor: number, aroundImage: { x: number; y: number }): void {
     const newW = clamp(
       this._viewBox.w * factor,
@@ -1814,7 +1869,9 @@ export class FloorplanCanvas extends LitElement {
         stroke-opacity=${borderOpacity}
         stroke-width=${isSelected ? 3 : 2}
       ></polygon>
-      <text class="room-label" x=${cx} y=${cy}>${room.name}</text>
+      <text class="room-label" x=${cx} y=${cy} transform=${this._upright(cx, cy)}
+        >${room.name}</text
+      >
       ${isEditing ? this._renderVertexHandles(points, true) : nothing}
     `;
   }
@@ -1922,11 +1979,26 @@ export class FloorplanCanvas extends LitElement {
     ></rect>`;
   }
 
+  /** The box in stored coordinates that covers everything on screen — a
+   * full-width guide line drawn across it reaches both screen edges at any
+   * angle. Same shape as a ViewBox. */
+  private _viewInImageBounds(): ViewBox {
+    const b = viewBounds(viewRectInImage(this._viewBox, this._angle), 0)!;
+    return { x: b.minX, y: b.minY, w: b.maxX - b.minX, h: b.maxY - b.minY };
+  }
+
+  /** `rotate(...)` turning something at (x, y) back upright on a turned
+   * plan, or nothing when the plan isn't turned. */
+  private _upright(x: number, y: number): string | typeof nothing {
+    const a = this._angle;
+    return a ? `rotate(${-a} ${x} ${y})` : nothing;
+  }
+
   /** Axis guides showing what a dragged room's edge snapped to. */
   private _renderRoomMoveGuides() {
     if (!this._liveRoomMove) return nothing;
     const { x, y } = this._roomMoveGuides;
-    const vb = this._viewBox;
+    const vb = this._viewInImageBounds();
     return svg`
       ${
         x !== null
@@ -2042,6 +2114,7 @@ export class FloorplanCanvas extends LitElement {
         ${
           showLabel
             ? svg`<text class="mesh-stub-label" x=${stub.x} y=${stub.y + r + 14}
+                transform=${this._upright(stub.x, stub.y)}
                 >${stub.targetFloorName}</text
               >`
             : nothing
@@ -2212,7 +2285,7 @@ export class FloorplanCanvas extends LitElement {
     label: string,
     extras?: PinExtras,
   ) {
-    return this._pinIcons.renderMarker(
+    const marker = this._pinIcons.renderMarker(
       x,
       y,
       r,
@@ -2222,6 +2295,10 @@ export class FloorplanCanvas extends LitElement {
       label,
       extras,
     );
+    // Icons, badges and captions stay upright on a turned plan.
+    return this._angle
+      ? svg`<g transform=${this._upright(x, y)}>${marker}</g>`
+      : marker;
   }
 
   private _renderPendingTrace() {
@@ -2281,7 +2358,7 @@ export class FloorplanCanvas extends LitElement {
   ) {
     if (!this._hoverSnap) return nothing;
     const [hx, hy] = this._hoverSnap.point;
-    const vb = this._viewBox;
+    const vb = this._viewInImageBounds();
     const target = closing && first ? first : [hx, hy];
     return svg`
       ${
@@ -2474,9 +2551,11 @@ export class FloorplanCanvas extends LitElement {
   private _renderScaleLine() {
     if (!this.scale) return nothing;
     const [[x1, y1], [x2, y2]] = this.scale.points;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
     return svg`
       <line class="scale-line" x1=${x1} y1=${y1} x2=${x2} y2=${y2}></line>
-      <text class="scale-label" x=${(x1 + x2) / 2} y=${(y1 + y2) / 2 - 6}>
+      <text class="scale-label" x=${mx} y=${my - 6} transform=${this._upright(mx, my)}>
         ${formatLarge(this.scale.meters, this.unitSystem)}
         ${largeUnitLabel(this.unitSystem)}
       </text>
@@ -2502,20 +2581,22 @@ export class FloorplanCanvas extends LitElement {
   private _renderBackgroundOverlay() {
     if (!this.backgroundImageUrl) return nothing;
     const { scale, offsetX, offsetY } = this._svgTransform();
+    const transform = this._overlayTransform(
+      this.backgroundOffsetX,
+      this.backgroundOffsetY,
+      this.backgroundScale,
+      scale,
+      offsetX,
+      offsetY,
+    );
     // backgroundOffsetX/Y/Scale place this image-space rectangle at
     // (backgroundOffsetX, backgroundOffsetY) sized BASE_WIDTH*backgroundScale
     // wide within the floor's own coordinate space, rather than always
     // exactly (0,0) at BASE_WIDTH — see Align Floors (_renderAlignOverlay,
     // panel.ts's _onAlignApply), the only thing that ever sets these to
     // anything other than the (0, 0, 1) default.
-    const tx = offsetX + scale * (this.backgroundOffsetX - this._viewBox.x);
-    const ty = offsetY + scale * (this.backgroundOffsetY - this._viewBox.y);
-    const bgScale = scale * this.backgroundScale;
     return html`
-      <div
-        class="bg-overlay"
-        style="transform: translate(${tx}px, ${ty}px) scale(${bgScale});"
-      >
+      <div class="bg-overlay" style="transform: ${transform};">
         <img
           src=${this.backgroundImageUrl}
           style="width:${BASE_WIDTH}px; height:${this._naturalHeight}px; opacity:${
@@ -2526,6 +2607,24 @@ export class FloorplanCanvas extends LitElement {
     `;
   }
 
+  /** CSS transform placing an image drawn at (imageX, imageY) in stored
+   * coordinates, `imageScale` times BASE_WIDTH wide, exactly where the SVG
+   * draws that spot — the viewBox mapping plus the plan's rotation. */
+  private _overlayTransform(
+    imageX: number,
+    imageY: number,
+    imageScale: number,
+    scale: number,
+    offsetX: number,
+    offsetY: number,
+  ): string {
+    const [vx, vy] = toView(imageX, imageY, this._angle);
+    const tx = offsetX + scale * (vx - this._viewBox.x);
+    const ty = offsetY + scale * (vy - this._viewBox.y);
+    const rotate = this._angle ? ` rotate(${this._angle}deg)` : "";
+    return `translate(${tx}px, ${ty}px)${rotate} scale(${scale * imageScale})`;
+  }
+
   /** Align Floors mode: another floor's background image, drawn semi-
    * transparent over this one using the exact same image-space-to-screen
    * transform as `_renderBackgroundOverlay`, just with the live in-progress
@@ -2534,14 +2633,16 @@ export class FloorplanCanvas extends LitElement {
   private _renderAlignOverlay() {
     if (!this.alignOverlay) return nothing;
     const { scale, offsetX, offsetY } = this._svgTransform();
-    const tx = offsetX + scale * (this.alignOverlay.offsetX - this._viewBox.x);
-    const ty = offsetY + scale * (this.alignOverlay.offsetY - this._viewBox.y);
-    const overlayScale = scale * this.alignOverlay.scale;
+    const transform = this._overlayTransform(
+      this.alignOverlay.offsetX,
+      this.alignOverlay.offsetY,
+      this.alignOverlay.scale,
+      scale,
+      offsetX,
+      offsetY,
+    );
     return html`
-      <div
-        class="bg-overlay"
-        style="transform: translate(${tx}px, ${ty}px) scale(${overlayScale});"
-      >
+      <div class="bg-overlay" style="transform: ${transform};">
         <img
           src=${this.alignOverlay.imageUrl}
           style="width:${BASE_WIDTH}px; height:${this._alignNaturalHeight}px; opacity:${
@@ -2620,6 +2721,7 @@ export class FloorplanCanvas extends LitElement {
           @pointercancel=${this._onPointerUp}
           @pointerleave=${this._onPointerLeave}
         >
+          <g transform=${this._angle ? `rotate(${this._angle})` : nothing}>
           ${this.rooms.map((room) => this._renderRoom(room))}
           ${this._renderLightAreas()}
           ${this.walls.map((wall) => this._renderWall(wall))}
@@ -2628,11 +2730,13 @@ export class FloorplanCanvas extends LitElement {
           ${this.meshLinks.map((link) => this._renderMeshLink(link))}
           ${this.meshStubs.map((stub) => this._renderMeshStubLine(stub))}
           ${this._renderMeshStubMarkers()}
-          ${this._renderRoomMoveGuides()} ${this._renderMarquee()}
+          ${this._renderRoomMoveGuides()}
           ${this.mode === "trace" || this.mode === "wall" ? this._renderPendingTrace() : nothing}
           ${this._renderScaleLine()}
           ${this.mode === "scale" ? this._renderPendingScale() : nothing}
           ${this._pinGroups().map((group) => this._renderPinGroup(group))}
+          </g>
+          ${this._renderMarquee()}
         </svg>
       `}
       ${this._renderScaleBar()}

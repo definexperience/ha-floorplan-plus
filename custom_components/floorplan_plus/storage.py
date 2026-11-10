@@ -99,6 +99,9 @@ def _empty_floor() -> dict[str, Any]:
         # whenever this floor is opened — None on a floor whose view was
         # never explicitly saved.
         "view_box": None,
+        # Degrees clockwise the plan is turned on screen (panel and cards),
+        # -180..180. A floor saved before this existed reads as 0.
+        "view_angle": 0.0,
         "rooms": [],
         "pins": [],
         "walls": [],

@@ -289,7 +289,10 @@
     "debugReport": "Debug-Bericht herunterladen",
     "debugReportHint": "Versionen, Einstellungen, Layout-Anzahlen und das aktuelle Debug-Protokoll – sicher an ein GitHub-Issue anzuhängen",
     "resetFloor": "Etage zurücksetzen",
-    "resetProperty": "Anwesen zurücksetzen"
+    "resetProperty": "Anwesen zurücksetzen",
+    "viewAngle": "Ansichtswinkel",
+    "turnLeft": "90° nach links drehen",
+    "turnRight": "90° nach rechts drehen"
   },
   "network": {
     "zigbee": "Zigbee-Mesh",

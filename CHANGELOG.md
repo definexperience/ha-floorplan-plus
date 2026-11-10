@@ -2,6 +2,12 @@
 
 Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spatial-context). Entries from 1.0.0 down are the original project's.
 
+## Unreleased
+
+### Added
+- **Turn the floor plan**. Each floor has a **View angle** (degrees clockwise), set while editing in the **Background** menu, with buttons to turn a quarter at a time. The plan is drawn at that angle in the sidebar, both when viewing and editing, and in dashboard cards. Room names, device markers and labels stay upright, and tapping, dragging, drawing, panning and zooming all follow the turned plan.
+- The dashboard card has a **Display angle** option that turns the plan in that card only, replacing the floors' own angles. Empty uses each floor's angle.
+
 ## 1.3.1
 
 ### Fixed

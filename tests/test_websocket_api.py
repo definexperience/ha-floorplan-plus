@@ -181,6 +181,20 @@ class SaveLimitsTest(unittest.TestCase):
         self.assertTrue(saved["pins"][0]["show_label"])
         self.assertTrue(saved["pins"][0]["view_only"])
 
+    def test_view_angle_is_optional(self) -> None:
+        saved = self.api.ws_save_layout.schema(self._layout())
+        self.assertNotIn("view_angle", saved)
+
+    def test_view_angle_is_folded_into_plus_minus_180(self) -> None:
+        for given, expected in ((90, 90), (270, -90), (-190, 170), (180, 180), (-180, 180), (720, 0), ("45.5", 45.5)):
+            saved = self.api.ws_save_layout.schema(self._layout(view_angle=given))
+            self.assertAlmostEqual(saved["view_angle"], expected, msg=str(given))
+
+    def test_a_non_finite_view_angle_is_refused(self) -> None:
+        for bad in (float("nan"), float("inf"), "north"):
+            with self.assertRaises(vol.Invalid):
+                self._validate(self._layout(view_angle=bad))
+
     def test_too_many_rooms_are_refused(self) -> None:
         room = {"id": "r", "name": "x", "points": []}
         with self.assertRaises(vol.Invalid):
