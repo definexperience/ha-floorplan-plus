@@ -9,6 +9,9 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 - **Turn the floor plan**. Each floor has a **View angle** (degrees clockwise), set while editing in the **Background** menu, with buttons to turn a quarter at a time. The plan is drawn at that angle in the sidebar, both when viewing and editing, and in dashboard cards. Room names, device markers and labels stay upright, and tapping, dragging, drawing, panning and zooming all follow the turned plan.
 - The dashboard card has a **Display angle** option that turns the plan in that card only, replacing the floors' own angles. Empty uses each floor's angle.
 
+### Fixed
+- The white border around device markers no longer thickens as you zoom in. It stays a thin 2px line at any zoom, so it no longer covers the device's icon. The same goes for the reading badge and the low-battery dot beside a marker.
+
 ## 1.3.1
 
 ### Fixed
