@@ -110,17 +110,20 @@ export const propertyCanvasStyles = css`
   .rotate-stick {
     stroke: var(--sc-danger);
     stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
   }
   .rotate-handle {
     fill: white;
     stroke: var(--sc-danger);
     stroke-width: 2;
+    vector-effect: non-scaling-stroke;
     cursor: alias;
   }
   .resize-handle {
     fill: white;
     stroke: var(--sc-accent);
     stroke-width: 2;
+    vector-effect: non-scaling-stroke;
     cursor: nwse-resize;
   }
   .mesh-link {
@@ -142,6 +145,7 @@ export const propertyCanvasStyles = css`
     fill: var(--sc-fg-secondary);
     stroke: white;
     stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
     pointer-events: none;
   }
   ${zoomControlsStyles}
