@@ -41,6 +41,7 @@ ENTRIES = {
     for e in [
         entry("light.relay_kitchen", "relay"),
         entry("switch.relay_boiler", "relay"),
+        entry("light.stairs", "stair"),
         entry("input_boolean.guests", platform="input_boolean", area_id="kitchen"),
         entry("automation.night", platform="automation"),
     ]
@@ -48,10 +49,18 @@ ENTRIES = {
 DEVICES = {
     "relay": NS(id="relay", name="Relay board", name_by_user=None, area_id="kitchen",
                 entry_type=None, config_entry_id="ce1"),
+    "stair": NS(id="stair", name="Stair light", name_by_user=None, area_id="hall",
+                entry_type=None, config_entry_id="ce1"),
 }
 LAYOUTS = {
-    "ground": {"pins": [{"id": "p1", "device_id": None, "single_entity_id": "light.relay_kitchen"}]}
+    "ground": {"pins": [
+        {"id": "p1", "device_id": None, "single_entity_id": "light.relay_kitchen"},
+        {"id": "p2", "device_id": "stair"},
+    ]},
+    # The same stair light on the floor above too.
+    "first": {"pins": [{"id": "p3", "device_id": "stair"}]},
 }
+FLOOR_NAMES = {"ground": "Ground floor", "first": "First floor"}
 
 
 class States:
@@ -80,8 +89,8 @@ for mod, getter in {
     "device_registry": lambda hass: NS(devices=list(DEVICES.values()), async_get=DEVICES.get),
     "area_registry": lambda hass: NS(async_get_area=lambda a: NS(name=a.title())),
     "floor_registry": lambda hass: NS(
-        async_list_floors=lambda: [NS(floor_id="ground")],
-        async_get_floor=lambda f: NS(name="Ground floor") if f == "ground" else None,
+        async_list_floors=lambda: [NS(floor_id=f) for f in FLOOR_NAMES],
+        async_get_floor=lambda f: NS(name=FLOOR_NAMES[f]) if f in FLOOR_NAMES else None,
     ),
 }.items():
     m = stubs.stub(f"homeassistant.helpers.{mod}", async_get=getter)
@@ -133,7 +142,13 @@ class PlaceableEntitiesTest(unittest.TestCase):
     def test_lists_device_and_deviceless_entities_but_not_automations(self) -> None:
         self.assertEqual(
             sorted(self.entities),
-            ["input_boolean.guests", "light.relay_kitchen", "sensor.yaml_only", "switch.relay_boiler"],
+            [
+                "input_boolean.guests",
+                "light.relay_kitchen",
+                "light.stairs",
+                "sensor.yaml_only",
+                "switch.relay_boiler",
+            ],
         )
 
     def test_a_deviceless_entity_has_no_device(self) -> None:
@@ -149,6 +164,15 @@ class PlaceableEntitiesTest(unittest.TestCase):
         # The relay board itself isn't placed, so it stays placeable.
         self.assertIsNone(kitchen["placed_floor_id"])
         self.assertIsNone(self.entities["switch.relay_boiler"]["entity_placed_floor_id"])
+        self.assertEqual(kitchen["placed_floor_ids"], [])
+
+    def test_a_device_on_two_floors_reports_both(self) -> None:
+        stairs = self.entities["light.stairs"]
+        self.assertEqual(stairs["placed_floor_ids"], ["ground", "first"])
+        self.assertEqual(stairs["placed_floor_names"], ["Ground floor", "First floor"])
+        # The single fields older frontends read: the first floor.
+        self.assertEqual(stairs["placed_floor_id"], "ground")
+        self.assertEqual(stairs["placed_floor_name"], "Ground floor")
 
 
 if __name__ == "__main__":

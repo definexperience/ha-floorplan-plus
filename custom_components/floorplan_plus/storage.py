@@ -387,32 +387,12 @@ async def async_save_floor_layout(
 ) -> None:
     """Replace-save a single floor's layout.
 
-    Also strips any pin sharing a device_id with a pin in `layout` from
-    every *other* floor — a device only physically exists in one place, so
-    placing it here means it can no longer be "still" placed elsewhere,
-    regardless of which of that device's entities backs each pin. Keyed on
-    device_id (not entity_id) so this catches the same physical device
-    being re-placed via a *different* entity too. Pins with no device_id
-    (an orphaned entity that no longer resolves to a device — see
-    registry_snapshot.py's migration) are left alone on other floors,
-    since there's nothing to safely match them against.
+    Other floors and the Property tab are left alone: a device (or a
+    single entity) may be placed on any number of floors at once, e.g. a
+    staircase light that belongs on both the floors it spans.
     """
     async with _lock(hass):
         data = await _async_load_all(hass)
-        moved_keys = _pin_keys(layout.get("pins", []))
-
-        for other_floor_id, other_layout in data["floors"].items():
-            if other_floor_id == floor_id:
-                continue
-            other_layout["pins"] = _without_devices(
-                other_layout.get("pins", []), moved_keys
-            )
-        # ...and from the Property tab's outdoor pins.
-        if data.get("property"):
-            data["property"]["pins"] = _without_devices(
-                data["property"].get("pins", []), moved_keys
-            )
-
         data["floors"][floor_id] = layout
         await _store(hass).async_save(data)
 
@@ -420,8 +400,8 @@ async def async_save_floor_layout(
 def pin_key(pin: dict[str, Any]) -> str | None:
     """What a pin places: a single entity (`single_entity_id`, e.g. one
     channel of a relay board, or a helper with no device) or a whole
-    device (`device_id`). Each lives in one place only. None for an
-    orphaned pin with nothing to match it on."""
+    device (`device_id`). None for an orphaned pin with nothing to match
+    it on."""
     if pin.get("single_entity_id"):
         return f"entity:{pin['single_entity_id']}"
     if pin.get("device_id"):
@@ -429,27 +409,13 @@ def pin_key(pin: dict[str, Any]) -> str | None:
     return None
 
 
-def _pin_keys(pins: list[dict[str, Any]]) -> set[str]:
-    return {key for key in map(pin_key, pins) if key}
-
-
-def _without_devices(
-    pins: list[dict[str, Any]], keys: set[str]
-) -> list[dict[str, Any]]:
-    """`pins` minus any placing one of `keys` (see pin_key) — pins with
-    nothing to match on are kept."""
-    return [pin for pin in pins if (key := pin_key(pin)) is None or key not in keys]
-
-
 async def async_save_all_layouts_raw(
     hass: HomeAssistant,
     floors: dict[str, dict[str, Any]],
 ) -> None:
-    """Write every floor's layout back as-is, with none of
-    async_save_floor_layout's per-save cross-floor dedup logic — only used
-    by registry_snapshot.py's one-time pin device_id migration, which reads
-    and rewrites all floors together and has already reasoned about the
-    whole set itself."""
+    """Write every floor's layout back as-is — only used by
+    registry_snapshot.py's one-time pin device_id migration, which reads
+    and rewrites all floors together."""
     async with _lock(hass):
         data = await _async_load_all(hass)
         data["floors"] = floors
@@ -482,14 +448,9 @@ async def async_save_property_layout(
     hass: HomeAssistant,
     layout: dict[str, Any],
 ) -> None:
-    """Replace-save the single whole-property layout. Outdoor pins placed
-    here are stripped from every floor — a device lives in one place."""
+    """Replace-save the single whole-property layout. Floors are left
+    alone: a device placed outdoors may also be placed on a floor."""
     async with _lock(hass):
         data = await _async_load_all(hass)
-        outdoor_keys = _pin_keys(layout.get("pins", []))
-        for floor_layout in data["floors"].values():
-            floor_layout["pins"] = _without_devices(
-                floor_layout.get("pins", []), outdoor_keys
-            )
         data["property"] = layout
         await _store(hass).async_save(data)
