@@ -606,6 +606,11 @@ export interface HomeAssistant {
    * is a hand-narrowed local type, not runtime-enforced. */
   locale?: { language: string };
   language?: string;
+  /** The sidebar's dock mode. "always_hidden" (set by e.g. Browser Mod's
+   * Hide sidebar) leaves it reachable only through a menu button. */
+  dockedSidebar?: "docked" | "auto" | "always_hidden";
+  /** HA's built-in kiosk mode (2026.1+): no sidebar and no menu button. */
+  kioskMode?: boolean;
 }
 
 /** A placed building's traced geometry (floor-plan units), for the Property

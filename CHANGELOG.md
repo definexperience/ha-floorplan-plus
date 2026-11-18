@@ -2,6 +2,11 @@
 
 Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spatial-context). Entries from 1.0.0 down are the original project's.
 
+## Unreleased
+
+### Fixed
+- **Menu button when the sidebar is hidden**. With the sidebar set to always hidden on a wide screen (for example after using Browser Mod's sidebar settings), the Floorplan Plus header had no menu button, so the sidebar couldn't be opened from the panel and looked like it had disappeared. The header now shows the menu button whenever the sidebar is hidden, like Home Assistant's own pages do, and still leaves it out in kiosk mode and when Browser Mod's **Hide sidebar** is on.
+
 ## 1.4.0
 
 ### Added

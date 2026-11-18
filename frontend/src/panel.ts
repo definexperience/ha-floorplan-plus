@@ -156,6 +156,11 @@ function readStoredSnapMode(): SnapMode {
  * calibrated: roughly a typical house. */
 const DEFAULT_BUILDING_LONG_SIDE_M = 12;
 
+/** Browser Mod (if installed) exposes its resolved frontend settings here. */
+type BrowserModWindow = Window & {
+  browser_mod?: { settings?: { hideSidebar?: boolean } };
+};
+
 @safeCustomElement("floorplan-plus-panel")
 export class FloorplanPlusPanel extends LitElement {
   static override styles = [
@@ -322,9 +327,16 @@ export class FloorplanPlusPanel extends LitElement {
 
   private _hass?: HomeAssistant;
   private _initialized = false;
-  /** Set by HA when the sidebar is hidden or an overlay (phones, narrow
-   * windows) — the only time the header needs its own menu button. */
+  /** Set by HA for a narrow window (phones), where the sidebar is an
+   * overlay. Recent HA sets it from the window width alone, so a sidebar
+   * hidden on a wide screen shows up in `_sidebarHidden` instead. */
   @property({ type: Boolean }) narrow = false;
+  /** The sidebar is hidden on any screen width ("always_hidden" dock mode,
+   * which Browser Mod's Hide sidebar setting turns on). */
+  @state() private _sidebarHidden = false;
+  /** No menu button at all: HA's kiosk mode, or Browser Mod's Hide
+   * sidebar (which removes HA's own menu buttons too). */
+  @state() private _menuLocked = false;
   /** Shown inside a dashboard card (see card/floorplan-plus-card.ts):
    * view only, no settings, and sized by the card instead of the window. */
   @property({ type: Boolean, reflect: true }) embedded = false;
@@ -335,6 +347,10 @@ export class FloorplanPlusPanel extends LitElement {
   set hass(value: HomeAssistant) {
     this._hass = value;
     setLanguage(value);
+    this._sidebarHidden = value.dockedSidebar === "always_hidden";
+    this._menuLocked =
+      value.kioskMode === true ||
+      (window as BrowserModWindow).browser_mod?.settings?.hideSidebar === true;
     if (!this._initialized) {
       this._initialized = true;
       void this._init();
@@ -484,6 +500,15 @@ export class FloorplanPlusPanel extends LitElement {
   };
   get hass(): HomeAssistant | undefined {
     return this._hass;
+  }
+
+  /** The header's menu button, on the same terms as HA's own
+   * <ha-menu-button>: whenever the sidebar isn't on screen (a narrow
+   * window, or the sidebar set to always hidden), except in kiosk mode.
+   * Without it a hidden sidebar can't be opened from this panel. */
+  private get _showMenuButton(): boolean {
+    if (this.embedded || this._menuLocked) return false;
+    return this.narrow || this._sidebarHidden;
   }
 
   private get _client(): HaClient {
@@ -3803,7 +3828,7 @@ export class FloorplanPlusPanel extends LitElement {
       <app-header
         ?hidden=${this.embedded && this.cardOptions.show_header === false}
         .compact=${this.embedded}
-        .narrow=${this.narrow && !this.embedded}
+        .showMenu=${this._showMenuButton}
         ?light=${!(this._hass?.themes?.darkMode ?? false)}
         .floors=${this._orderedFloors}
         .selectedFloorId=${this._currentFloorId}
