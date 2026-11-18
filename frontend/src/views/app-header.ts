@@ -171,7 +171,9 @@ export class AppHeader extends LitElement {
   @property({ attribute: false }) floors: FloorMeta[] = [];
   @property({ attribute: false }) selectedFloorId: string | null = null;
   @property({ type: Boolean }) propertySelected = false;
-  @property({ type: Boolean }) narrow = false;
+  /** Show the menu button that opens HA's sidebar (see the panel's
+   * `_showMenuButton`). */
+  @property({ type: Boolean }) showMenu = false;
   /** A page other than the map ("settings"): the header shows a back
    * arrow and the page's name instead of the menu, brand and floor tabs. */
   @property() page = "";
@@ -216,7 +218,7 @@ export class AppHeader extends LitElement {
     return html`
       <div class="identity">
         ${
-          this.narrow
+          this.showMenu
             ? html` <button
                 class="icon-button menu-button"
                 title=${localize("appHeader.menu")}
