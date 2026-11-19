@@ -48,9 +48,10 @@ ENTRIES = {
 }
 DEVICES = {
     "relay": NS(id="relay", name="Relay board", name_by_user=None, area_id="kitchen",
-                entry_type=None, config_entry_id="ce1"),
+                entry_type=None, config_entry_id="ce1",
+                configuration_url="homeassistant://stations/abc"),
     "stair": NS(id="stair", name="Stair light", name_by_user=None, area_id="hall",
-                entry_type=None, config_entry_id="ce1"),
+                entry_type=None, config_entry_id="ce1", configuration_url=None),
 }
 LAYOUTS = {
     "ground": {"pins": [
@@ -165,6 +166,15 @@ class PlaceableEntitiesTest(unittest.TestCase):
         self.assertIsNone(kitchen["placed_floor_id"])
         self.assertIsNone(self.entities["switch.relay_boiler"]["entity_placed_floor_id"])
         self.assertEqual(kitchen["placed_floor_ids"], [])
+
+    def test_each_entity_carries_its_devices_own_link(self) -> None:
+        self.assertEqual(
+            self.entities["switch.relay_boiler"]["device_configuration_url"],
+            "homeassistant://stations/abc",
+        )
+        self.assertIsNone(self.entities["light.stairs"]["device_configuration_url"])
+        self.assertIsNone(self.entities["input_boolean.guests"]["device_configuration_url"])
+        self.assertIsNone(self.entities["sensor.yaml_only"]["device_configuration_url"])
 
     def test_a_device_on_two_floors_reports_both(self) -> None:
         stairs = self.entities["light.stairs"]
