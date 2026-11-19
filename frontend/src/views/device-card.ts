@@ -18,6 +18,7 @@ import { sharedStyles, switchStyles } from "../styles";
 import { infoCardStyles, renderCard } from "./info-card";
 import {
   type DeviceLink,
+  linkButtonText,
   openDeviceLink,
   resolveDeviceLink,
 } from "./device-link";
@@ -137,7 +138,7 @@ export class DeviceCard extends LitElement {
   /** The pin's link choice (see Pin.link_mode); null = the device's own. */
   @property({ attribute: false }) linkOptions: Pick<
     Pin,
-    "link_mode" | "custom_link"
+    "link_mode" | "custom_link" | "link_label"
   > | null = null;
 
   private get _canControl(): boolean {
@@ -284,15 +285,12 @@ export class DeviceCard extends LitElement {
   }
 
   private _renderLinkButton(link: DeviceLink) {
-    const integration =
-      link.source === "device"
-        ? this.entities.find(
-            (e) => belongsToKey(this.deviceId, e) && e.integration_name,
-          )?.integration_name
-        : null;
-    const text = integration
-      ? localize("deviceCard.openIn", { name: integration })
-      : localize("deviceCard.openLink");
+    const text = linkButtonText(
+      this.linkOptions,
+      link.source,
+      this.deviceId,
+      this.entities,
+    );
     return html`<button
       class="primary device-link"
       title=${link.href}

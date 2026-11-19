@@ -73,6 +73,9 @@ export interface Pin {
   /** The admin's own link, used when link_mode is "custom": a web address,
    * a Home Assistant path such as /lovelace/home, or homeassistant://... */
   custom_link?: string | null;
+  /** The admin's own text for the link's button. Null/missing = "Open in
+   * <integration>" for the device's link, "Open link" for a custom one. */
+  link_label?: string | null;
 }
 
 export type PinLinkMode = "device" | "custom" | "none";

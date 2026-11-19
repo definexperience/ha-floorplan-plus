@@ -98,6 +98,7 @@
       "linkNoneHint": "Kein Link auf der Karte",
       "customLink": "Eigener Link",
       "customLinkPlaceholder": "https://… oder /lovelace/…",
+      "linkLabel": "Text der Schaltfläche",
       "lightArea": "Beleuchteter Bereich",
       "lightArea_glow": "Schein um das Symbol",
       "lightArea_room": "Ganzer Raum",

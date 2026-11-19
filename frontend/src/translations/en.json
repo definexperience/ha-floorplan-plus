@@ -98,6 +98,7 @@
       "linkNoneHint": "No link on the card",
       "customLink": "Custom link",
       "customLinkPlaceholder": "https://… or /lovelace/…",
+      "linkLabel": "Button text",
       "lightArea": "Lit area",
       "lightArea_glow": "Glow around the icon",
       "lightArea_room": "Whole room",

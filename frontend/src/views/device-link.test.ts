@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { PlaceableEntity } from "../types";
-import { canOpenInternal, parseLink, resolveDeviceLink } from "./device-link";
+import {
+  canOpenInternal,
+  linkButtonText,
+  parseLink,
+  resolveDeviceLink,
+} from "./device-link";
 
 function entity(
   entity_id: string,
@@ -18,7 +23,7 @@ function entity(
     device_name: null,
     entity_category: null,
     integration_domain: null,
-    integration_name: null,
+    integration_name: device_id === "station" ? "Stations" : null,
     device_configuration_url: url,
     placed_floor_id: null,
     placed_floor_name: null,
@@ -125,5 +130,32 @@ describe("canOpenInternal", () => {
     expect(canOpenInternal("/anything", { user: { is_admin: false } })).toBe(
       true,
     );
+  });
+});
+
+describe("linkButtonText", () => {
+  it("names the integration the device's link comes from", () => {
+    expect(linkButtonText(null, "device", "station", entities)).toBe(
+      "Open in Stations",
+    );
+  });
+
+  it("is generic when there's no integration name or the link is custom", () => {
+    expect(linkButtonText(null, "device", "plug", entities)).toBe("Open link");
+    expect(linkButtonText({}, "custom", "station", entities)).toBe("Open link");
+  });
+
+  it("uses the admin's own text when there is one", () => {
+    expect(
+      linkButtonText(
+        { link_label: " Weather " },
+        "device",
+        "station",
+        entities,
+      ),
+    ).toBe("Weather");
+    expect(
+      linkButtonText({ link_label: "  " }, "device", "station", entities),
+    ).toBe("Open in Stations");
   });
 });

@@ -1,4 +1,5 @@
 import { belongsToKey } from "../canvas/device-display";
+import { localize } from "../i18n";
 import type {
   HomeAssistant,
   Pin,
@@ -100,4 +101,25 @@ export function openDeviceLink(link: DeviceLink): void {
   } else {
     window.open(link.href, "_blank", "noopener,noreferrer");
   }
+}
+
+/** The link button's text: the admin's own, else "Open in <integration>"
+ * for the device's link (the name of whichever integration set it), else
+ * "Open link". */
+export function linkButtonText(
+  pin: Pick<Pin, "link_label"> | null | undefined,
+  source: DeviceLink["source"],
+  key: string | null,
+  entities: Iterable<PlaceableEntity>,
+): string {
+  const own = pin?.link_label?.trim();
+  if (own) return own;
+  if (source === "device") {
+    for (const e of entities) {
+      if (belongsToKey(key, e) && e.integration_name) {
+        return localize("deviceCard.openIn", { name: e.integration_name });
+      }
+    }
+  }
+  return localize("deviceCard.openLink");
 }

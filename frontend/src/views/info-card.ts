@@ -7,7 +7,7 @@ import {
   type LayerDef,
 } from "../canvas/layers";
 import type { PlaceableEntity, Pin, PinLinkMode } from "../types";
-import { parseLink } from "./device-link";
+import { linkButtonText, parseLink } from "./device-link";
 
 /** HA map-panel style info card shared by the floor and Property overlays:
  * a floating card with a close button, a title and subtitle, inner rounded
@@ -363,6 +363,7 @@ export type PinOptions = Pick<
   | "layer"
   | "link_mode"
   | "custom_link"
+  | "link_label"
 >;
 
 export function pinOptionRows(
@@ -451,6 +452,20 @@ function pinLinkRows(
     (e) => e.device_configuration_url,
   )?.device_configuration_url;
   const custom = pin.custom_link ?? "";
+  // What the button says unless the admin types their own text.
+  const defaultText = linkButtonText(
+    null,
+    mode === "device" ? "device" : "custom",
+    null,
+    [],
+  );
+  const integration =
+    mode === "device"
+      ? deviceEntities.find((e) => e.integration_name)?.integration_name
+      : null;
+  const placeholder = integration
+    ? localize("deviceCard.openIn", { name: integration })
+    : defaultText;
   const hint =
     mode === "device"
       ? own
@@ -502,7 +517,27 @@ function pinLinkRows(
           </div>`
         : nothing
     }
-    <div class="info-sub link-sub link-hint">${hint}</div>`;
+    <div class="info-sub link-sub link-hint">${hint}</div>
+    ${
+      mode === "none"
+        ? nothing
+        : fieldRow(
+            "mdi:form-textbox",
+            localize("canvas.pin.linkLabel"),
+            html`<input
+              type="text"
+              class="text-field"
+              aria-label=${localize("canvas.pin.linkLabel")}
+              placeholder=${placeholder}
+              .value=${pin.link_label ?? ""}
+              @change=${(e: Event) =>
+                onChange({
+                  link_label:
+                    (e.target as HTMLInputElement).value.trim() || null,
+                })}
+            />`,
+          )
+    }`;
 }
 
 /** The layers a placed device is on: its standard layer (automatic, or
