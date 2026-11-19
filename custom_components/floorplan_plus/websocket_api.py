@@ -128,6 +128,12 @@ _PIN_SCHEMA = {
     vol.Optional("show_label"): bool,
     # Non-admin users see the device's states but get no controls for it.
     vol.Optional("view_only"): bool,
+    # The link on the device's card: the device's own link from Home
+    # Assistant (the default), the admin's custom_link, or none.
+    vol.Optional("link_mode"): vol.In(["device", "custom", "none"]),
+    vol.Optional("custom_link"): vol.Any(vol.All(str, vol.Length(max=2048)), None),
+    # The admin's own text for the link's button; none = a standard text.
+    vol.Optional("link_label"): vol.Any(_TEXT, None),
     # One of the device's own entities to show beside its marker; none
     # unless an admin picked one.
     vol.Optional("badge_entity_id"): vol.Any(_TEXT, None),

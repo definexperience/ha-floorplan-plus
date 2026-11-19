@@ -181,6 +181,20 @@ class SaveLimitsTest(unittest.TestCase):
         self.assertTrue(saved["pins"][0]["show_label"])
         self.assertTrue(saved["pins"][0]["view_only"])
 
+    def test_pin_link_options_are_kept(self) -> None:
+        for mode in ("device", "custom", "none"):
+            pin = {"id": "p1", "device_id": "abc", "x": 1, "y": 2, "link_mode": mode,
+                   "custom_link": "/lovelace/home", "link_label": "Weather"}
+            saved = self.api.ws_save_layout.schema(self._layout(pins=[pin]))
+            self.assertEqual(saved["pins"][0]["link_mode"], mode)
+            self.assertEqual(saved["pins"][0]["custom_link"], "/lovelace/home")
+            self.assertEqual(saved["pins"][0]["link_label"], "Weather")
+
+    def test_an_unknown_link_mode_is_refused(self) -> None:
+        pin = {"id": "p1", "device_id": "abc", "x": 1, "y": 2, "link_mode": "sometimes"}
+        with self.assertRaises(vol.Invalid):
+            self._validate(self._layout(pins=[pin]))
+
     def test_a_light_area_keeps_its_fill(self) -> None:
         for fill in ("solid", "fade"):
             pin = {"id": "p1", "device_id": "abc", "x": 1, "y": 2, "light_area": {"mode": "room", "fill": fill}}

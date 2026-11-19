@@ -418,6 +418,9 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
                 "area_name": area.name if area else None,
                 "device_id": device_id,
                 "device_name": (device.name_by_user or device.name) if device else None,
+                "device_configuration_url": device.configuration_url
+                if device
+                else None,
                 "entity_category": entry.entity_category,
                 "integration_domain": integration_domain,
                 "integration_name": integration_names.get(integration_domain)
@@ -445,6 +448,7 @@ async def async_list_placeable_entities(hass: HomeAssistant) -> list[dict[str, A
                 "area_name": None,
                 "device_id": None,
                 "device_name": None,
+                "device_configuration_url": None,
                 "entity_category": None,
                 "integration_domain": None,
                 "integration_name": None,

@@ -6,7 +6,8 @@ import {
   type BuiltinLayerId,
   type LayerDef,
 } from "../canvas/layers";
-import type { PlaceableEntity, Pin } from "../types";
+import type { PlaceableEntity, Pin, PinLinkMode } from "../types";
+import { linkButtonText, parseLink } from "./device-link";
 
 /** HA map-panel style info card shared by the floor and Property overlays:
  * a floating card with a close button, a title and subtitle, inner rounded
@@ -251,6 +252,19 @@ export const infoCardStyles = css`
   .text-field.short {
     width: 90px;
   }
+  .text-field.wide {
+    flex: 1;
+    width: auto;
+  }
+  /* The link's field and hint sit under its row, lined up with the label. */
+  .link-sub {
+    padding-inline-start: 48px;
+  }
+  .link-hint {
+    margin-top: -4px;
+    padding-inline-end: var(--ha-space-3, 12px);
+    overflow-wrap: break-word;
+  }
 `;
 
 /** The card frame: header (close, title, subtitle), scrolling body, footer. */
@@ -339,11 +353,17 @@ export function fieldRow(icon: string, label: string, control: unknown) {
 }
 
 /** A placed device's on/off options, shared by the floor and Property
- * cards: its name on the plan, and whether users who aren't admins may
- * switch it. */
+ * cards: its name on the plan, whether users who aren't admins may
+ * switch it, and the link on its card. */
 export type PinOptions = Pick<
   Pin,
-  "show_label" | "view_only" | "badge_entity_id" | "layer"
+  | "show_label"
+  | "view_only"
+  | "badge_entity_id"
+  | "layer"
+  | "link_mode"
+  | "custom_link"
+  | "link_label"
 >;
 
 export function pinOptionRows(
@@ -416,7 +436,108 @@ export function pinOptionRows(
         @change=${(e: Event) =>
           onChange({ view_only: !(e.target as HTMLInputElement).checked })}
       />
-    </div>`;
+    </div>
+    ${pinLinkRows(pin, onChange, deviceEntities)}`;
+}
+
+/** The link on the device's card, for everyone: the device's own link
+ * from Home Assistant (the default), a custom one, or none. */
+function pinLinkRows(
+  pin: PinOptions,
+  onChange: (patch: Partial<PinOptions>) => void,
+  deviceEntities: PlaceableEntity[],
+) {
+  const mode: PinLinkMode = pin.link_mode ?? "device";
+  const own = deviceEntities.find(
+    (e) => e.device_configuration_url,
+  )?.device_configuration_url;
+  const custom = pin.custom_link ?? "";
+  // What the button says unless the admin types their own text.
+  const defaultText = linkButtonText(
+    null,
+    mode === "device" ? "device" : "custom",
+    null,
+    [],
+  );
+  const integration =
+    mode === "device"
+      ? deviceEntities.find((e) => e.integration_name)?.integration_name
+      : null;
+  const placeholder = integration
+    ? localize("deviceCard.openIn", { name: integration })
+    : defaultText;
+  const hint =
+    mode === "device"
+      ? own
+        ? localize("canvas.pin.linkDeviceHint", {
+            link: parseLink(own, "device")?.href ?? own,
+          })
+        : localize("canvas.pin.linkDeviceNone")
+      : mode === "custom"
+        ? custom && !parseLink(custom, "custom")
+          ? localize("canvas.pin.linkInvalid")
+          : localize("canvas.pin.linkCustomHint")
+        : localize("canvas.pin.linkNoneHint");
+  return html`${fieldRow(
+      "mdi:link-variant",
+      localize("canvas.pin.link"),
+      selectWrap(
+        html`<select
+          aria-label=${localize("canvas.pin.link")}
+          @change=${(e: Event) =>
+            onChange({
+              link_mode: (e.target as HTMLSelectElement).value as PinLinkMode,
+            })}
+        >
+          ${(["device", "custom", "none"] as const).map(
+            (m) =>
+              html`<option value=${m} ?selected=${m === mode}>
+                ${localize(`canvas.pin.linkMode_${m}`)}
+              </option>`,
+          )}
+        </select>`,
+      ),
+    )}
+    ${
+      mode === "custom"
+        ? html`<div class="info-row link-sub">
+            <input
+              type="text"
+              class="text-field wide"
+              inputmode="url"
+              aria-label=${localize("canvas.pin.customLink")}
+              placeholder=${localize("canvas.pin.customLinkPlaceholder")}
+              .value=${custom}
+              @change=${(e: Event) =>
+                onChange({
+                  custom_link:
+                    (e.target as HTMLInputElement).value.trim() || null,
+                })}
+            />
+          </div>`
+        : nothing
+    }
+    <div class="info-sub link-sub link-hint">${hint}</div>
+    ${
+      mode === "none"
+        ? nothing
+        : fieldRow(
+            "mdi:form-textbox",
+            localize("canvas.pin.linkLabel"),
+            html`<input
+              type="text"
+              class="text-field"
+              aria-label=${localize("canvas.pin.linkLabel")}
+              placeholder=${placeholder}
+              .value=${pin.link_label ?? ""}
+              @change=${(e: Event) =>
+                onChange({
+                  link_label:
+                    (e.target as HTMLInputElement).value.trim() || null,
+                })}
+            />`,
+          )
+    }`;
 }
 
 /** The layers a placed device is on: its standard layer (automatic, or

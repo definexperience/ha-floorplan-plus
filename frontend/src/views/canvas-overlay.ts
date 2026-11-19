@@ -1279,6 +1279,7 @@ export class CanvasOverlay extends LitElement {
       .entities=${[...this.entityLookup.values()]}
       .status=${this.statuses?.get(pinKey(pin) ?? "") ?? null}
       .viewOnly=${pin.view_only ?? false}
+      .linkOptions=${pin}
       @device-card-close=${this._clearSelection}
     ></device-card>`;
   }

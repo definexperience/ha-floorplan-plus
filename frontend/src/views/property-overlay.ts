@@ -198,6 +198,7 @@ export class PropertyOverlay extends LitElement {
         .entities=${this.entities}
         .status=${id ? (this.statuses?.get(id) ?? null) : null}
         .viewOnly=${this.selectedPinOptions?.view_only ?? false}
+        .linkOptions=${this.selectedPinOptions}
         @device-card-close=${() => this._fire("selection-clear")}
       ></device-card>`;
     }

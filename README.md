@@ -18,6 +18,7 @@ Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spat
 - **Per-device permissions.** Admins choose, per device, whether other users can switch it or only see its state.
 - **Names on the plan** for the devices you choose, and lights drawn as a light bulb.
 - **Tap through to Home Assistant.** Tap a device for its states and quick toggles, and open it in Home Assistant.
+- **Device links for everyone.** A device's own link (such as a Stations page) shows on its card for every user, and admins can set a custom link per device or turn it off.
 - **Zoom to a room** when you tap it, and a **home button** to glide back to the whole plan.
 - **A dashboard card** for wall tablets and phones.
 - **Suggested devices per room.** Link a room to a Home Assistant area and its devices are offered first, ready to drop into the room in one click.

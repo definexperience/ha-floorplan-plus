@@ -1,7 +1,12 @@
 import { LitElement, css, html, nothing } from "lit";
 import { property } from "lit/decorators.js";
 import { safeCustomElement } from "../define";
-import type { HassEntityState, HomeAssistant, PlaceableEntity } from "../types";
+import type {
+  HassEntityState,
+  HomeAssistant,
+  Pin,
+  PlaceableEntity,
+} from "../types";
 import {
   belongsToKey,
   isEntityKey,
@@ -11,6 +16,12 @@ import type { DeviceStatus } from "../canvas/device-state";
 import { localize } from "../i18n";
 import { sharedStyles, switchStyles } from "../styles";
 import { infoCardStyles, renderCard } from "./info-card";
+import {
+  type DeviceLink,
+  linkButtonText,
+  openDeviceLink,
+  resolveDeviceLink,
+} from "./device-link";
 
 /** Domains a row can switch on and off straight from the card. */
 const TOGGLE_DOMAINS = new Set([
@@ -34,7 +45,9 @@ function rowRank(e: PlaceableEntity): number {
 
 /** The view-mode card for a tapped device: its live states, quick toggles,
  * and a way into Home Assistant. Admins go to the device page; other users
- * can't open that page in HA, so they get the device's more-info dialog. */
+ * can't open that page in HA, so they get the device's more-info dialog.
+ * Everyone also gets the device's own link (such as a Stations page), or
+ * the admin's custom link, unless the admin turned the link off. */
 @safeCustomElement("device-card")
 export class DeviceCard extends LitElement {
   static override styles = [
@@ -73,6 +86,13 @@ export class DeviceCard extends LitElement {
       }
       .entity-value.offline {
         color: var(--sc-danger);
+      }
+      /* The device's link gets a row of its own above the other button. */
+      .info-foot {
+        flex-wrap: wrap;
+      }
+      .info-foot .device-link {
+        flex-basis: 100%;
       }
       .view-only {
         display: inline-flex;
@@ -115,6 +135,11 @@ export class DeviceCard extends LitElement {
    * its states but get no switches and no more-info dialog (which has
    * its own controls). */
   @property({ attribute: false }) viewOnly = false;
+  /** The pin's link choice (see Pin.link_mode); null = the device's own. */
+  @property({ attribute: false }) linkOptions: Pick<
+    Pin,
+    "link_mode" | "custom_link" | "link_label"
+  > | null = null;
 
   private get _canControl(): boolean {
     return (this.hass?.user?.is_admin ?? false) || !this.viewOnly;
@@ -259,6 +284,25 @@ export class DeviceCard extends LitElement {
       }`;
   }
 
+  private _renderLinkButton(link: DeviceLink) {
+    const text = linkButtonText(
+      this.linkOptions,
+      link.source,
+      this.deviceId,
+      this.entities,
+    );
+    return html`<button
+      class="primary device-link"
+      title=${link.href}
+      @click=${() => openDeviceLink(link)}
+    >
+      <ha-icon
+        icon=${link.internal ? "mdi:link-variant" : "mdi:open-in-new"}
+      ></ha-icon>
+      ${text}
+    </button>`;
+  }
+
   override render() {
     const own = this.entities
       .filter((e) => belongsToKey(this.deviceId, e))
@@ -269,6 +313,14 @@ export class DeviceCard extends LitElement {
     const rep = pickDisplayEntity(this.deviceId, own);
     const isAdmin = this.hass?.user?.is_admin ?? false;
     const hidden = own.length - rows.length;
+    const link = resolveDeviceLink(
+      this.linkOptions,
+      this.deviceId,
+      this.entities,
+      this.hass,
+    );
+    // The link leads when there is one; the other button steps back.
+    const main = link ? "" : "primary";
 
     return renderCard({
       title: this.label,
@@ -305,6 +357,7 @@ export class DeviceCard extends LitElement {
         </div>
       `,
       footer: html`
+        ${link ? this._renderLinkButton(link) : nothing}
         ${
           !this._canControl
             ? html`<span class="info-sub view-only">
@@ -312,13 +365,13 @@ export class DeviceCard extends LitElement {
                 ${localize("deviceCard.viewOnly")}
               </span>`
             : isAdmin && this.deviceId && !isEntityKey(this.deviceId)
-              ? html`<button class="primary" @click=${this._openDevicePage}>
+              ? html`<button class=${main} @click=${this._openDevicePage}>
                   <ha-icon icon="mdi:open-in-app"></ha-icon>
                   ${localize("deviceCard.openDevice")}
                 </button>`
               : rep
                 ? html`<button
-                    class="primary"
+                    class=${main}
                     @click=${() => this._moreInfo(rep.entity_id)}
                   >
                     <ha-icon icon="mdi:information-outline"></ha-icon>

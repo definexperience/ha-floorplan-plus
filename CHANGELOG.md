@@ -2,6 +2,12 @@
 
 Floorplan Plus is a fork of [Spatial Context](https://github.com/Greminn/ha-spatial-context). Entries from 1.0.0 down are the original project's.
 
+## 1.5.0
+
+### Added
+- **Device links on the plan, for everyone**. When an integration gives a device a link in Home Assistant (the **Visit** link on the device page, such as the Stations page that a station from the Stations integration links to), the device's card on the plan now shows it as an **Open in …** button. Users who aren't admins can use it too, so they no longer need the device page to get there. A link to a page inside Home Assistant only shows for users who may open that page.
+- Each placed device has a **Link on its card** option: **Device link** (the default) shows the device's own link, **Custom link** shows a link you type instead (a web address, or a Home Assistant page such as `/lovelace/home`), and **No link** shows none. The button says **Open in** and the name of the integration the link comes from (or **Open link**), and **Button text** lets you write your own.
+
 ## 1.4.0
 
 ### Added

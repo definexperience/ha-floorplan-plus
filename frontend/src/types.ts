@@ -65,7 +65,20 @@ export interface Pin {
   /** The standard layer the admin put this device on (a BuiltinLayerId
    * from canvas/layers.ts). Null/missing = picked automatically. */
   layer?: string | null;
+  /** The link on this device's card, for everyone who opens it:
+   * "device" (the default) is the link the device's integration sets in
+   * Home Assistant (its configuration_url, the "Visit" link on the device
+   * page), "custom" is custom_link, "none" shows no link. */
+  link_mode?: PinLinkMode;
+  /** The admin's own link, used when link_mode is "custom": a web address,
+   * a Home Assistant path such as /lovelace/home, or homeassistant://... */
+  custom_link?: string | null;
+  /** The admin's own text for the link's button. Null/missing = "Open in
+   * <integration>" for the device's link, "Open link" for a custom one. */
+  link_label?: string | null;
 }
+
+export type PinLinkMode = "device" | "custom" | "none";
 
 export interface DetectionZone {
   range_m: number;
@@ -329,6 +342,10 @@ export interface PlaceableEntity {
    * CDN the HA frontend itself uses for every integration logo. */
   integration_domain: string | null;
   integration_name: string | null;
+  /** The link the device's integration set in Home Assistant (the device
+   * registry's configuration_url): a web address, or homeassistant://path
+   * for a page inside Home Assistant. Null when it set none. */
+  device_configuration_url?: string | null;
   /** The first floor (if any) this entity's device is placed on. Null
    * means not placed anywhere yet. A device may be on several floors at
    * once; see placed_floor_ids for all of them. */
@@ -594,6 +611,9 @@ export interface HomeAssistant {
   states: Record<string, HassEntityState | undefined>;
   /** The signed-in user. Only admins may edit the plan. */
   user?: { id?: string; name?: string; is_admin: boolean };
+  /** The sidebar panels this user may open, keyed by url path. Home
+   * Assistant leaves out the admin-only ones for users who aren't admins. */
+  panels?: Record<string, { url_path?: string } | undefined>;
   callService?(
     domain: string,
     service: string,
